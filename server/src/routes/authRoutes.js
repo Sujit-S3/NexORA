@@ -3,7 +3,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
-const { register, login, logout, getMe, changePassword, refreshToken } = require('../controllers/authController');
+const { register, login, logout, getMe, changePassword } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const { authLimiter } = require('../middleware/rateLimiter');
 const ApiError = require('../utils/ApiError');
@@ -41,7 +41,7 @@ router.post(
   login
 );
 
-router.post('/refresh', authLimiter, refreshToken);
+
 
 // Protected routes
 router.post('/logout', protect, logout);
