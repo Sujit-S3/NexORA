@@ -1,0 +1,64 @@
+// NexORA — Cart Model
+
+const mongoose = require('mongoose');
+
+const cartItemSchema = new mongoose.Schema(
+  {
+    product: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Product',
+      required: true,
+    },
+    quantity: {
+      type: Number,
+      required: true,
+      min: [1, 'Quantity must be at least 1'],
+      default: 1,
+    },
+    price: {
+      // Price snapshot at the time item was added (prevents price changes from affecting active cart)
+      type: Number,
+      required: true,
+      min: 0,
+    },
+  },
+  { _id: true }
+);
+
+const cartSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      unique: true, // One cart per user
+    },
+    items: [cartItemSchema],
+  },
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);
+
+// ── Virtual: total price ─────────────────────────────────────────────────
+cartSchema.virtual('totalPrice').get(function () {
+  return this.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+});
+
+// ── Virtual: item count ──────────────────────────────────────────────────
+cartSchema.virtual('itemCount').get(function () {
+  return this.items.reduce((sum, item) => sum + item.quantity, 0);
+});
+
+// ── Instance method: find item by product ────────────────────────────────
+cartSchema.methods.findItem = function (productId) {
+  return this.items.find((item) => {
+    const id = item.product._id ? item.product._id.toString() : item.product.toString();
+    return id === productId.toString();
+  });
+};
+
+const Cart = mongoose.model('Cart', cartSchema);
+module.exports = Cart;
