@@ -74,6 +74,14 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isNewArrival: {
+      type: Boolean,
+      default: false,
+    },
+    isBestSeller: {
+      type: Boolean,
+      default: false,
+    },
     isActive: {
       type: Boolean,
       default: true,
@@ -82,6 +90,21 @@ const productSchema = new mongoose.Schema(
     specifications: {
       type: Map,
       of: String,
+    },
+    gender: {
+      type: String,
+      enum: ['Men', 'Women', 'Unisex', 'Kids'],
+      default: 'Unisex',
+    },
+    variants: [
+      {
+        size: { type: String, required: true, trim: true },
+        stock: { type: Number, required: true, min: 0, default: 0 },
+      },
+    ],
+    sizeChartHtml: {
+      type: String,
+      default: '',
     },
   },
   {

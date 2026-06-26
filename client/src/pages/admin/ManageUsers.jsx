@@ -48,28 +48,29 @@ const ManageUsers = () => {
     u.email.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (isLoading) return <div className="min-h-[50vh] flex justify-center items-center"><Spinner size="lg" /></div>;
+  if (isLoading) return <div className="min-h-screen flex justify-center items-center bg-transparent"><Spinner size="lg" /></div>;
 
   return (
-    <div className="section container-app animate-fade-in">
+    <div className="bg-transparent min-h-screen pt-32 pb-20">
+      <div className="container-app">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="section-title mb-0">Manage Users</h1>
+        <h1 className="text-3xl font-display font-bold text-[#111827] dark:text-[#F5F5F5] mb-0 tracking-tight">Manage Users</h1>
       </div>
 
-      <div className="card p-6">
+      <div className="glass-panel p-6">
         <div className="mb-6">
           <input 
             type="text" 
             placeholder="Search users by name or email..." 
-            className="input max-w-md"
+            className="w-full max-w-md px-4 py-2 bg-white/50 dark:bg-[#0B1220]/60 backdrop-blur-md border border-gray-200/50 dark:border-[rgba(212,175,55,0.15)] text-[#111827] dark:text-[#F5F5F5] placeholder-gray-400 dark:placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 transition-all"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-400">
+          <table className="w-full text-left text-sm text-[#6B7280] dark:text-[#9CA3AF]">
+            <thead className="text-xs uppercase bg-[#D4AF37]/10 dark:bg-white/5 text-[#D4AF37] dark:text-[#F5F5F5]">
               <tr>
                 <th className="px-6 py-3">Name</th>
                 <th className="px-6 py-3">Email</th>
@@ -80,9 +81,9 @@ const ManageUsers = () => {
             </thead>
             <tbody>
               {filteredUsers.map(user => (
-                <tr key={user._id} className="border-b dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                  <td className="px-6 py-4 font-medium text-gray-900 dark:text-white flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 flex items-center justify-center font-bold uppercase shrink-0">
+                <tr key={user._id} className="border-b border-gray-200/50 dark:border-white/5 hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
+                  <td className="px-6 py-4 font-medium text-[#111827] dark:text-[#F5F5F5] flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-[#D4AF37]/10 text-[#D4AF37] flex items-center justify-center font-bold uppercase shrink-0">
                       {user.name.charAt(0)}
                     </div>
                     {user.name}
@@ -91,7 +92,7 @@ const ManageUsers = () => {
                   <td className="px-6 py-4">{new Date(user.createdAt).toLocaleDateString()}</td>
                   <td className="px-6 py-4">
                     <select 
-                      className="text-sm bg-transparent border-gray-300 dark:border-gray-700 rounded p-1 focus:ring-primary-500 focus:border-primary-500"
+                      className="text-sm bg-transparent border-gray-200 dark:border-white/10 rounded p-1 focus:ring-[#D4AF37] focus:border-[#D4AF37] text-[#111827] dark:text-[#F5F5F5] outline-none"
                       value={user.role}
                       onChange={(e) => handleRoleChange(user._id, e.target.value)}
                     >
@@ -103,7 +104,7 @@ const ManageUsers = () => {
                     <button 
                       onClick={() => handleDelete(user._id)} 
                       disabled={user.role === 'admin'}
-                      className={`font-medium hover:underline ${user.role === 'admin' ? 'text-gray-400 cursor-not-allowed' : 'text-red-600'}`}
+                      className={`font-medium hover:underline ${user.role === 'admin' ? 'text-gray-400 cursor-not-allowed' : 'text-red-500'}`}
                     >
                       Delete
                     </button>
@@ -116,6 +117,7 @@ const ManageUsers = () => {
             </tbody>
           </table>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -3,7 +3,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
-const { register, login, logout, getMe, changePassword } = require('../controllers/authController');
+const { register, login, logout, getMe, changePassword, forgotPassword, resetPassword } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const { authLimiter } = require('../middleware/rateLimiter');
 const ApiError = require('../utils/ApiError');
@@ -42,6 +42,13 @@ router.post(
 );
 
 
+
+// Password reset (public)
+router.post('/forgot-password', authLimiter, forgotPassword);
+router.post('/reset-password/:token', authLimiter, [
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  validate
+], resetPassword);
 
 // Protected routes
 router.post('/logout', protect, logout);

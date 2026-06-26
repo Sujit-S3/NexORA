@@ -48,7 +48,22 @@ const userSchema = new mongoose.Schema(
       url: { type: String, default: '' },
       publicId: { type: String, default: '' },
     },
+    mobile: {
+      type: String,
+      trim: true,
+    },
+    countryCode: {
+      type: String,
+      trim: true,
+      default: '+91',
+    },
+    currency: {
+      type: String,
+      enum: ['INR', 'USD', 'GBP', 'EUR', 'AED'],
+      default: 'INR',
+    },
     addresses: [addressSchema],
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
     isActive: {
       type: Boolean,
       default: true,

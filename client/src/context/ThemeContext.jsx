@@ -13,8 +13,8 @@ export const ThemeProvider = ({ children }) => {
     const saved = localStorage.getItem(THEME_KEY);
     if (saved) return saved;
     // 2. Respect OS preference
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
-    return 'light';
+    if (window.matchMedia('(prefers-color-scheme: light)').matches) return 'light';
+    return 'dark'; // Luxury default
   });
 
   useEffect(() => {

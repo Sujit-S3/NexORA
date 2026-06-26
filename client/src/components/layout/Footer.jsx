@@ -1,71 +1,88 @@
-// NexORA — Footer Component
-
+// NexORA — Luxury Footer (embedded in Home V7, this is the standalone layout footer)
 import { Link } from 'react-router-dom';
-import { APP_NAME } from '@utils/constants';
 
-const Footer = () => {
-  const year = new Date().getFullYear();
+const FOOTER_COL = {
+  shop:    ['All Products','New Arrivals','Best Sellers','Collections','Sale'],
+  care:    ['Contact Us','Shipping Info','Returns & Refunds','FAQ','Affiliate Program'],
+  company: ['About NexORA','Careers','Press','Privacy Policy','Terms of Service'],
+};
 
-  return (
-    <footer className="bg-gray-900 dark:bg-black text-gray-300 mt-auto">
-      <div className="container-app py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+const Footer = () => (
+  <footer className="bg-[#0B0B0B] border-t border-[#1A1A1A]">
+    <div className="container-app py-20">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-10 lg:gap-12">
 
-          {/* Brand */}
-          <div className="md:col-span-1">
-            <Link to="/" className="flex items-center gap-2 mb-4 no-underline">
-              <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center text-white text-sm font-black">N</span>
-              <span className="font-display font-bold text-xl text-white">{APP_NAME}</span>
-            </Link>
-            <p className="text-sm text-gray-400 leading-relaxed">
-              Your premium destination for shopping. Quality products, unbeatable prices.
-            </p>
+        {/* Col 1 – Brand */}
+        <div className="lg:col-span-1">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-9 h-9 rounded-sm flex items-center justify-center font-playfair font-bold text-black text-lg"
+              style={{ background: 'linear-gradient(135deg, #D4AF37, #B38945)' }}>N</div>
+            <span className="text-white font-playfair font-semibold text-lg tracking-wider">NEXORA</span>
           </div>
-
-          {/* Shop */}
-          <div>
-            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Shop</h3>
-            <ul className="space-y-2 text-sm">
-              <li><Link to="/products" className="hover:text-white transition-colors no-underline">All Products</Link></li>
-              <li><Link to="/products?featured=true" className="hover:text-white transition-colors no-underline">Featured</Link></li>
-              <li><Link to="/products?sort=sold:desc" className="hover:text-white transition-colors no-underline">Best Sellers</Link></li>
-              <li><Link to="/products?sort=createdAt:desc" className="hover:text-white transition-colors no-underline">New Arrivals</Link></li>
-            </ul>
-          </div>
-
-          {/* Account */}
-          <div>
-            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Account</h3>
-            <ul className="space-y-2 text-sm">
-              <li><Link to="/login" className="hover:text-white transition-colors no-underline">Sign In</Link></li>
-              <li><Link to="/register" className="hover:text-white transition-colors no-underline">Create Account</Link></li>
-              <li><Link to="/orders" className="hover:text-white transition-colors no-underline">My Orders</Link></li>
-              <li><Link to="/profile" className="hover:text-white transition-colors no-underline">Profile</Link></li>
-            </ul>
-          </div>
-
-          {/* Support */}
-          <div>
-            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Support</h3>
-            <ul className="space-y-2 text-sm">
-              <li><span className="text-gray-400">Free shipping above ₹499</span></li>
-              <li><span className="text-gray-400">Easy 30-day returns</span></li>
-              <li><span className="text-gray-400">Secure payments</span></li>
-              <li><span className="text-gray-400">24/7 customer support</span></li>
-            </ul>
-          </div>
+          <p className="text-[13px] leading-relaxed text-gray-500">
+            Curated luxury, powered by intelligence. Discover the finest products from around the world.
+          </p>
         </div>
 
-        {/* Bottom bar */}
-        <div className="border-t border-gray-700/50 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
-          <p>© {year} {APP_NAME}. All rights reserved.</p>
-          <div className="flex items-center gap-4">
-            <span>Built with ❤️ on MERN</span>
+        {/* Col 2 – Shop */}
+        <div>
+          <h4 className="text-white text-[11px] font-semibold tracking-widest uppercase mb-5">Shop</h4>
+          <ul className="space-y-3">
+            {FOOTER_COL.shop.map(l => (
+              <li key={l}><Link to="/products" className="text-[13px] text-gray-500 hover:text-[#D4AF37] transition-colors">{l}</Link></li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Col 3 – Customer Care */}
+        <div>
+          <h4 className="text-white text-[11px] font-semibold tracking-widest uppercase mb-5">Customer Care</h4>
+          <ul className="space-y-3">
+            {FOOTER_COL.care.map(l => (
+              <li key={l}><Link to={l === 'Contact Us' ? '/contact' : '/'} className="text-[13px] text-gray-500 hover:text-[#D4AF37] transition-colors">{l}</Link></li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Col 4 – Company */}
+        <div>
+          <h4 className="text-white text-[11px] font-semibold tracking-widest uppercase mb-5">Company</h4>
+          <ul className="space-y-3">
+            {FOOTER_COL.company.map(l => (
+              <li key={l}><Link to={l === 'Privacy Policy' ? '/privacy-policy' : l === 'Terms of Service' ? '/terms-of-service' : '/'} className="text-[13px] text-gray-500 hover:text-[#D4AF37] transition-colors">{l}</Link></li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Col 5 – Newsletter */}
+        <div>
+          <h4 className="text-white text-[11px] font-semibold tracking-widest uppercase mb-5">Newsletter</h4>
+          <p className="text-[13px] mb-5 text-gray-500">Be the first to know about new arrivals and exclusive offers.</p>
+          <div className="flex">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="flex-1 px-4 py-2.5 text-[12px] bg-transparent outline-none text-white"
+              style={{ border: '1px solid #2A2A2A', borderRight: 'none' }}
+            />
+            <button className="px-4 py-2.5 text-[11px] font-semibold" style={{ background: '#D4AF37', color: '#000' }}>
+              →
+            </button>
           </div>
         </div>
       </div>
-    </footer>
-  );
-};
+    </div>
+
+    {/* Bottom bar */}
+    <div className="container-app py-6 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-[#1A1A1A]">
+      <p className="text-[12px] text-gray-600">© {new Date().getFullYear()} NexORA. All rights reserved.</p>
+      <div className="flex gap-6">
+        {['Privacy Policy','Terms of Service'].map(l => (
+          <Link key={l} to={l === 'Privacy Policy' ? '/privacy-policy' : '/terms-of-service'} className="text-[12px] text-gray-600 hover:text-[#D4AF37] transition-colors">{l}</Link>
+        ))}
+      </div>
+    </div>
+  </footer>
+);
 
 export default Footer;

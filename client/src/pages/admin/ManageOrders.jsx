@@ -9,7 +9,7 @@ const ManageOrders = () => {
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      const res = await orderService.getAllOrders();
+      const res = await orderService.getAll();
       setOrders(res.data.data);
     } catch (err) {
       alert('Failed to load orders');
@@ -24,7 +24,7 @@ const ManageOrders = () => {
 
   const handleStatusChange = async (orderId, status) => {
     try {
-      await orderService.updateOrderStatus(orderId, status);
+      await orderService.updateStatus(orderId, status);
       fetchOrders();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to update order status');
@@ -42,18 +42,19 @@ const ManageOrders = () => {
     return <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium uppercase ${colors[status] || 'bg-gray-100 text-gray-800'}`}>{status}</span>;
   };
 
-  if (isLoading) return <div className="min-h-[50vh] flex justify-center items-center"><Spinner size="lg" /></div>;
+  if (isLoading) return <div className="min-h-screen flex justify-center items-center bg-transparent"><Spinner size="lg" /></div>;
 
   return (
-    <div className="section container-app animate-fade-in">
+    <div className="bg-transparent min-h-screen pt-32 pb-20">
+      <div className="container-app">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="section-title mb-0">Manage Orders</h1>
+        <h1 className="text-3xl font-display font-bold text-[#111827] dark:text-[#F5F5F5] mb-0 tracking-tight">Manage Orders</h1>
       </div>
 
-      <div className="card p-6">
+      <div className="glass-panel p-6">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-800 dark:text-gray-400">
+          <table className="w-full text-left text-sm text-[#6B7280] dark:text-[#9CA3AF]">
+            <thead className="text-xs uppercase bg-[#D4AF37]/10 dark:bg-white/5 text-[#D4AF37] dark:text-[#F5F5F5]">
               <tr>
                 <th className="px-6 py-3">Order ID</th>
                 <th className="px-6 py-3">Customer</th>
@@ -66,11 +67,11 @@ const ManageOrders = () => {
             </thead>
             <tbody>
               {orders.map(order => (
-                <tr key={order._id} className="border-b dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                <tr key={order._id} className="border-b border-gray-200/50 dark:border-white/5 hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
                   <td className="px-6 py-4 font-mono text-xs">{order.orderNumber}</td>
-                  <td className="px-6 py-4">{order.user?.name || 'Deleted User'}</td>
+                  <td className="px-6 py-4 text-[#111827] dark:text-[#F5F5F5]">{order.user?.name || 'Deleted User'}</td>
                   <td className="px-6 py-4">{new Date(order.createdAt).toLocaleDateString()}</td>
-                  <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">₹{order.totalPrice}</td>
+                  <td className="px-6 py-4 font-bold text-[#111827] dark:text-[#F5F5F5]">₹{order.totalPrice}</td>
                   <td className="px-6 py-4">
                     <span className={order.paymentInfo?.status === 'paid' ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
                       {order.paymentInfo?.status?.toUpperCase()}
@@ -79,7 +80,7 @@ const ManageOrders = () => {
                   <td className="px-6 py-4">{getStatusBadge(order.status)}</td>
                   <td className="px-6 py-4">
                     <select 
-                      className="text-sm bg-transparent border-gray-300 dark:border-gray-700 rounded p-1 focus:ring-primary-500 focus:border-primary-500"
+                      className="text-sm bg-transparent border-gray-200 dark:border-white/10 rounded p-1 focus:ring-[#D4AF37] focus:border-[#D4AF37] text-[#111827] dark:text-[#F5F5F5] outline-none"
                       value={order.status}
                       disabled={order.status === 'cancelled' || order.status === 'delivered'}
                       onChange={(e) => handleStatusChange(order._id, e.target.value)}
@@ -99,6 +100,7 @@ const ManageOrders = () => {
             </tbody>
           </table>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -13,6 +13,12 @@ const orderRoutes = require('./orderRoutes');
 const reviewRoutes = require('./reviewRoutes');
 const paymentRoutes = require('./paymentRoutes');
 const adminRoutes = require('./adminRoutes');
+const discountRoutes = require('./discountRoutes');
+const settingRoutes = require('./settingRoutes');
+const shippingRoutes = require('./shippingRoutes');
+const aiRoutes = require('./aiRoutes');
+const preferenceRoutes = require('./preferenceRoutes');
+const wishlistRoutes = require('./wishlistRoutes');
 
 // Health check
 router.get('/health', (req, res) => {
@@ -35,5 +41,12 @@ router.use('/orders', orderRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/admin', adminRoutes);
+router.use('/discounts', discountRoutes);
+router.use('/settings', settingRoutes);
+router.use('/shipping', shippingRoutes);
+router.use('/ai', aiRoutes);
+router.use('/preferences', preferenceRoutes);
+router.use('/wishlist', wishlistRoutes);
 
 module.exports = router;
+

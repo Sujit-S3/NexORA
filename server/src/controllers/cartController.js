@@ -4,12 +4,20 @@ const Product = require('../models/Product');
 const asyncHandler = require('../utils/asyncHandler');
 const { sendResponse } = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
+const { eventBus, EVENTS } = require('../services/ai/utils/eventBus');
 
 // Helper to get or create a cart for the user
 const getOrCreateCart = async (userId) => {
-  let cart = await Cart.findOne({ user: userId }).populate('items.product', 'name images slug stock price discountPrice');
+  let cart = await Cart.findOne({ user: userId }).populate('items.product', 'name images slug stock price discountPrice isActive');
   if (!cart) {
     cart = await Cart.create({ user: userId, items: [] });
+  } else {
+    // Auto-clean any items whose product has been deleted from the database
+    const originalLength = cart.items.length;
+    cart.items = cart.items.filter(item => item.product != null);
+    if (cart.items.length !== originalLength) {
+      await cart.save();
+    }
   }
   return cart;
 };
@@ -32,7 +40,7 @@ const getCart = asyncHandler(async (req, res) => {
 // @route   POST /api/cart/add
 // @access  Auth
 const addToCart = asyncHandler(async (req, res) => {
-  const { productId, quantity = 1 } = req.body;
+  const { productId, quantity = 1, size = '' } = req.body;
 
   if (!productId) {
     throw ApiError.badRequest('Product ID is required');
@@ -40,23 +48,44 @@ const addToCart = asyncHandler(async (req, res) => {
 
   const product = await Product.findById(productId);
   if (!product) {
-    throw ApiError.notFound('Product not found');
+    throw ApiError.notFound('The selected product no longer exists.');
   }
 
-  if (product.stock < quantity) {
-    throw ApiError.badRequest('Insufficient stock');
+  if (!product.isActive) {
+    throw ApiError.badRequest(`The ${product.name} is currently inactive and cannot be added to cart.`);
+  }
+
+  // Handle variants/sizes
+  let availableStock = product.stock;
+  if (product.variants && product.variants.length > 0) {
+    if (!size) {
+      throw ApiError.badRequest(`Please select a size for ${product.name}.`);
+    }
+    const variant = product.variants.find(v => v.size === size);
+    if (!variant) {
+      throw ApiError.badRequest(`Selected size ${size} is invalid for ${product.name}.`);
+    }
+    availableStock = variant.stock;
+  }
+
+  if (availableStock === 0) {
+    throw ApiError.badRequest(`The ${product.name}${size ? ` (Size: ${size})` : ''} is currently out of stock.`);
+  }
+
+  if (availableStock < quantity) {
+    throw ApiError.badRequest(`Insufficient stock. Only ${availableStock} left.`);
   }
 
   const cart = await getOrCreateCart(req.user._id);
 
-  const existingItem = cart.findItem(productId);
+  const existingItem = cart.findItem(productId, size);
   
   // Determine correct price snapshot
   const currentPrice = product.discountPrice !== null ? product.discountPrice : product.price;
 
   if (existingItem) {
-    if (existingItem.quantity + quantity > product.stock) {
-      throw ApiError.badRequest('Insufficient stock to add more of this item');
+    if (existingItem.quantity + quantity > availableStock) {
+      throw ApiError.badRequest(`Cannot add ${quantity} more. Only ${availableStock - existingItem.quantity} more available.`);
     }
     existingItem.quantity += quantity;
     existingItem.price = currentPrice; // Update price snapshot
@@ -64,21 +93,27 @@ const addToCart = asyncHandler(async (req, res) => {
     cart.items.push({
       product: productId,
       quantity,
-      price: currentPrice
+      price: currentPrice,
+      size
     });
   }
 
   await cart.save();
-  await cart.populate('items.product', 'name images slug stock price discountPrice');
 
-  sendResponse(res, 200, 'Item added to cart', cart);
+  // Emit journey event
+  const sessionId = req.headers['x-session-id'];
+  eventBus.emit(EVENTS.ADD_TO_CART, { userId: req.user._id, sessionId, product });
+
+  const populatedCart = await cart.populate('items.product', 'name price discountPrice images slug');
+
+  sendResponse(res, 200, 'Item added to cart', populatedCart);
 });
 
 // @desc    Update item quantity
 // @route   PUT /api/cart/update
 // @access  Auth
 const updateCartItem = asyncHandler(async (req, res) => {
-  const { productId, quantity } = req.body;
+  const { productId, quantity, size = '' } = req.body;
 
   if (!productId || quantity === undefined) {
     throw ApiError.badRequest('Product ID and quantity are required');
@@ -90,16 +125,36 @@ const updateCartItem = asyncHandler(async (req, res) => {
 
   const product = await Product.findById(productId);
   if (!product) {
-    throw ApiError.notFound('Product not found');
+    throw ApiError.notFound('The selected product no longer exists.');
   }
 
-  if (product.stock < quantity) {
-    throw ApiError.badRequest(`Cannot update quantity to ${quantity}. Only ${product.stock} left in stock.`);
+  if (!product.isActive) {
+    throw ApiError.badRequest(`The ${product.name} is currently inactive.`);
+  }
+
+  let availableStock = product.stock;
+  if (product.variants && product.variants.length > 0) {
+    if (!size) {
+      throw ApiError.badRequest(`Please provide a size for ${product.name}.`);
+    }
+    const variant = product.variants.find(v => v.size === size);
+    if (!variant) {
+      throw ApiError.badRequest(`Selected size ${size} is invalid.`);
+    }
+    availableStock = variant.stock;
+  }
+
+  if (availableStock === 0) {
+    throw ApiError.badRequest(`The ${product.name}${size ? ` (Size: ${size})` : ''} is currently out of stock.`);
+  }
+
+  if (availableStock < quantity) {
+    throw ApiError.badRequest(`Cannot update quantity to ${quantity}. Only ${availableStock} left.`);
   }
 
   const cart = await getOrCreateCart(req.user._id);
 
-  const existingItem = cart.findItem(productId);
+  const existingItem = cart.findItem(productId, size);
   if (!existingItem) {
     throw ApiError.notFound('Item not found in cart');
   }
@@ -109,7 +164,7 @@ const updateCartItem = asyncHandler(async (req, res) => {
   existingItem.price = product.discountPrice !== null ? product.discountPrice : product.price;
 
   await cart.save();
-  await cart.populate('items.product', 'name images slug stock price discountPrice');
+  await cart.populate('items.product', 'name images slug stock variants price discountPrice isActive');
 
   sendResponse(res, 200, 'Cart updated', cart);
 });
@@ -122,10 +177,13 @@ const removeFromCart = asyncHandler(async (req, res) => {
 
   const cart = await getOrCreateCart(req.user._id);
 
-  cart.items = cart.items.filter(item => item.product._id.toString() !== productId.toString());
+  cart.items = cart.items.filter(item => {
+    if (!item.product) return false;
+    return item.product._id.toString() !== productId.toString();
+  });
 
   await cart.save();
-  await cart.populate('items.product', 'name images slug stock price discountPrice');
+  await cart.populate('items.product', 'name images slug stock price discountPrice isActive');
 
   sendResponse(res, 200, 'Item removed from cart', cart);
 });

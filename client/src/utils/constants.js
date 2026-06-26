@@ -77,7 +77,7 @@ export const TAX_RATE = 0.18; // 18% GST
 export const ROUTES = {
   HOME: '/',
   PRODUCTS: '/products',
-  PRODUCT_DETAIL: '/products/:slug',
+  PRODUCT_DETAIL: '/product/:slug',
   CART: '/cart',
   CHECKOUT: '/checkout',
   LOGIN: '/login',

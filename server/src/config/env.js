@@ -10,6 +10,8 @@ const required = [
   'CLOUDINARY_CLOUD_NAME',
   'CLOUDINARY_API_KEY',
   'CLOUDINARY_API_SECRET',
+  'GEMINI_API_KEY',
+  'CLIENT_ORIGIN',
 ];
 
 const validateEnv = () => {

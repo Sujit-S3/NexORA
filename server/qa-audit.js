@@ -88,21 +88,21 @@ const runQA = async () => {
 
     // 6. Payments
     console.log('\n[6] Testing Payments...');
-    const payRes = await request(app).post('/api/payments/create').set('Authorization', `Bearer ${userToken}`).send({
+    const payRes = await request(app).post('/api/payments/initiate').set('Authorization', `Bearer ${userToken}`).send({
       orderId, paymentMethod: 'card'
     });
-    if (payRes.status !== 200) throw new Error('Payment creation failed: ' + JSON.stringify(payRes.body));
+    if (payRes.status !== 201 && payRes.status !== 200) throw new Error('Payment creation failed: ' + JSON.stringify(payRes.body));
     
     const verifyPayRes = await request(app).post('/api/payments/verify').set('Authorization', `Bearer ${userToken}`).send({
-      transactionId: payRes.body.data.transactionId, status: 'success'
+      paymentId: payRes.body.data._id, simulateStatus: 'success'
     });
     if (verifyPayRes.status !== 200) throw new Error('Payment verification failed');
     console.log('✅ Payment simulation successful');
 
     // 7. Reviews
     console.log('\n[7] Testing Reviews...');
-    const reviewRes = await request(app).post('/api/reviews').set('Authorization', `Bearer ${userToken}`).send({
-      product: productId, rating: 5, comment: 'Great product!'
+    const reviewRes = await request(app).post(`/api/reviews/product/${productId}`).set('Authorization', `Bearer ${userToken}`).send({
+      rating: 5, comment: 'Great product!'
     });
     if (reviewRes.status !== 201) throw new Error('Review creation failed: ' + JSON.stringify(reviewRes.body));
     console.log('✅ Review creation successful');

@@ -1,7 +1,9 @@
 // NexORA — Admin Controller
 const User = require('../models/User');
 const Product = require('../models/Product');
+const Category = require('../models/Category');
 const Order = require('../models/Order');
+const { categories, products } = require('../data/luxurySeed');
 const asyncHandler = require('../utils/asyncHandler');
 const { sendResponse } = require('../utils/ApiResponse');
 
@@ -73,17 +75,30 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     users: item.users
   }));
 
+  // 7. Orders by Status
+  const orderStatusAgg = await Order.aggregate([
+    { $group: { _id: '$status', count: { $sum: 1 } } }
+  ]);
+  const ordersByStatus = orderStatusAgg.reduce((acc, s) => { acc[s._id] = s.count; return acc; }, {});
+
+  // 8. Recent Orders
+  const recentOrders = await Order.find()
+    .populate('user', 'name')
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .select('orderNumber totalPrice status createdAt user');
+
   sendResponse(res, 200, 'Dashboard stats retrieved', {
-    kpis: {
-      totalUsers,
-      totalProducts,
-      totalOrders,
-      totalRevenue,
-      pendingOrders,
-      deliveredOrders
-    },
+    totalUsers,
+    totalProducts,
+    totalOrders,
+    totalRevenue,
+    pendingOrders,
+    deliveredOrders,
     lowStockProducts,
     topProducts,
+    ordersByStatus,
+    recentOrders,
     charts: {
       revenueByMonth,
       usersByMonth
@@ -91,4 +106,13 @@ const getDashboardStats = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { getDashboardStats };
+// @desc    Seed database with luxury product catalog
+// @route   POST /api/admin/seed
+// @access  Admin
+const seedDatabase = asyncHandler(async (req, res) => {
+  const { seedLuxuryProducts } = require('../data/luxurySeed');
+  const result = await seedLuxuryProducts();
+  sendResponse(res, 201, 'Luxury catalog seeded successfully', result);
+});
+
+module.exports = { getDashboardStats, seedDatabase };

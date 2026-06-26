@@ -21,9 +21,29 @@ const cartReducer = (state, action) => {
     case 'CART_LOADING':
       return { ...state, isLoading: true, error: null };
     case 'SET_CART':
+      const flatItems = (action.payload.items || []).map(item => {
+        if (item.product && typeof item.product === 'object' && item.product._id) {
+          return {
+            ...item,
+            _id: item.product._id, // Set the item ID to the product ID for easy update/remove
+            cartItemId: item._id, // keep original cart item ID if needed
+            name: item.product.name,
+            brand: item.product.brand,
+            slug: item.product.slug,
+            image: item.product.images?.[0]?.url || item.product.image || '',
+            price: item.product.discountPrice !== null && item.product.discountPrice !== undefined ? item.product.discountPrice : item.product.price,
+            originalPrice: item.product.price,
+            stock: item.product.stock,
+            variants: item.product.variants,
+            isActive: item.product.isActive,
+            size: item.size || '',
+          };
+        }
+        return item; // fallback
+      });
       return {
         ...state,
-        items: action.payload.items || [],
+        items: flatItems,
         totalPrice: action.payload.totalPrice || 0,
         itemCount: action.payload.itemCount || 0,
         isLoading: false,
@@ -46,12 +66,32 @@ export const CartProvider = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
   const { isAuthenticated } = useAuth();
 
-  // Fetch cart from backend when user logs in
+  const saveLocalCart = (items) => {
+    localStorage.setItem('nexora_cart', JSON.stringify(items));
+    let totalPrice = 0;
+    let itemCount = 0;
+    items.forEach(i => {
+      totalPrice += i.price * i.quantity;
+      itemCount += i.quantity;
+    });
+    dispatch({ type: 'SET_CART', payload: { items, totalPrice, itemCount } });
+  };
+
+  const getLocalCartItems = () => {
+    try {
+      const stored = localStorage.getItem('nexora_cart');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  };
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchCart();
     } else {
-      dispatch({ type: 'CLEAR_CART' });
+      const localItems = getLocalCartItems();
+      saveLocalCart(localItems);
     }
   }, [isAuthenticated]);
 
@@ -65,53 +105,152 @@ export const CartProvider = ({ children }) => {
     }
   }, []);
 
-  const addToCart = useCallback(async (productId, quantity = 1) => {
+  const addToCart = useCallback(async (productOrId, quantity = 1, size = '') => {
     dispatch({ type: 'CART_LOADING' });
-    try {
-      const { data } = await cartService.addItem(productId, quantity);
-      dispatch({ type: 'SET_CART', payload: data.data });
-      return { success: true };
-    } catch (error) {
-      dispatch({ type: 'CART_ERROR', payload: error.message });
-      return { success: false, message: error.message };
-    }
-  }, []);
+    
+    const productId = typeof productOrId === 'string' ? productOrId : productOrId._id;
+    
+    if (isAuthenticated) {
+      try {
+        const { data } = await cartService.addItem(productId, quantity, size);
+        dispatch({ type: 'SET_CART', payload: data.data });
+        return { success: true };
+      } catch (error) {
+        dispatch({ type: 'CART_ERROR', payload: error.message });
+        return { success: false, message: error.message };
+      }
+    } else {
+      // Guest logic
+      try {
+        let productData = typeof productOrId === 'object' ? productOrId : null;
+        if (!productData) {
+          // Fallback fetch if only ID provided
+          const response = await fetch(`http://localhost:5000/api/products?_id=${productId}`);
+          const resData = await response.json();
+          productData = resData.data.find(p => p._id === productId);
+        }
+        
+        if (!productData) throw new Error('Product not found');
+        if (!productData.isActive) throw new Error(`The ${productData.name} is currently inactive and cannot be added to cart.`);
+        
+        let availableStock = productData.stock;
+        if (productData.variants && productData.variants.length > 0) {
+          if (!size) throw new Error(`Please select a size for ${productData.name}.`);
+          const variant = productData.variants.find(v => v.size === size);
+          if (!variant) throw new Error(`Selected size ${size} is invalid.`);
+          availableStock = variant.stock;
+        }
 
-  const updateItem = useCallback(async (productId, quantity) => {
-    dispatch({ type: 'CART_LOADING' });
-    try {
-      const { data } = await cartService.updateItem(productId, quantity);
-      dispatch({ type: 'SET_CART', payload: data.data });
-      return { success: true };
-    } catch (error) {
-      dispatch({ type: 'CART_ERROR', payload: error.message });
-      return { success: false, message: error.message };
+        if (availableStock === 0) throw new Error(`The ${productData.name}${size ? ` (Size: ${size})` : ''} is currently out of stock.`);
+        if (availableStock < quantity) throw new Error(`Insufficient stock. Only ${availableStock} available.`);
+        
+        const localItems = getLocalCartItems();
+        const existing = localItems.find(i => (i._id === productId || i.product === productId) && (i.size || '') === size);
+        
+        if (existing) {
+          if (existing.quantity + quantity > availableStock) {
+            throw new Error(`Cannot add ${quantity} more. Only ${availableStock - existing.quantity} available.`);
+          }
+          existing.quantity += quantity;
+        } else {
+          localItems.push({
+            _id: productId,
+            product: productId,
+            name: productData.name,
+            brand: productData.brand,
+            slug: productData.slug,
+            image: productData.images?.[0]?.url || '',
+            price: productData.discountPrice !== null ? productData.discountPrice : productData.price,
+            originalPrice: productData.price,
+            stock: productData.stock,
+            variants: productData.variants,
+            isActive: productData.isActive,
+            quantity: quantity,
+            size: size
+          });
+        }
+        
+        saveLocalCart(localItems);
+        return { success: true };
+      } catch (error) {
+        dispatch({ type: 'CART_ERROR', payload: error.message });
+        return { success: false, message: error.message };
+      }
     }
-  }, []);
+  }, [isAuthenticated]);
+
+  const updateItem = useCallback(async (productId, quantity, size = '') => {
+    dispatch({ type: 'CART_LOADING' });
+    if (isAuthenticated) {
+      try {
+        const { data } = await cartService.updateItem(productId, quantity, size);
+        dispatch({ type: 'SET_CART', payload: data.data });
+        return { success: true };
+      } catch (error) {
+        dispatch({ type: 'CART_ERROR', payload: error.message });
+        return { success: false, message: error.message };
+      }
+    } else {
+      try {
+        const localItems = getLocalCartItems();
+        const existing = localItems.find(i => (i._id === productId || i.product === productId) && (i.size || '') === size);
+        if (existing) {
+          let availableStock = existing.stock;
+          if (existing.variants && existing.variants.length > 0) {
+            const variant = existing.variants.find(v => v.size === size);
+            if (variant) availableStock = variant.stock;
+          }
+          if (quantity > availableStock) {
+            throw new Error(`Cannot update quantity. Only ${availableStock} left in stock.`);
+          }
+          existing.quantity = quantity;
+        }
+        saveLocalCart(localItems);
+        return { success: true };
+      } catch (error) {
+        dispatch({ type: 'CART_ERROR', payload: error.message });
+        return { success: false, message: error.message };
+      }
+    }
+  }, [isAuthenticated]);
 
   const removeItem = useCallback(async (productId) => {
     dispatch({ type: 'CART_LOADING' });
-    try {
-      const { data } = await cartService.removeItem(productId);
-      dispatch({ type: 'SET_CART', payload: data.data });
-      return { success: true };
-    } catch (error) {
-      dispatch({ type: 'CART_ERROR', payload: error.message });
-      return { success: false, message: error.message };
+    if (isAuthenticated) {
+      try {
+        const { data } = await cartService.removeItem(productId);
+        dispatch({ type: 'SET_CART', payload: data.data });
+        return { success: true };
+      } catch (error) {
+        dispatch({ type: 'CART_ERROR', payload: error.message });
+        return { success: false, message: error.message };
+      }
+    } else {
+      try {
+        let localItems = getLocalCartItems();
+        localItems = localItems.filter(i => i._id !== productId && i.product !== productId);
+        saveLocalCart(localItems);
+        return { success: true };
+      } catch (error) {
+        return { success: false };
+      }
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const clearCart = useCallback(async () => {
     dispatch({ type: 'CART_LOADING' });
     try {
-      await cartService.clearCart();
+      if (isAuthenticated) {
+        await cartService.clearCart();
+      }
+      localStorage.removeItem('nexora_cart');
       dispatch({ type: 'CLEAR_CART' });
       return { success: true };
     } catch (error) {
       dispatch({ type: 'CART_ERROR', payload: error.message });
       return { success: false, message: error.message };
     }
-  }, []);
+  }, [isAuthenticated]);
 
   const value = {
     ...state,

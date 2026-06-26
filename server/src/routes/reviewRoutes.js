@@ -2,9 +2,12 @@
 
 const express = require('express');
 const router = express.Router();
-const { getProductReviews, addReview, editReview, deleteReview } = require('../controllers/reviewController');
+const { getProductReviews, addReview, editReview, deleteReview, getAllReviews } = require('../controllers/reviewController');
 const { protect } = require('../middleware/auth');
 const { adminOnly } = require('../middleware/admin');
+
+// Admin
+router.get('/', protect, adminOnly, getAllReviews);
 
 // Public
 router.get('/product/:productId', getProductReviews);

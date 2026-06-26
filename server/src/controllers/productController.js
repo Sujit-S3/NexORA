@@ -1,5 +1,6 @@
 // NexORA — Product Controller
 const Product = require('../models/Product');
+const Category = require('../models/Category');
 const asyncHandler = require('../utils/asyncHandler');
 const { sendResponse } = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
@@ -10,23 +11,31 @@ const slugify = require('slugify');
 // @route   GET /api/products
 // @access  Public
 const getProducts = asyncHandler(async (req, res) => {
-  const { keyword, category, minPrice, maxPrice, sort, page = 1, limit = 12 } = req.query;
+  const { keyword, category, minPrice, maxPrice, sort, page = 1, limit = 12, isFeatured, isNewArrival, isBestSeller } = req.query;
 
   // 1. Build Query
   const query = { isActive: true };
 
-  // Search keyword (Full-text search or regex on name/description)
+  // Search keyword (Uses MongoDB full-text index instead of slow regex)
   if (keyword) {
-    query.$or = [
-      { name: { $regex: keyword, $options: 'i' } },
-      { description: { $regex: keyword, $options: 'i' } },
-      { brand: { $regex: keyword, $options: 'i' } }
-    ];
+    query.$text = { $search: keyword };
   }
 
   // Category filter
-  if (category) {
-    query.category = category;
+  if (category && category !== 'all') {
+    const isObjectId = category.match(/^[0-9a-fA-F]{24}$/);
+    const catDoc = await Category.findOne({
+      $or: [
+        { slug: category },
+        ...(isObjectId ? [{ _id: category }] : [])
+      ]
+    });
+    
+    if (catDoc) {
+      query.category = catDoc._id;
+    } else {
+      query.category = null; // Invalid category slug/id, return nothing
+    }
   }
 
   // Price filter
@@ -35,6 +44,11 @@ const getProducts = asyncHandler(async (req, res) => {
     if (minPrice) query.price.$gte = Number(minPrice);
     if (maxPrice) query.price.$lte = Number(maxPrice);
   }
+
+  // Flag filters
+  if (isFeatured === 'true') query.isFeatured = true;
+  if (isNewArrival === 'true') query.isNewArrival = true;
+  if (isBestSeller === 'true') query.isBestSeller = true;
 
   // 2. Build Sort
   let sortOption = { createdAt: -1 }; // Default: Newest
@@ -76,6 +90,8 @@ const getFeaturedProducts = asyncHandler(async (req, res) => {
   sendResponse(res, 200, 'Featured products retrieved successfully', products);
 });
 
+const { eventBus, EVENTS } = require('../services/ai/utils/eventBus');
+
 // @desc    Get single product by slug
 // @route   GET /api/products/:slug
 // @access  Public
@@ -87,6 +103,11 @@ const getProductBySlug = asyncHandler(async (req, res) => {
     throw ApiError.notFound('Product not found');
   }
 
+  // Emit journey event
+  const userId = req.user ? req.user._id : null;
+  const sessionId = req.headers['x-session-id'];
+  eventBus.emit(EVENTS.VIEW_PRODUCT, { userId, sessionId, product });
+
   sendResponse(res, 200, 'Product retrieved successfully', product);
 });
 
@@ -94,7 +115,7 @@ const getProductBySlug = asyncHandler(async (req, res) => {
 // @route   POST /api/products
 // @access  Admin
 const createProduct = asyncHandler(async (req, res) => {
-  const { name, description, price, discountPrice, category, brand, stock, isFeatured, isActive, tags } = req.body;
+  const { name, description, price, discountPrice, category, brand, stock, isFeatured, isNewArrival, isBestSeller, isActive, tags } = req.body;
 
   const productExists = await Product.findOne({ name });
   if (productExists) {
@@ -102,14 +123,10 @@ const createProduct = asyncHandler(async (req, res) => {
   }
 
   const product = await Product.create({
-    name,
-    description,
-    price,
-    discountPrice,
-    category,
-    brand,
-    stock,
+    name, description, price, discountPrice, category, brand, stock,
     isFeatured: isFeatured !== undefined ? isFeatured : false,
+    isNewArrival: isNewArrival !== undefined ? isNewArrival : false,
+    isBestSeller: isBestSeller !== undefined ? isBestSeller : false,
     isActive: isActive !== undefined ? isActive : true,
     tags: tags ? (Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim())) : [],
   });
@@ -127,9 +144,8 @@ const updateProduct = asyncHandler(async (req, res) => {
     throw ApiError.notFound('Product not found');
   }
 
-  const { name, description, price, discountPrice, category, brand, stock, isFeatured, isActive, tags } = req.body;
+  const { name, description, price, discountPrice, category, brand, stock, isFeatured, isNewArrival, isBestSeller, isActive, tags } = req.body;
 
-  // Update slug if name changes
   if (name && name !== product.name) {
     const existingProduct = await Product.findOne({ name });
     if (existingProduct && existingProduct._id.toString() !== product._id.toString()) {
@@ -141,16 +157,17 @@ const updateProduct = asyncHandler(async (req, res) => {
 
   if (description) product.description = description;
   if (price !== undefined) product.price = price;
-  if (discountPrice !== undefined) product.discountPrice = discountPrice;
+  if (discountPrice !== undefined) product.discountPrice = discountPrice || null;
   if (category) product.category = category;
-  if (brand) product.brand = brand;
+  if (brand !== undefined) product.brand = brand;
   if (stock !== undefined) product.stock = stock;
   if (isFeatured !== undefined) product.isFeatured = isFeatured;
+  if (isNewArrival !== undefined) product.isNewArrival = isNewArrival;
+  if (isBestSeller !== undefined) product.isBestSeller = isBestSeller;
   if (isActive !== undefined) product.isActive = isActive;
   if (tags) product.tags = Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim());
 
   await product.save();
-
   sendResponse(res, 200, 'Product updated successfully', product);
 });
 

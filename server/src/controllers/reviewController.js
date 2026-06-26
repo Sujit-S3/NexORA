@@ -6,6 +6,17 @@ const asyncHandler = require('../utils/asyncHandler');
 const { sendResponse } = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
 
+// @desc    Get ALL reviews (admin)
+// @route   GET /api/reviews
+// @access  Admin
+const getAllReviews = asyncHandler(async (req, res) => {
+  const reviews = await Review.find()
+    .populate('user', 'name avatar')
+    .populate('product', 'name images')
+    .sort({ createdAt: -1 });
+  sendResponse(res, 200, 'All reviews retrieved', reviews);
+});
+
 // @desc    Get all reviews for a product
 // @route   GET /api/reviews/product/:productId
 // @access  Public
@@ -113,4 +124,4 @@ const deleteReview = asyncHandler(async (req, res) => {
   sendResponse(res, 200, 'Review deleted successfully');
 });
 
-module.exports = { getProductReviews, addReview, editReview, deleteReview };
+module.exports = { getAllReviews, getProductReviews, addReview, editReview, deleteReview };

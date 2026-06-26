@@ -1,0 +1,256 @@
+/* ══════════════════════════════════════════════════════════════════
+   NEXORA — Luxury Brand Reveal  v5
+   Typography: Cormorant Garamond (brand) + Outfit (support)
+   ══════════════════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Outfit:wght@300;400;500;600&display=swap');
+
+/* ── Base ────────────────────────────────────────────────────── */
+.gs-root {
+  position: fixed;
+  inset: 0;
+  background: #060504;
+  overflow: hidden;
+  font-family: 'Outfit', sans-serif;
+}
+
+/* ── Ambient fog ─────────────────────────────────────────────── */
+.gs-fog {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.gs-glow-blob {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 55vw;
+  height: 50vh;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse,
+    rgba(212, 175, 55, 0.07) 0%,
+    rgba(212, 175, 55, 0.02) 48%,
+    transparent 70%
+  );
+  filter: blur(48px);
+  will-change: transform;
+}
+
+/* ── Vignette ────────────────────────────────────────────────── */
+.gs-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 30%,
+    rgba(6, 5, 4, 0.42) 60%,
+    rgba(6, 5, 4, 0.90) 100%
+  );
+}
+
+/* ── Stage & Scene ───────────────────────────────────────────── */
+.gs-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gs-scene {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Whole composition fades in on load */
+  opacity: 0;
+  animation: nx-scene-in 2.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+}
+
+@keyframes nx-scene-in {
+  0%   { opacity: 0; transform: scale(0.92) translateY(12px); filter: blur(16px); }
+  55%  { opacity: 0.8; filter: blur(2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+}
+
+/* ── Logo wrapper — JS drives ALL transforms ─────────────────── */
+.gs-logo-wrap {
+  will-change: transform;
+  transform-style: preserve-3d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* NO CSS transform or animation here — RAF handles everything */
+}
+
+/* ── Copy block ──────────────────────────────────────────────── */
+.gs-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  margin-top: 38px;
+}
+
+/* ─ Brand name ─────────────────────────────────────────────── */
+.gs-name-reveal {
+  opacity: 0;
+  animation: nx-rise 2.0s cubic-bezier(0.16, 1, 0.3, 1) 5s forwards;
+}
+
+.gs-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 300;
+  font-size: clamp(44px, 6.5vw, 84px);
+  letter-spacing: 0.38em;
+  margin: 0 0 0 0.38em;   /* compensate tracking */
+  line-height: 1;
+  color: #EDE0B8;
+  text-shadow:
+    0 0 50px rgba(212, 175, 55, 0.50),
+    0 0 100px rgba(212, 175, 55, 0.18),
+    0 2px 6px rgba(0, 0, 0, 0.55);
+}
+
+/* ─ Rule + tagline ─────────────────────────────────────────── */
+.gs-tag-reveal {
+  opacity: 0;
+  animation: nx-fade-up 1.4s ease-out 7s forwards;
+  margin-top: 16px;
+}
+
+.gs-rule-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.gs-rule {
+  display: block;
+  width: 36px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.45), transparent);
+}
+
+.gs-tagline {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 300;
+  font-size: clamp(9px, 1.05vw, 11px);
+  letter-spacing: 0.52em;
+  text-transform: uppercase;
+  color: #C8B07A;
+  opacity: 0.85;
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.28);
+}
+
+/* ─ CTA ─────────────────────────────────────────────────────── */
+.gs-cta-reveal {
+  opacity: 0;
+  pointer-events: none;
+  animation: nx-cta-in 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) 9s forwards;
+  margin-top: 52px;
+}
+
+.gs-cta-reveal.ready {
+  pointer-events: auto;
+}
+
+.gs-cta {
+  position: relative;
+  padding: 15px 58px;
+  border-radius: 100px;
+  border: 1px solid rgba(212, 175, 55, 0.38);
+  background: rgba(8, 6, 2, 0.72);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    border-color 0.4s ease,
+    background   0.4s ease,
+    transform    0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow   0.4s ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.gs-cta:hover {
+  border-color: rgba(212, 175, 55, 0.85);
+  background: rgba(12, 9, 3, 0.88);
+  transform: translateY(-5px);
+  box-shadow:
+    0 0 40px rgba(212, 175, 55, 0.28),
+    0 14px 32px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.gs-cta:active { transform: translateY(-2px); }
+
+/* sheen sweep on hover */
+.gs-cta-sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    108deg,
+    transparent 20%,
+    rgba(212, 175, 55, 0.16) 50%,
+    transparent 80%
+  );
+  transform: translateX(-200%);
+  pointer-events: none;
+  transition: none;
+}
+.gs-cta:hover .gs-cta-sheen {
+  transform: translateX(200%);
+  transition: transform 0.6s ease;
+}
+
+.gs-cta-text {
+  position: relative;
+  z-index: 1;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 500;
+  font-size: 10.5px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: #D4AF37;
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+}
+
+/* ── Keyframes ───────────────────────────────────────────────── */
+@keyframes nx-rise {
+  0%   { opacity: 0; transform: translateY(20px); filter: blur(10px); }
+  100% { opacity: 1; transform: translateY(0);    filter: blur(0); }
+}
+
+@keyframes nx-fade-up {
+  0%   { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes nx-cta-in {
+  0%   { opacity: 0; transform: translateY(18px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* ── Transition overlays ─────────────────────────────────────── */
+#nx-gold-flash {
+  position: fixed; inset: 0; z-index: 80;
+  background: radial-gradient(ellipse at center, #F0D98A 0%, #D4AF37 50%, #7A5510 100%);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.42s ease-in;
+}
+#nx-gold-flash.active { opacity: 1; }
+
+#nx-black-fade {
+  position: fixed; inset: 0; z-index: 90;
+  background: #060504;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.55s ease-out;
+}
+#nx-black-fade.active { opacity: 1; }

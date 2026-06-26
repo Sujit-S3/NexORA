@@ -33,10 +33,14 @@ const generateRefreshToken = (id) => {
 const sendTokenResponse = (res, user) => {
   const accessToken = generateAccessToken(user._id);
 
+  const isProduction = process.env.NODE_ENV === 'production';
+
   const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    // Production (Vercel → Render cross-origin): requires sameSite:'none' + secure:true
+    // Development (localhost): lax is sufficient and works without HTTPS
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   };
 

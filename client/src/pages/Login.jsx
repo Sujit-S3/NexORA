@@ -1,105 +1,113 @@
-// NexORA — Login Page
-
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { APP_NAME } from '@utils/constants';
 import { useAuth } from '@hooks/useAuth';
+import MainLogo from '@components/common/MainLogo';
+import FloatingInput from '@components/common/FloatingInput';
+import AuthLayout from '@components/layout/AuthLayout';
+import { motion } from 'framer-motion';
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, loading, error, clearError } = useAuth();
+  
+  useEffect(() => {
+    if (error) clearError();
+  }, []);
   
   const [formData, setFormData] = useState({ email: '', password: '' });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  // Where to navigate after login
-  const from = location.state?.from?.pathname || '/';
+  const [formError, setFormError] = useState('');
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (error) setError('');
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+    if (formError) setFormError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
-      setError('Please fill in all fields');
+      setFormError('Please fill in all fields');
       return;
     }
-    
-    setIsLoading(true);
-    const result = await login(formData);
-    setIsLoading(false);
-    
-    if (result.success) {
-      navigate(from, { replace: true });
-    } else {
-      setError(result.message);
+
+    try {
+      const result = await login({ email: formData.email, password: formData.password });
+      if (result && result.success) {
+        const from = location.state?.from?.pathname || '/';
+        navigate(from, { replace: true });
+      } else {
+        setFormError(result?.message || 'Invalid credentials');
+      }
+    } catch (err) {
+      setFormError('An unexpected error occurred');
+      console.error('Login failed', err);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-gray-900 dark:to-gray-800 p-4">
-      <div className="w-full max-w-md animate-slide-up">
-        <div className="card p-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex w-14 h-14 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-2xl items-center justify-center text-white text-2xl font-black shadow-glow mb-4">N</div>
-            <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Welcome back</h1>
-            <p className="text-gray-500 mt-1 text-sm">Sign in to your {APP_NAME} account</p>
+    <AuthLayout>
+      <div className="bg-[rgba(255,255,255,0.75)] dark:bg-[rgba(255,255,255,0.08)] backdrop-blur-2xl border border-white/50 dark:border-white/10 rounded-[2rem] p-8 md:p-10 shadow-[0_20px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_20px_40px_rgba(0,0,0,0.5)]">
+        
+        <div className="flex flex-col items-center text-center mb-10">
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>
+            <MainLogo className="w-14 h-14" showText={true} textClassName="text-xl font-bold" />
+          </motion.div>
+          <h1 className="text-3xl font-display font-bold text-[#1A1A1A] dark:text-[#F5F2E8] mt-6">Welcome back</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm">Sign in to your premium account</p>
+        </div>
+
+        {(error || formError) && (
+          <div className="mb-6 p-4 bg-red-50/50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm rounded-xl text-center backdrop-blur-sm">
+            {error || formError}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+          <FloatingInput 
+            label="Email Address" 
+            type="email" 
+            id="email" 
+            value={formData.email} 
+            onChange={handleChange} 
+            required 
+          />
+          
+          <FloatingInput 
+            label="Password" 
+            type="password" 
+            id="password" 
+            value={formData.password} 
+            onChange={handleChange} 
+            required 
+          />
+
+          <div className="flex justify-end mb-6 -mt-2">
+            <Link to="/forgot-password" className="text-sm font-medium text-[#D4AF37] hover:text-[#B38945] transition-colors">
+              Forgot password?
+            </Link>
           </div>
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-lg border border-red-200 dark:border-red-800 text-center">
-              {error}
-            </div>
-          )}
+          <motion.button 
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            type="submit" 
+            disabled={loading}
+            className="w-full py-4 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B38945] text-white font-bold tracking-wide shadow-[0_10px_20px_rgba(212,175,55,0.3)] hover:shadow-[0_15px_25px_rgba(212,175,55,0.4)] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Authenticating...' : 'Sign In To NEXORA'}
+          </motion.button>
+        </form>
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div>
-              <label className="label label-required">Email</label>
-              <input 
-                type="email" 
-                name="email"
-                className="input" 
-                placeholder="you@example.com" 
-                value={formData.email}
-                onChange={handleChange}
-                disabled={isLoading}
-                required
-              />
-            </div>
-            <div>
-              <label className="label label-required">Password</label>
-              <input 
-                type="password" 
-                name="password"
-                className="input" 
-                placeholder="••••••••" 
-                value={formData.password}
-                onChange={handleChange}
-                disabled={isLoading}
-                required
-              />
-            </div>
-            <button 
-              type="submit" 
-              className="btn-primary w-full btn-lg" 
-              disabled={isLoading}
-            >
-              {isLoading ? 'Signing in...' : 'Sign In'}
-            </button>
-          </form>
-
-          <p className="text-center text-sm text-gray-500 mt-6">
-            Don&apos;t have an account?{' '}
-            <Link to="/register" className="font-medium text-primary-600 hover:text-primary-500">Create one</Link>
+        <div className="mt-8 text-center">
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            Don't have an account?{' '}
+            <Link to="/register" className="font-semibold text-[#1A1A1A] dark:text-[#F5F2E8] hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors">
+              Join NEXORA
+            </Link>
           </p>
         </div>
       </div>
-    </div>
+    </AuthLayout>
   );
 };
 

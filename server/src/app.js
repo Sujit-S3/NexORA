@@ -23,7 +23,8 @@ app.use(
     origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
     credentials: true, // Allow cookies
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    // x-session-id is required by the AI Concierge for anonymous session tracking
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id'],
   })
 );
 

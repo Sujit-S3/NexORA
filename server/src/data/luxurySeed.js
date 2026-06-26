@@ -1,0 +1,640 @@
+const mongoose = require('mongoose');
+const slugify = require('slugify');
+const Product = require('../models/Product');
+const Category = require('../models/Category');
+
+const CATEGORIES = [
+  { name: 'Fashion', slug: 'fashion', description: 'Luxury designer clothing and footwear' },
+  { name: 'Electronics', slug: 'electronics', description: 'Premium tech and gadgets' },
+  { name: 'Watches', slug: 'watches', description: 'Luxury timepieces' },
+  { name: 'Accessories', slug: 'accessories', description: 'Designer bags, wallets and eyewear' },
+  { name: 'Lifestyle', slug: 'lifestyle', description: 'Premium home and personal care' },
+  { name: 'Luxury Gifts', slug: 'luxury-gifts', description: 'Curated premium gift collections' },
+];
+
+const buildProducts = (categoryMap) => [
+  // ── FASHION (10) ──────────────────────────────────────────────────────────
+  {
+    name: 'Gucci Wool Cashmere Jacket',
+    brand: 'Gucci', category: categoryMap['fashion'],
+    price: 189000, discountPrice: 159000, stock: 12,
+    isFeatured: true, isBestSeller: false, isNewArrival: true,
+    description: 'Crafted from the finest Italian cashmere-wool blend, this Gucci jacket exudes understated luxury. The structured silhouette and double-G button detailing make it the centrepiece of any wardrobe.',
+    tags: ['gucci', 'jacket', 'cashmere', 'luxury', 'fashion'],
+    images: [{ url: '/assets/luxury/fashion/gucci_jacket.png', publicId: 'gucci-jacket-1' }]
+  },
+  {
+    name: 'Prada Re-Nylon Sneakers',
+    brand: 'Prada', category: categoryMap['fashion'],
+    price: 79000, discountPrice: 69000, stock: 25,
+    isFeatured: true, isBestSeller: true, isNewArrival: false,
+    description: 'Prada\'s iconic Re-Nylon sneakers crafted from regenerated nylon fabric. Featuring the signature triangle logo, these sneakers blend sport and luxury effortlessly.',
+    tags: ['prada', 'sneakers', 'nylon', 'luxury', 'shoes'],
+    images: [{ url: '/assets/luxury/fashion/prada_sneakers.png', publicId: 'prada-sneakers-1' }]
+  },
+  {
+    name: 'Versace Medusa Silk Shirt',
+    brand: 'Versace', category: categoryMap['fashion'],
+    price: 45000, discountPrice: null, stock: 18,
+    isFeatured: false, isBestSeller: true, isNewArrival: false,
+    description: 'Iconic Versace baroque print on premium Italian silk. The Medusa head embroidery at the chest is a statement of uncompromising luxury.',
+    tags: ['versace', 'shirt', 'silk', 'baroque', 'luxury'],
+    images: [{ url: '/assets/luxury/fashion/versace_silk_shirt.png', publicId: 'versace-shirt-1' }]
+  },
+  {
+    name: 'Balenciaga Triple S Sneakers',
+    brand: 'Balenciaga', category: categoryMap['fashion'],
+    price: 89000, discountPrice: 75000, stock: 15,
+    isFeatured: true, isBestSeller: true, isNewArrival: false,
+    description: 'The Balenciaga Triple S defines the chunky sneaker era. A triple-layered sole construction with mixed material upper creates the ultimate luxury streetwear silhouette.',
+    tags: ['balenciaga', 'sneakers', 'triple-s', 'streetwear', 'luxury'],
+    images: [{ url: '/assets/luxury/fashion/balenciaga_triple_s.png', publicId: 'balenciaga-triple-s' }]
+  },
+  {
+    name: 'Louis Vuitton Monogram Belt',
+    brand: 'Louis Vuitton', category: categoryMap['fashion'],
+    price: 38000, discountPrice: null, stock: 30,
+    isFeatured: false, isBestSeller: true, isNewArrival: false,
+    description: 'The quintessential LV Monogram Canvas belt with polished gold-tone buckle. A timeless accessory that elevates any outfit.',
+    tags: ['louis-vuitton', 'belt', 'monogram', 'leather', 'luxury'],
+    images: [{ url: '/assets/luxury/fashion/lv_monogram_belt.png', publicId: 'lv-belt-1' }]
+  },
+  {
+    name: 'Dior B23 High-Top Sneakers',
+    brand: 'Dior', category: categoryMap['fashion'],
+    price: 105000, discountPrice: 89000, stock: 8,
+    isFeatured: true, isBestSeller: false, isNewArrival: true,
+    description: 'The Dior B23 High-Top in Dior Oblique canvas. A collaboration between Kim Jones and Shawn Stussy that redefined luxury streetwear.',
+    tags: ['dior', 'b23', 'sneakers', 'oblique', 'luxury'],
+    images: [{ url: '/assets/luxury/fashion/dior_b23.png', publicId: 'dior-b23' }]
+  },
+  {
+    name: 'Hermès Cashmere Scarf',
+    brand: 'Hermès', category: categoryMap['fashion'],
+    price: 28000, discountPrice: null, stock: 20,
+    isFeatured: false, isBestSeller: false, isNewArrival: true,
+    description: 'Hermès 100% cashmere scarf in the iconic Carré print. Woven from the finest Mongolian cashmere for exceptional softness and warmth.',
+    tags: ['hermes', 'scarf', 'cashmere', 'carré', 'luxury'],
+    images: [{ url: '/assets/luxury/fashion/hermes_scarf.png', publicId: 'hermes-scarf' }]
+  },
+  {
+    name: 'Nike Air Jordan 1 Retro High OG',
+    brand: 'Nike', category: categoryMap['fashion'],
+    price: 15999, discountPrice: 12999, stock: 40,
+    isFeatured: false, isBestSeller: true, isNewArrival: false,
+    description: 'The original rebel sneaker. Air Jordan 1 Retro High OG in the iconic Chicago colourway. Full-grain leather upper with classic Nike Air cushioning.',
+    tags: ['nike', 'jordan', 'sneakers', 'retro', 'og'],
+    images: [{ url: '/assets/luxury/fashion/jordan_1_chicago.png', publicId: 'jordan-1' }]
+  },
+  {
+    name: 'Off-White Industrial Belt',
+    brand: 'Off-White', category: categoryMap['fashion'],
+    price: 22000, discountPrice: 18500, stock: 22,
+    isFeatured: false, isBestSeller: false, isNewArrival: true,
+    description: 'The Off-White Industrial Belt — Virgil Abloh\'s signature piece. Yellow canvas webbing with industrial-style clasp and bold Off-White branding.',
+    tags: ['off-white', 'belt', 'industrial', 'streetwear'],
+    images: [{ url: '/assets/luxury/fashion/offwhite_industrial_belt.png', publicId: 'offwhite-belt' }]
+  },
+  {
+    name: 'Moncler Grenoble Down Jacket',
+    brand: 'Moncler', category: categoryMap['fashion'],
+    price: 135000, discountPrice: 115000, stock: 10,
+    isFeatured: true, isBestSeller: false, isNewArrival: false,
+    description: 'Technical down jacket from Moncler Grenoble. Premium 90/10 goose down fill with DWR-treated shell. Engineered for extreme cold performance with luxury aesthetics.',
+    tags: ['moncler', 'jacket', 'down', 'winter', 'luxury'],
+    images: [{ url: '/assets/luxury/fashion/moncler_grenoble_jacket.png', publicId: 'moncler-jacket' }]
+  },
+  {
+    name: 'Chanel Classic Tweed Jacket',
+    brand: 'Chanel', category: categoryMap['fashion'],
+    price: 450000, discountPrice: null, stock: 5,
+    isFeatured: true, isBestSeller: false, isNewArrival: true,
+    description: 'The iconic Chanel tweed jacket in black and white. Features silk lining, signature gold interlocking CC buttons, and weighted chain hem for perfect drape.',
+    tags: ['chanel', 'jacket', 'tweed', 'womenswear', 'luxury'],
+    images: [{ url: '/assets/luxury/fashion/chanel_tweed_jacket.png', publicId: 'chanel-tweed' }]
+  },
+  {
+    name: 'Burberry Kensington Heritage Trench',
+    brand: 'Burberry', category: categoryMap['fashion'],
+    price: 195000, discountPrice: null, stock: 15,
+    isFeatured: false, isBestSeller: true, isNewArrival: false,
+    description: 'The quintessential British trench coat, tailored to the body in signature honey gabardine. Features vintage check lining and buffalo horn buttons.',
+    tags: ['burberry', 'trench', 'coat', 'womenswear', 'luxury'],
+    images: [{ url: '/assets/luxury/fashion/burberry_trench.png', publicId: 'burberry-trench' }]
+  },
+  {
+    name: 'Christian Louboutin So Kate Pumps',
+    brand: 'Christian Louboutin', category: categoryMap['fashion'],
+    price: 68000, discountPrice: null, stock: 20,
+    isFeatured: true, isBestSeller: true, isNewArrival: false,
+    description: 'The iconic So Kate pump features a dramatic 120mm stiletto heel, deeply cut vamp, and the signature unmistakable red leather sole. Crafted in Italy from black patent leather.',
+    tags: ['louboutin', 'heels', 'shoes', 'womenswear', 'luxury'],
+    images: [{ url: '/assets/luxury/fashion/louboutin_sokate.png', publicId: 'louboutin-sokate' }]
+  },
+
+  // ── ELECTRONICS (15) ──────────────────────────────────────────────────────
+  {
+    name: 'Apple MacBook Pro 16" M4 Max',
+    brand: 'Apple', category: categoryMap['electronics'],
+    price: 349900, discountPrice: 319900, stock: 15,
+    isFeatured: true, isBestSeller: true, isNewArrival: true,
+    description: 'The most powerful MacBook Pro ever. M4 Max chip with 16-core CPU, 40-core GPU, and up to 128GB unified memory. Liquid Retina XDR display with ProMotion.',
+    tags: ['apple', 'macbook', 'laptop', 'm4', 'pro'],
+    images: [{ url: '/assets/luxury/electronics/macbook_pro.png', publicId: 'macbook-pro-m4' }]
+  },
+  {
+    name: 'iPhone 16 Pro Max',
+    brand: 'Apple', category: categoryMap['electronics'],
+    price: 159900, discountPrice: 149900, stock: 25,
+    isFeatured: true, isBestSeller: true, isNewArrival: true,
+    description: 'Apple Intelligence. A18 Pro chip with 6-core GPU. Camera Control for effortless shooting. 48MP Fusion Camera with 5x optical zoom. Titanium design.',
+    tags: ['iphone', 'apple', 'smartphone', 'pro', 'titanium'],
+    images: [{ url: '/assets/luxury/electronics/iphone_16_pro.png', publicId: 'iphone-16-pro' }]
+  },
+  {
+    name: 'Sony WH-1000XM6',
+    brand: 'Sony', category: categoryMap['electronics'],
+    price: 34990, discountPrice: 28999, stock: 35,
+    isFeatured: true, isBestSeller: true, isNewArrival: true,
+    description: 'Industry-leading noise cancelling with Dual Noise Sensor technology. 30-hour battery life. Multipoint connection for seamless device switching. LDAC Hi-Res Audio.',
+    tags: ['sony', 'headphones', 'noise-cancelling', 'wireless', 'xm6'],
+    images: [{ url: '/assets/luxury/electronics/sony_xm6.png', publicId: 'sony-xm6' }]
+  },
+  {
+    name: 'Samsung Galaxy S26 Ultra',
+    brand: 'Samsung', category: categoryMap['electronics'],
+    price: 139999, discountPrice: 124999, stock: 20,
+    isFeatured: true, isBestSeller: false, isNewArrival: true,
+    description: 'The ultimate Samsung. 200MP AI-powered camera system. Snapdragon 8 Elite processor. Integrated S Pen. 6.9" Dynamic AMOLED 2X display with 120Hz.',
+    tags: ['samsung', 'galaxy', 'smartphone', 's26', 'ultra'],
+    images: [{ url: '/assets/luxury/electronics/samsung_galaxy_s26_ultra.png', publicId: 'samsung-s26' }]
+  },
+  {
+    name: 'Apple iPad Pro 13" M4',
+    brand: 'Apple', category: categoryMap['electronics'],
+    price: 119900, discountPrice: 109900, stock: 18,
+    isFeatured: false, isBestSeller: true, isNewArrival: false,
+    description: 'The thinnest Apple product ever. M4 chip with tandem OLED display. Apple Pencil Pro support. Up to 16GB RAM. Perfect canvas for creativity.',
+    tags: ['apple', 'ipad', 'tablet', 'm4', 'pro'],
+    images: [{ url: '/assets/luxury/electronics/ipad_pro_m4.png', publicId: 'ipad-pro-m4' }]
+  },
+  {
+    name: 'Bose QuietComfort Ultra',
+    brand: 'Bose', category: categoryMap['electronics'],
+    price: 31990, discountPrice: 26999, stock: 28,
+    isFeatured: false, isBestSeller: true, isNewArrival: false,
+    description: 'Bose Immersive Audio creates sound that feels like it surrounds you. CustomTune technology personally calibrates noise cancellation and sound performance.',
+    tags: ['bose', 'headphones', 'quietcomfort', 'noise-cancelling'],
+    images: [{ url: '/assets/luxury/electronics/bose_quietcomfort_ultra.png', publicId: 'bose-qc-ultra' }]
+  },
+  {
+    name: 'Dell XPS 15 OLED',
+    brand: 'Dell', category: categoryMap['electronics'],
+    price: 189900, discountPrice: 169900, stock: 12,
+    isFeatured: false, isBestSeller: false, isNewArrival: false,
+    description: 'Intel Core Ultra 9, RTX 4070, 32GB DDR5 RAM, 15.5" 3.5K OLED InfinityEdge display. The benchmark for premium Windows laptops.',
+    tags: ['dell', 'xps', 'laptop', 'oled', 'windows'],
+    images: [{ url: '/assets/luxury/electronics/dell_xps_15_oled.png', publicId: 'dell-xps-15' }]
+  },
+  {
+    name: 'Sony PlayStation 5 Pro',
+    brand: 'Sony', category: categoryMap['electronics'],
+    price: 74990, discountPrice: 69990, stock: 10,
+    isFeatured: true, isBestSeller: true, isNewArrival: true,
+    description: 'PlayStation 5 Pro with enhanced GPU for 4K gaming. PlayStation Spectral Super Resolution upscaling. Advanced Ray Tracing. 2TB SSD.',
+    tags: ['sony', 'ps5', 'gaming', 'console', 'playstation'],
+    images: [{ url: '/assets/luxury/electronics/ps5_pro_console.png', publicId: 'ps5-pro' }]
+  },
+  {
+    name: 'Apple Watch Ultra 2',
+    brand: 'Apple', category: categoryMap['electronics'],
+    price: 89900, discountPrice: 79900, stock: 20,
+    isFeatured: true, isBestSeller: true, isNewArrival: false,
+    description: 'The most rugged and capable Apple Watch. Titanium case. Action Button. Precision GPS. 60-hour battery life. Siren. For extreme sports and adventure.',
+    tags: ['apple', 'watch', 'ultra', 'titanium', 'smartwatch'],
+    images: [{ url: '/assets/luxury/electronics/apple_watch_ultra.png', publicId: 'apple-watch-ultra-2' }]
+  },
+  {
+    name: 'Microsoft Surface Pro 11',
+    brand: 'Microsoft', category: categoryMap['electronics'],
+    price: 149900, discountPrice: 134900, stock: 14,
+    isFeatured: false, isBestSeller: false, isNewArrival: true,
+    description: 'The most versatile tablet. Snapdragon X Elite. Neural Processing Unit. Wi-Fi 7. USB 4. Incredible battery life. Slim Pen 2 support. Windows 11.',
+    tags: ['microsoft', 'surface', 'tablet', 'laptop', 'windows'],
+    images: [{ url: '/assets/luxury/electronics/microsoft_surface_pro_11.png', publicId: 'surface-pro-11' }]
+  },
+  {
+    name: 'Dyson Zone Headphones',
+    brand: 'Dyson', category: categoryMap['electronics'],
+    price: 65900, discountPrice: 55900, stock: 8,
+    isFeatured: true, isBestSeller: false, isNewArrival: false,
+    description: 'Air-purifying noise cancelling headphones. Captures and projects a continuous stream of purified air to your mouth and nose. Dual electrostatic mesh filters.',
+    tags: ['dyson', 'headphones', 'air-purifying', 'noise-cancelling'],
+    images: [{ url: '/assets/luxury/electronics/dyson_zone_headphones.png', publicId: 'dyson-zone' }]
+  },
+  {
+    name: 'Nvidia RTX 5090 GPU',
+    brand: 'Nvidia', category: categoryMap['electronics'],
+    price: 299900, discountPrice: null, stock: 5,
+    isFeatured: true, isBestSeller: false, isNewArrival: true,
+    description: 'The most powerful consumer GPU ever. 32GB GDDR7. 3rd gen RTX technology. AI-powered DLSS 4. PCIe 5.0. For content creators and professional gamers.',
+    tags: ['nvidia', 'rtx', 'gpu', 'gaming', '5090'],
+    images: [{ url: '/assets/luxury/electronics/nvidia_rtx_5090.png', publicId: 'rtx-5090' }]
+  },
+  {
+    name: 'LG OLED Flex 42"',
+    brand: 'LG', category: categoryMap['electronics'],
+    price: 189990, discountPrice: 159990, stock: 6,
+    isFeatured: false, isBestSeller: false, isNewArrival: false,
+    description: 'World\'s first bendable OLED TV. Flex between flat and curved with a single button. 4K 120Hz OLED evo panel. HDMI 2.1. Ideal for gaming and cinema.',
+    tags: ['lg', 'oled', 'tv', 'flex', 'gaming'],
+    images: [{ url: '/assets/luxury/electronics/lg_oled_flex_tv.png', publicId: 'lg-oled-flex' }]
+  },
+  {
+    name: 'Rode NT-USB+ Microphone',
+    brand: 'Rode', category: categoryMap['electronics'],
+    price: 18990, discountPrice: 15990, stock: 30,
+    isFeatured: false, isBestSeller: true, isNewArrival: false,
+    description: 'Premium studio-quality USB condenser microphone. 32-bit float onboard recording. Ultra-low noise. Internal DSP for real-time monitoring.',
+    tags: ['rode', 'microphone', 'usb', 'studio', 'podcast'],
+    images: [{ url: '/assets/luxury/electronics/rode_nt_usb_microphone.png', publicId: 'rode-nt-usb' }]
+  },
+  {
+    name: 'GoPro Hero 13 Black',
+    brand: 'GoPro', category: categoryMap['electronics'],
+    price: 44990, discountPrice: 39990, stock: 22,
+    isFeatured: false, isBestSeller: true, isNewArrival: true,
+    description: '5.3K60 + 4K120 video. 27MP photos. Legendary GoPro durability. Extended battery life. HyperSmooth 7.0 stabilisation. Waterproof to 10m without housing.',
+    tags: ['gopro', 'camera', 'action', '4k', 'waterproof'],
+    images: [{ url: '/assets/luxury/electronics/gopro_hero13_black.png', publicId: 'gopro-hero-13' }]
+  },
+
+  // ── WATCHES (10) ──────────────────────────────────────────────────────────
+  {
+    name: 'Rolex Submariner Date 41mm',
+    brand: 'Rolex', category: categoryMap['watches'],
+    price: 1250000, discountPrice: null, stock: 5,
+    isFeatured: true, isBestSeller: true, isNewArrival: false,
+    description: 'The archetype of the diver\'s watch. Crafted in 18kt Oystersteel, the Submariner Date is both a precision instrument and a timeless luxury object. Cerachrom bezel.',
+    tags: ['rolex', 'submariner', 'diver', 'luxury', 'swiss'],
+    images: [{ url: '/assets/luxury/watches/rolex_submariner.png', publicId: 'rolex-sub-date' }]
+  },
+  {
+    name: 'Omega Seamaster 300 Co‑Axial',
+    brand: 'Omega', category: categoryMap['watches'],
+    price: 450000, discountPrice: 420000, stock: 8,
+    isFeatured: true, isBestSeller: true, isNewArrival: false,
+    description: 'The watch chosen by James Bond. Master Chronometer movement. 60m unidirectional bezel. 300m water resistance. Anti-magnetic to 15,000 gauss.',
+    tags: ['omega', 'seamaster', 'diver', 'bond', 'swiss'],
+    images: [{ url: '/assets/luxury/watches/omega_seamaster_blue.png', publicId: 'omega-seamaster' }]
+  },
+  {
+    name: 'Patek Philippe Calatrava',
+    brand: 'Patek Philippe', category: categoryMap['watches'],
+    price: 2800000, discountPrice: null, stock: 3,
+    isFeatured: true, isBestSeller: false, isNewArrival: false,
+    description: 'The purest expression of the classic round dress watch. 18kt rose gold case. Manual calibre 215 PS. Sapphire crystal caseback. You never truly own a Patek Philippe.',
+    tags: ['patek', 'calatrava', 'dress-watch', 'rose-gold', 'swiss'],
+    images: [{ url: '/assets/luxury/watches/patek_calatrava.png', publicId: 'patek-calatrava' }]
+  },
+  {
+    name: 'Patek Philippe Nautilus 5711/1R',
+    brand: 'Patek Philippe', category: categoryMap['watches'],
+    price: 3500000, discountPrice: null, stock: 2,
+    isFeatured: true, isBestSeller: true, isNewArrival: true,
+    description: 'The iconic Patek Philippe Nautilus in stunning rose gold with a beautiful blue gradient dial. Designed by Gérald Genta, this is the ultimate luxury sports watch.',
+    tags: ['patek', 'nautilus', 'rose-gold', 'luxury', 'swiss'],
+    images: [{ url: '/assets/luxury/watches/patek_nautilus_new.png', publicId: 'patek-nautilus-rosegold' }]
+  },
+  {
+    name: 'Audemars Piguet Royal Oak',
+    brand: 'Audemars Piguet', category: categoryMap['watches'],
+    price: 2450000, discountPrice: null, stock: 4,
+    isFeatured: true, isBestSeller: true, isNewArrival: true,
+    description: 'The Audemars Piguet Royal Oak in stainless steel featuring the signature Grande Tapisserie white dial and octagonal bezel. A true masterpiece of horology.',
+    tags: ['audemars', 'royal-oak', 'steel', 'luxury', 'swiss'],
+    images: [{ url: '/assets/luxury/watches/ap_royal_oak_new.png', publicId: 'ap-royal-oak-steel' }]
+  },
+  {
+    name: 'Casio G-Shock GA-2100',
+    brand: 'Casio', category: categoryMap['watches'],
+    price: 8995, discountPrice: 7499, stock: 50,
+    isFeatured: false, isBestSeller: true, isNewArrival: false,
+    description: 'CasiOak — the iconic octagonal G-Shock. Carbon Core Guard structure. 200m water resistance. 48.5mm case. World time 31 cities. The toughest fashion watch.',
+    tags: ['casio', 'g-shock', 'sport', 'tough', 'casioak'],
+    images: [{ url: '/assets/luxury/watches/rolex_daytona.png', publicId: 'casio-g-shock-ga2100' }]
+  },
+  {
+    name: 'Tissot PRX Powermatic 80',
+    brand: 'Tissot', category: categoryMap['watches'],
+    price: 42000, discountPrice: 37000, stock: 20,
+    isFeatured: false, isBestSeller: true, isNewArrival: false,
+    description: 'The Tissot PRX — a modern icon. Integrated bracelet design. Powermatic 80 movement with 80-hour power reserve. Anti-reflective sapphire crystal.',
+    tags: ['tissot', 'prx', 'powermatic', 'integrated', 'steel'],
+    images: [{ url: '/assets/luxury/watches/cartier_santos.png', publicId: 'tissot-prx' }]
+  },
+  {
+    name: 'Grand Seiko SBGA413 Spring Drive',
+    brand: 'Grand Seiko', category: categoryMap['watches'],
+    price: 680000, discountPrice: null, stock: 4,
+    isFeatured: true, isBestSeller: false, isNewArrival: false,
+    description: 'The Snowflake. Spring Drive movement with ±1 sec/day accuracy. Zaratsu-polished titanium case. Textured dial inspired by the winter scenery of Shinshu.',
+    tags: ['grand-seiko', 'spring-drive', 'snowflake', 'titanium', 'japanese'],
+    images: [{ url: '/assets/luxury/watches/ap_royal_oak_blue.png', publicId: 'grand-seiko-snowflake' }]
+  },
+  {
+    name: 'Breitling Navitimer B01',
+    brand: 'Breitling', category: categoryMap['watches'],
+    price: 520000, discountPrice: 490000, stock: 6,
+    isFeatured: false, isBestSeller: false, isNewArrival: true,
+    description: 'The iconic aviation chronograph since 1952. In-house Manufacture Calibre 01. Slide rule bezel for aviation calculations. 30-min and 12-hour counters.',
+    tags: ['breitling', 'navitimer', 'chronograph', 'aviation', 'swiss'],
+    images: [{ url: '/assets/luxury/watches/ap_royal_oak.png', publicId: 'breitling-navitimer-b01' }]
+  },
+  {
+    name: 'Seiko Presage Sharp Edged',
+    brand: 'Seiko', category: categoryMap['watches'],
+    price: 35000, discountPrice: 29999, stock: 18,
+    isFeatured: false, isBestSeller: true, isNewArrival: false,
+    description: 'Inspired by Japanese Kiriko cut glass. Automatic calibre 6R35. 70-hour power reserve. Faceted hands. Blue Arita porcelain dial. A masterpiece at an accessible price.',
+    tags: ['seiko', 'presage', 'automatic', 'japanese', 'kiriko'],
+    images: [{ url: '/assets/luxury/watches/rolex_submariner.png', publicId: 'seiko-presage-sharp' }]
+  },
+
+  // ── ACCESSORIES (10) ──────────────────────────────────────────────────────
+  {
+    name: 'Louis Vuitton Keepall 55',
+    brand: 'Louis Vuitton', category: categoryMap['accessories'],
+    price: 145000, discountPrice: null, stock: 8,
+    isFeatured: true, isBestSeller: true, isNewArrival: false,
+    description: 'The original luxury travel bag. Louis Vuitton Monogram canvas Keepall 55 with iconic LV motif. Includes padlock, key, and luggage tag. The ultimate travel companion.',
+    tags: ['louis-vuitton', 'keepall', 'bag', 'travel', 'monogram'],
+    images: [{ url: '/assets/luxury/bags/lv_keepall.png', publicId: 'lv-keepall-55' }]
+  },
+  {
+    name: 'Hermès Birkin 30 Togo',
+    brand: 'Hermès', category: categoryMap['accessories'],
+    price: 1200000, discountPrice: null, stock: 2,
+    isFeatured: true, isBestSeller: false, isNewArrival: false,
+    description: 'The most coveted bag in the world. Hermès Birkin 30 in Togo leather. Palladium-plated hardware. Hand-stitched by a single artisan. An investment piece.',
+    tags: ['hermes', 'birkin', 'bag', 'togo', 'luxury'],
+    images: [{ url: '/assets/luxury/bags/hermes_birkin_orange.png', publicId: 'hermes-birkin-30' }]
+  },
+  {
+    name: 'Ray-Ban Aviator Classic',
+    brand: 'Ray-Ban', category: categoryMap['accessories'],
+    price: 14990, discountPrice: 11990, stock: 40,
+    isFeatured: false, isBestSeller: true, isNewArrival: false,
+    description: 'The original aviator. Worn by pilots since 1937. Gold metal frame with G-15 lens for natural colour perception. UV protection.',
+    tags: ['ray-ban', 'aviator', 'sunglasses', 'classic', 'gold'],
+    images: [{ url: '/assets/luxury/bags/hermes_kelly.png', publicId: 'rayban-aviator' }]
+  },
+  {
+    name: 'Gucci Dionysus GG Canvas Bag',
+    brand: 'Gucci', category: categoryMap['accessories'],
+    price: 185000, discountPrice: 165000, stock: 6,
+    isFeatured: true, isBestSeller: false, isNewArrival: true,
+    description: 'The Gucci Dionysus with the iconic tiger-head closure. GG Supreme canvas with leather trim. Includes detachable chain strap. A collector\'s piece.',
+    tags: ['gucci', 'dionysus', 'bag', 'gg-canvas', 'tiger'],
+    images: [{ url: '/assets/luxury/bags/chanel_flap_black.png', publicId: 'gucci-dionysus' }]
+  },
+  {
+    name: 'Montblanc Meisterstück Wallet',
+    brand: 'Montblanc', category: categoryMap['accessories'],
+    price: 18500, discountPrice: 15999, stock: 25,
+    isFeatured: false, isBestSeller: true, isNewArrival: false,
+    description: 'Crafted from premium grain leather, this slim wallet features the iconic Montblanc emblem. 6 card slots, 2 bill compartments. A symbol of executive success.',
+    tags: ['montblanc', 'wallet', 'leather', 'meisterstuck', 'luxury'],
+    images: [{ url: '/assets/luxury/bags/luxury_dark_bag.png', publicId: 'montblanc-wallet' }]
+  },
+  {
+    name: 'Bottega Veneta Intrecciato Cardholder',
+    brand: 'Bottega Veneta', category: categoryMap['accessories'],
+    price: 42000, discountPrice: null, stock: 15,
+    isFeatured: false, isBestSeller: false, isNewArrival: true,
+    description: 'Bottega Veneta\'s signature Intrecciato woven leather cardholder. 8 card slots. Buttery-soft nappa leather. The most discreet luxury money can buy.',
+    tags: ['bottega', 'intrecciato', 'cardholder', 'woven', 'nappa'],
+    images: [{ url: '/assets/luxury/bags/lv_capucines.png', publicId: 'bottega-cardholder' }]
+  },
+  {
+    name: 'Prada Saffiano Leather Backpack',
+    brand: 'Prada', category: categoryMap['accessories'],
+    price: 135000, discountPrice: 118000, stock: 9,
+    isFeatured: true, isBestSeller: false, isNewArrival: false,
+    description: 'Structured Saffiano leather backpack with the triangular Prada enamel logo. Internal laptop compartment. Adjustable shoulder straps. Modern luxury at its finest.',
+    tags: ['prada', 'saffiano', 'backpack', 'leather', 'luxury'],
+    images: [{ url: '/assets/luxury/bags/chanel_flap.png', publicId: 'prada-saffiano-backpack' }]
+  },
+  {
+    name: 'Tom Ford Aviator Sunglasses',
+    brand: 'Tom Ford', category: categoryMap['accessories'],
+    price: 32000, discountPrice: 27000, stock: 20,
+    isFeatured: false, isBestSeller: true, isNewArrival: false,
+    description: 'Tom Ford FT0144 Aviator in gold with brown gradient lenses. Acetate temples with TF logo. 100% UV protection. Designed in Milan.',
+    tags: ['tom-ford', 'sunglasses', 'aviator', 'gold', 'luxury'],
+    images: [{ url: '/assets/luxury/bags/bag_white_bg.png', publicId: 'tom-ford-aviator' }]
+  },
+  {
+    name: 'Rimowa Essential Trunk Plus',
+    brand: 'Rimowa', category: categoryMap['accessories'],
+    price: 65000, discountPrice: 58000, stock: 12,
+    isFeatured: false, isBestSeller: false, isNewArrival: true,
+    description: 'Rimowa Essential Trunk Plus in Polycarbonate. 131L capacity. Multi-wheel system with 360° smooth rolling. TSA-approved lock. Grooved surface design.',
+    tags: ['rimowa', 'luggage', 'travel', 'polycarbonate', 'trunk'],
+    images: [{ url: '/assets/luxury/bags/lv_keepall.png', publicId: 'rimowa-trunk' }]
+  },
+  {
+    name: 'Cartier Santos Chain Bracelet',
+    brand: 'Cartier', category: categoryMap['accessories'],
+    price: 98000, discountPrice: null, stock: 10,
+    isFeatured: true, isBestSeller: false, isNewArrival: false,
+    description: 'Inspired by the Santos de Cartier watch, this sterling silver bracelet features the signature screwed motif. 18kt gold accents. A wrist stack essential.',
+    tags: ['cartier', 'bracelet', 'silver', 'santos', 'luxury'],
+    images: [{ url: '/assets/luxury/bags/lady_dior.png', publicId: 'cartier-santos-bracelet' }]
+  },
+
+  // ── LIFESTYLE (10) ──────────────────────────────────────────────────────
+  {
+    name: 'Dyson V15 Detect Absolute',
+    brand: 'Dyson', category: categoryMap['lifestyle'],
+    price: 59900, discountPrice: 52990, stock: 20,
+    isFeatured: true, isBestSeller: true, isNewArrival: false,
+    description: 'The most powerful Dyson cordless vacuum. Laser reveals hidden dust. Particle count display. Up to 60 minutes run time. HEPA filtration captures 99.97% of particles.',
+    tags: ['dyson', 'vacuum', 'cordless', 'laser', 'hepa'],
+    images: [{ url: '/assets/luxury/electronics/dyson_v15.png', publicId: 'dyson-v15' }]
+  },
+  {
+    name: 'Dyson Airwrap Multi-Styler',
+    brand: 'Dyson', category: categoryMap['lifestyle'],
+    price: 44900, discountPrice: 39900, stock: 18,
+    isFeatured: true, isBestSeller: true, isNewArrival: false,
+    description: 'Style and dry simultaneously with no extreme heat. Coanda effect wraps hair around the barrel automatically. Includes 6 attachments. For all hair types.',
+    tags: ['dyson', 'airwrap', 'hair', 'styler', 'coanda'],
+    images: [{ url: '/assets/luxury/electronics/dyson_airwrap.png', publicId: 'dyson-airwrap' }]
+  },
+  {
+    name: 'Aesop Resurrection Hand Balm 75ml',
+    brand: 'Aesop', category: categoryMap['lifestyle'],
+    price: 2850, discountPrice: null, stock: 60,
+    isFeatured: false, isBestSeller: true, isNewArrival: false,
+    description: 'A highly nourishing formulation of Mandelic acid and Provitamin B5 for visibly smoother skin. Immediately conditions and soothes even the most parched hands.',
+    tags: ['aesop', 'hand-balm', 'skincare', 'nourishing', 'luxury'],
+    images: [{ url: '/assets/luxury/lifestyle/aesop_hand_balm.png', publicId: 'aesop-hand-balm' }]
+  },
+  {
+    name: 'Moleskine Limited Edition Smart Writing Set',
+    brand: 'Moleskine', category: categoryMap['lifestyle'],
+    price: 12990, discountPrice: 10990, stock: 25,
+    isFeatured: false, isBestSeller: false, isNewArrival: true,
+    description: 'Digitise your handwriting in real-time. NeoStudio app instantly sends notes to any device. Dot-grid Smart Notebook with 192 pages. Includes Neo Pen N2.',
+    tags: ['moleskine', 'notebook', 'smart', 'writing', 'digital'],
+    images: [{ url: '/assets/luxury/lifestyle/moleskine_smart_set.png', publicId: 'moleskine-smart-set' }]
+  },
+  {
+    name: 'Moleskine Smart Writing Set',
+    brand: 'Moleskine', category: categoryMap['lifestyle'],
+    price: 22900, discountPrice: 19900, stock: 15,
+    isFeatured: false, isBestSeller: false, isNewArrival: true,
+    description: 'Watch your ideas travel off the page and evolve on screen with the new generation Moleskine Smart Pen, Notebook and App.',
+    tags: ['moleskine', 'notebook', 'smart', 'writing', 'stationery'],
+    images: [{ url: '/assets/luxury/lifestyle/moleskine_smart_set.png', publicId: 'moleskine-smart-set' }]
+  },
+  {
+    name: 'Le Labo Santal 33 Eau de Parfum',
+    brand: 'Le Labo', category: categoryMap['lifestyle'],
+    price: 25500, discountPrice: null, stock: 25,
+    isFeatured: true, isBestSeller: true, isNewArrival: false,
+    description: 'A perfume that touches the sensual universality of this icon... that would intoxicate a man as much as a woman. Notes of cardamom, iris, violet, and ambrox.',
+    tags: ['le-labo', 'perfume', 'santal-33', 'fragrance', 'beauty'],
+    images: [{ url: '/assets/luxury/lifestyle/le_labo_santal_33.png', publicId: 'le-labo-santal-33' }]
+  },
+  {
+    name: 'Bang & Olufsen Beolit 20',
+    brand: 'Bang & Olufsen', category: categoryMap['electronics'],
+    price: 49990, discountPrice: 44990, stock: 12,
+    isFeatured: false, isBestSeller: false, isNewArrival: true,
+    description: 'Powerful, portable Bluetooth speaker with built-in wireless Qi charging. Delivers True360 sound and up to 8 hours of playtime.',
+    tags: ['bang-olufsen', 'speaker', 'audio', 'bluetooth', 'premium'],
+    images: [{ url: '/assets/luxury/electronics/bo_beolit_20.png', publicId: 'bo-beolit-20' }]
+  },
+  {
+    name: 'Smeg 2-Slice Toaster TSF01',
+    brand: 'Smeg', category: categoryMap['lifestyle'],
+    price: 18990, discountPrice: 15990, stock: 18,
+    isFeatured: false, isBestSeller: true, isNewArrival: false,
+    description: '50s Retro Style aesthetic 2-slice toaster. Features 6 browning levels, powder-coated steel body, and extra-wide slots.',
+    tags: ['smeg', 'toaster', 'kitchen', 'retro', 'appliance'],
+    images: [{ url: 'https://images.unsplash.com/photo-1626806819282-2c1dc01a5e0c?q=80&w=600&auto=format&fit=crop', publicId: 'smeg-toaster' }]
+  },
+  {
+    name: 'Nespresso Vertuo Next',
+    brand: 'Nespresso', category: categoryMap['lifestyle'],
+    price: 15999, discountPrice: 12999, stock: 30,
+    isFeatured: false, isBestSeller: false, isNewArrival: true,
+    description: 'The next big cup is here with Vertuo Next. Takes the full range of Nespresso coffee styles to the next level with Centrifusion™ technology.',
+    tags: ['nespresso', 'coffee', 'machine', 'kitchen', 'vertuo'],
+    images: [{ url: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba1?q=80&w=600&auto=format&fit=crop', publicId: 'nespresso-vertuo' }]
+  },
+  {
+    name: 'Theragun Pro Gen 6',
+    brand: 'Therabody', category: categoryMap['lifestyle'],
+    price: 39990, discountPrice: 34990, stock: 15,
+    isFeatured: true, isBestSeller: true, isNewArrival: false,
+    description: 'Smarter and quieter than ever before, Theragun PRO is the ultimate tool for recovery and pain relief. Features a customizable speed range and OLED screen.',
+    tags: ['theragun', 'massage', 'recovery', 'wellness', 'fitness'],
+    images: [{ url: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=600&auto=format&fit=crop', publicId: 'theragun-pro-6' }]
+  },
+  {
+    name: 'Yeti Rambler 30oz Tumbler',
+    brand: 'Yeti', category: categoryMap['lifestyle'],
+    price: 4990, discountPrice: 3990, stock: 50,
+    isFeatured: false, isBestSeller: true, isNewArrival: false,
+    description: 'The Rambler® 30 oz. is the tumbler that gets you through the day. Made of 18/8 stainless steel with double-wall vacuum insulation.',
+    tags: ['yeti', 'tumbler', 'insulated', 'stainless', 'outdoor'],
+    images: [{ url: 'https://images.unsplash.com/photo-1614316335198-500b462c16ac?q=80&w=600&auto=format&fit=crop', publicId: 'yeti-rambler-30' }]
+  },
+
+  // ── LUXURY GIFTS (5) ──────────────────────────────────────────────────────
+  {
+    name: 'The Executive Gift Set',
+    brand: 'NexORA Curated', category: categoryMap['luxury-gifts'],
+    price: 49000, discountPrice: 42000, stock: 10,
+    isFeatured: true, isBestSeller: true, isNewArrival: false,
+    description: 'The perfect corporate gift. Includes Montblanc pen, premium leather portfolio, Le Labo travel fragrance, and Aesop hand balm. Elegantly packaged in a NexORA luxury box.',
+    tags: ['gift', 'executive', 'corporate', 'luxury', 'bundle'],
+    images: [{ url: '/assets/luxury/gifts/executive_gift_box.png', publicId: 'executive-gift-set' }]
+  },
+  {
+    name: 'The Luxury Watch Starter Set',
+    brand: 'NexORA Curated', category: categoryMap['luxury-gifts'],
+    price: 85000, discountPrice: 75000, stock: 5,
+    isFeatured: true, isBestSeller: false, isNewArrival: true,
+    description: 'Start the watch collecting journey right. Includes Tissot PRX, premium watch roll for 3 watches, and NexORA watch care kit. For the discerning beginner.',
+    tags: ['watch', 'gift', 'starter', 'collector', 'luxury'],
+    images: [{ url: '/assets/luxury/watches/omega_seamaster_blue.png', publicId: 'luxury-watch-set' }]
+  },
+  {
+    name: 'The Wellness Ritual Box',
+    brand: 'NexORA Curated', category: categoryMap['luxury-gifts'],
+    price: 18500, discountPrice: 15000, stock: 15,
+    isFeatured: false, isBestSeller: true, isNewArrival: false,
+    description: 'A curated wellness experience. Aesop Resurrection hand balm, Le Labo travel set, Theragun mini, and aromatherapy candle. Gift-wrapped with handwritten note.',
+    tags: ['wellness', 'gift', 'self-care', 'spa', 'luxury'],
+    images: [{ url: '/assets/luxury/gifts/executive_gift_box.png', publicId: 'wellness-ritual-box' }]
+  },
+  {
+    name: 'The Tech Lover Hamper',
+    brand: 'NexORA Curated', category: categoryMap['luxury-gifts'],
+    price: 62000, discountPrice: 54999, stock: 8,
+    isFeatured: false, isBestSeller: false, isNewArrival: true,
+    description: 'For the gadget enthusiast. Includes Apple AirPods Pro 2, Anker 10,000mAh MagSafe powerbank, Mophie wireless charging pad, and premium cable set.',
+    tags: ['tech', 'gift', 'apple', 'gadget', 'hamper'],
+    images: [{ url: '/assets/luxury/electronics/apple_watch_ultra.png', publicId: 'tech-hamper' }]
+  },
+  {
+    name: 'The Fashion Connoisseur Box',
+    brand: 'NexORA Curated', category: categoryMap['luxury-gifts'],
+    price: 38000, discountPrice: 32000, stock: 12,
+    isFeatured: true, isBestSeller: false, isNewArrival: false,
+    description: 'Luxury fashion essentials in one box. Hermès mini scarf, Bottega card holder, designer shoe care set, and personalised gift message. The gift of style.',
+    tags: ['fashion', 'gift', 'luxury', 'style', 'hermes'],
+    images: [{ url: '/assets/luxury/bags/hermes_birkin_orange.png', publicId: 'fashion-box' }]
+  },
+];
+
+const seedLuxuryProducts = async () => {
+  try {
+    console.log('🌱 Starting NexORA luxury seed...');
+
+    // 1. Clear existing
+    await Product.deleteMany({});
+    await Category.deleteMany({});
+    console.log('✅ Cleared existing products and categories');
+
+    // 2. Insert categories
+    const insertedCategories = await Category.insertMany(CATEGORIES);
+    const categoryMap = insertedCategories.reduce((map, cat) => {
+      map[cat.slug] = cat._id;
+      return map;
+    }, {});
+    console.log(`✅ Created ${insertedCategories.length} categories`);
+
+    // 3. Build and insert products
+    const products = buildProducts(categoryMap).map(p => ({
+      ...p,
+      slug: slugify(p.name, { lower: true, strict: true })
+    }));
+    const insertedProducts = await Product.insertMany(products);
+    console.log(`✅ Created ${insertedProducts.length} products`);
+
+    console.log('\n🎉 NexORA Luxury Catalog Seeded Successfully!');
+    console.log(`📦 Categories: ${insertedCategories.length}`);
+    console.log(`🛍️  Products: ${insertedProducts.length}`);
+    return { categories: insertedCategories.length, products: insertedProducts.length };
+  } catch (error) {
+    console.error('❌ Seeding Error:', error);
+    throw error;
+  }
+};
+
+module.exports = { seedLuxuryProducts, CATEGORIES };

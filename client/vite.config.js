@@ -37,12 +37,27 @@ export default defineConfig({
   // Build optimization
   build: {
     outDir: 'dist',
-    sourcemap: false,
+    sourcemap: true,
+    chunkSizeWarningLimit: 800,
     rollupOptions: {
       output: {
         manualChunks: {
+          // Core React bundle
           vendor: ['react', 'react-dom', 'react-router-dom'],
+          // HTTP client
           axios: ['axios'],
+          // Heavy animation library \u2014 deferred chunk
+          framer: ['framer-motion'],
+          // Charts \u2014 admin only, deferred chunk
+          recharts: ['recharts'],
+          // 3D rendering \u2014 heavy, isolate
+          three: ['three'],
+          // Analytics
+          posthog: ['posthog-js'],
+          // Confetti
+          confetti: ['react-confetti'],
+          // Lucide icons \u2014 large icon set
+          icons: ['lucide-react'],
         },
       },
     },

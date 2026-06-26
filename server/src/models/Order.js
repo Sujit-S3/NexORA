@@ -35,7 +35,6 @@ const orderSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
     },
     orderNumber: {
       type: String,
@@ -55,7 +54,7 @@ const orderSchema = new mongoose.Schema(
     paymentInfo: {
       method: {
         type: String,
-        enum: ['card', 'upi', 'wallet', 'cod'],
+        enum: ['card', 'upi', 'wallet', 'cod', 'stripe', 'paypal'],
         required: true,
       },
       status: {
@@ -69,6 +68,8 @@ const orderSchema = new mongoose.Schema(
     itemsPrice: { type: Number, required: true, min: 0 },
     shippingPrice: { type: Number, required: true, min: 0, default: 0 },
     taxPrice: { type: Number, required: true, min: 0, default: 0 },
+    discountPrice: { type: Number, min: 0, default: 0 },
+    discountCode: { type: String, default: null },
     totalPrice: { type: Number, required: true, min: 0 },
     status: {
       type: String,

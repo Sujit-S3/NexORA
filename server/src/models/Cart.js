@@ -9,6 +9,10 @@ const cartItemSchema = new mongoose.Schema(
       ref: 'Product',
       required: true,
     },
+    size: {
+      type: String,
+      default: '', // Empty if product has no sizes
+    },
     quantity: {
       type: Number,
       required: true,
@@ -52,11 +56,12 @@ cartSchema.virtual('itemCount').get(function () {
   return this.items.reduce((sum, item) => sum + item.quantity, 0);
 });
 
-// ── Instance method: find item by product ────────────────────────────────
-cartSchema.methods.findItem = function (productId) {
+// ── Instance method: find item by product and size ───────────────────────
+cartSchema.methods.findItem = function (productId, size = '') {
   return this.items.find((item) => {
+    if (!item.product) return false;
     const id = item.product._id ? item.product._id.toString() : item.product.toString();
-    return id === productId.toString();
+    return id === productId.toString() && (item.size || '') === size;
   });
 };
 

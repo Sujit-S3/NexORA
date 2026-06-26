@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXORA — Experience the Future of Commerce</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Italiana&family=Outfit:wght@300;400;600&family=Playfair+Display:ital,wght@1,500&display=swap');
+/* Global CSS */
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+
+html, body {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #000000;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+:root {
+    --text-color: #111827;
+    --text-muted: #4B5563;
+    --border-color: rgba(17, 24, 39, 0.2);
+    --btn-bg: rgba(0, 0, 0, 0.05);
+    --btn-hover: rgba(0, 0, 0, 0.1);
+}
+
+body {
+    min-height: 1000vh;
+    font-family: 'Outfit', sans-serif;
+    color: var(--text-color);
+    overflow-x: hidden;
+    cursor: none;
+    transition: color 0.5s;
+}
+
+* { cursor: none !important; }
+
+::-webkit-scrollbar { display: none; width: 0; }
+
+#webgl {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+    outline: none;
+}
+/* cursor CSS */
+.cursor-inner {
+    position: fixed; top: 0; left: 0;
+    width: 6px; height: 6px;
+    background: #D4AF37;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 9999;
+    box-shadow: 0 0 10px #D4AF37;
+}
+.cursor-outer {
+    position: fixed; top: 0; left: 0;
+    width: 40px; height: 40px;
+    border: 1.5px solid rgba(212, 175, 55, 0.7);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 9998;
+    transition: width 0.3s, height 0.3s, background 0.3s, border-color 0.3s;
+}
+/* layout CSS */
+.cinematic-container {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 10;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0 60px 40px 60px;
+    box-sizing: border-box;
+}
+.main-header {
+    display: flex; justify-content: space-between; align-items: center;
+    width: 100%; z-index: 20;
+    pointer-events: auto;
+    padding: 20px 0;
+}
+.brand { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 800; letter-spacing: 6px; text-transform: uppercase; color: var(--text-color); transition: color 0.5s; }
+.header-nav { display: flex; align-items: center; gap: 24px; }
+.nav-link {
+    color: var(--text-color); text-decoration: none;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
+    font-weight: 600; transition: color 0.3s;
+}
+.nav-link:hover { color: #f97316; }
+.nav-dot { width: 3px; height: 3px; background: var(--border-color); border-radius: 50%; transition: background 0.5s; }
+.contact-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 28px;
+    background: var(--btn-bg); color: var(--text-color);
+    text-decoration: none;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;
+    border-radius: 30px;
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s;
+}
+.btn-circle {
+    display: inline-block; width: 6px; height: 6px;
+    background: #D4AF37; border-radius: 50%; box-shadow: 0 0 8px #D4AF37;
+}
+.contact-btn:hover { background: var(--btn-hover); transform: translateY(-1px); border-color: rgba(212, 175, 55, 0.5); }
+
+/* slides CSS */
+.slide { position: absolute; bottom: 12%; pointer-events: none; }
+
+#slide-1 { left: 0; width: 100%; }
+#slide-1 .slide-title { margin-left: 60px; }
+#slide-1 .desc-row { position: relative; display: flex; width: 100%; }
+#slide-1 .col-1 { margin-left: 60px; width: calc(25vw - 60px); max-width: calc(25vw - 60px); }
+#slide-1 .col-2 { position: absolute; left: calc(25vw + 40px); width: calc(25vw - 60px); max-width: calc(25vw - 60px); }
+
+#slide-2 { left: 0; width: 100%; }
+#slide-2-img {
+    position: fixed; top: 120px; left: 60px; width: calc(25vw - 60px);
+    aspect-ratio: 4 / 5; overflow: hidden; z-index: 2; pointer-events: none;
+    clip-path: inset(0 0 100% 0); transition: clip-path 1.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease; opacity: 0;
+    border-radius: 4px;
+}
+#slide-2-img img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.15); transition: transform 1.8s cubic-bezier(0.16, 1, 0.3, 1); }
+#slide-2-img.active { clip-path: inset(0 0 0 0); opacity: 1; }
+#slide-2-img.active img { transform: scale(1); }
+
+#slide-2 .slide-title { margin-left: calc(25vw + 40px); }
+#slide-2 .slide-desc { margin-left: calc(50vw + 20px); width: calc(25vw - 60px); max-width: calc(25vw - 60px); }
+
+#slide-3 { left: calc(50vw + 20px); width: calc(25vw - 60px); max-width: calc(25vw - 60px); }
+#slide-3 .slide-title { white-space: nowrap; }
+
+#slide-4 { left: calc(25% + 40px); max-width: 600px; }
+
+#slide-5 { left: 50%; transform: translateX(-50%); text-align: center; width: 100%; bottom: 35%; transition: opacity 0.8s, transform 0.8s; opacity: 0; pointer-events: none; }
+#slide-5.active { opacity: 1; pointer-events: auto; transform: translate(-50%, -20px); }
+#slide-5 .slide-title { font-size: 72px; margin-bottom: 40px; text-align: center; font-weight: 800; font-family: 'Outfit', sans-serif; letter-spacing: -2px; }
+
+.slide-title { font-family: 'Italiana', serif; font-size: 116px; line-height: 1.0; font-weight: 400; letter-spacing: 2px; margin-bottom: 20px; color: var(--text-color); transition: color 0.5s; }
+.slide-title.bold-caption { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 84px; letter-spacing: -2px; line-height: 1.1; text-transform: uppercase; }
+.slide-desc { font-size: 16px; line-height: 1.7; font-weight: 400; color: var(--text-muted); letter-spacing: 0.5px; opacity: 0; transform: translateY(30px); transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1), transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), color 0.5s; transition-delay: 0.4s; }
+.slide.active .slide-desc { opacity: 1; transform: translateY(0); }
+.slide-title .char { display: inline-block; opacity: 0; transform: translateY(50px); filter: blur(12px); transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1), transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), filter 0.8s cubic-bezier(0.25, 1, 0.5, 1); }
+.slide.active .slide-title .char { opacity: 1; transform: translateY(0); filter: blur(0); }
+.slide.active { pointer-events: auto; }
+
+.final-cta {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 20px 50px;
+    background: var(--btn-bg);
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(12px);
+    border-radius: 40px;
+    color: var(--text-color);
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    text-decoration: none;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+.final-cta::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+.final-cta:hover::before { left: 100%; }
+.final-cta:hover {
+    background: var(--btn-hover);
+    transform: translateY(-4px);
+}
+
+/* grid CSS */
+.story-dashes { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; gap: 12px; }
+.story-dash { width: 2px; height: 35px; background: var(--border-color); border-radius: 2px; transition: background 0.5s; }
+.story-dash-fill { width: 100%; height: 0%; background: #D4AF37; border-radius: 2px; transition: height 0.1s linear; box-shadow: 0 0 8px #D4AF37; }
+.grid-horizontal-line { position: fixed; top: 70px; left: 0; right: 0; width: 100%; height: 1px; background: var(--border-color); z-index: 5; pointer-events: none; transition: background 0.5s; }
+.grid-lines { position: fixed; top: 0; left: 40px; right: 40px; width: calc(100% - 80px); height: 100vh; display: flex; justify-content: space-between; z-index: 5; pointer-events: none; }
+.grid-line { position: relative; width: 1px; height: 100%; background: var(--border-color); transition: background 0.5s; }
+.grid-line:nth-child(3) { margin-top: 70px; height: calc(100vh - 70px); }
+.grid-dot { position: absolute; left: 50%; transform: translate(-50%, -50%); width: 4px; height: 4px; border-radius: 50%; background: var(--border-color); transition: background 0.5s; }
+
+/* Scroll Indicator */
+.scroll-indicator {
+    position: absolute;
+    bottom: -80px;
+    left: 60px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 1;
+    transition: opacity 0.5s;
+}
+.scroll-indicator.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+.mouse {
+    width: 20px;
+    height: 32px;
+    border: 2px solid var(--text-color);
+    border-radius: 12px;
+    position: relative;
+    transition: border-color 0.5s;
+}
+.wheel {
+    width: 2px;
+    height: 6px;
+    background: var(--text-color);
+    border-radius: 2px;
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    animation: scrollWheel 2s infinite;
+    transition: background 0.5s;
+}
+@keyframes scrollWheel {
+    0% { top: 4px; opacity: 1; }
+    100% { top: 16px; opacity: 0; }
+}
+.scroll-indicator span {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-color);
+    transition: color 0.5s;
+}
+</style>
+</head>
+<body>
+<div class="cursor-inner"></div>
+<div class="cursor-outer"></div>
+
+<div class="cinematic-container">
+  <div class="main-header">
+    <div class="brand">NEXORA</div>
+    <nav class="header-nav">
+      <a href="#slide-1" class="nav-link">Intelligence</a>
+      <span class="nav-dot"></span>
+      <a href="#slide-2" class="nav-link">Collections</a>
+      <span class="nav-dot"></span>
+      <a href="#slide-3" class="nav-link">Assistant</a>
+      <span class="nav-dot"></span>
+      <a href="#slide-4" class="nav-link">Architecture</a>
+    </nav>
+    <div class="header-actions">
+      <a href="/client/index.html" class="contact-btn">Launch <span class="btn-circle"></span></a>
+    </div>
+  </div>
+
+  <div class="slide" id="slide-1">
+    <h2 class="slide-title bold-caption">Experience the <br>Future of Commerce</h2>
+    <div class="desc-row">
+      <p class="slide-desc col-1">Discover premium products curated through intelligence, design, and seamless digital experiences.</p>
+      <p class="slide-desc col-2">NEXORA blends AI-powered recommendations, luxury design, and modern commerce into a shopping experience built for the future.</p>
+    </div>
+    <div class="scroll-indicator" id="scroll-indicator">
+      <div class="mouse"><div class="wheel"></div></div>
+      <span>Scroll to Explore</span>
+    </div>
+  </div>
+</div>
+
+<div class="slide-image-mask" id="slide-2-img">
+  <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80&w=800" alt="Premium Collections">
+</div>
+
+<div class="cinematic-container">
+  <div class="slide" id="slide-2">
+    <h2 class="slide-title">Premium <br>Collections</h2>
+    <p class="slide-desc">Explore handpicked collections across fashion, electronics, accessories, lifestyle, and emerging brands. Curated with exquisite taste.</p>
+  </div>
+
+  <div class="slide" id="slide-3">
+    <h2 class="slide-title">AI Shopping <br>Assistant</h2>
+    <p class="slide-desc">Compare products instantly, discover personalized recommendations, and shop smarter with an assistant that truly understands your needs.</p>
+  </div>
+
+  <div class="slide" id="slide-4">
+    <h2 class="slide-title">Future of <br>Commerce</h2>
+    <p class="slide-desc">Fast checkout, intelligent discovery, secure payments, and next-generation shopping experiences designed for modern consumers.</p>
+  </div>
+  
+  <div class="slide" id="slide-5">
+    <h2 class="slide-title">Ready to Experience<br>the Future of Shopping?</h2>
+    <a href="/client/index.html" class="final-cta">Enter NEXORA</a>
+  </div>
+</div>
+
+<div class="grid-horizontal-line"></div>
+<div class="grid-lines">
+  <div class="grid-line"><div class="grid-dot top"></div><div class="grid-dot bottom"></div></div>
+  <div class="grid-line"><div class="grid-dot top"></div><div class="grid-dot bottom"></div></div>
+  <div class="grid-line"><div class="grid-dot top"></div><div class="grid-dot bottom"></div></div>
+  <div class="grid-line"><div class="grid-dot top"></div><div class="grid-dot bottom"></div></div>
+  <div class="grid-line story-progress-container">
+    <div class="grid-dot top"></div>
+    <div class="grid-dot bottom"></div>
+    <div class="story-dashes">
+      <div class="story-dash"><div class="story-dash-fill" id="dash-fill-1"></div></div>
+      <div class="story-dash"><div class="story-dash-fill" id="dash-fill-2"></div></div>
+      <div class="story-dash"><div class="story-dash-fill" id="dash-fill-3"></div></div>
+      <div class="story-dash"><div class="story-dash-fill" id="dash-fill-4"></div></div>
+      <div class="story-dash"><div class="story-dash-fill" id="dash-fill-5"></div></div>
+    </div>
+  </div>
+</div>
+
+<canvas id="webgl"></canvas>
+
+<!-- ThreeJS Import Map -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/examples/jsm/loaders/GLTFLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+const canvas = document.querySelector('#webgl');
+let scene, camera, renderer;
+let gltfModel;     
+let modelPivot;    
+const clock = new THREE.Clock();
+let currentScroll = 0;   
+
+let mouseX = 0, mouseY = 0, targetMouseX = 0, targetMouseY = 0;
+
+let cursorX = window.innerWidth / 2,  cursorY = window.innerHeight / 2;
+let outerCursorX = window.innerWidth / 2, outerCursorY = window.innerHeight / 2;
+
+let bgMaterial;
+const shaderUniforms = {
+    uTime: { value: 0 },
+    uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+    uScroll: { value: 0 },
+    uMixMode: { value: 0 }
+};
+
+let sparkParticles;
+const sparkCount = 600;
+const sparkData = [];
+
+const sizes = { width: window.innerWidth, height: window.innerHeight };
+
+function createBackgroundShader() {
+    const geometry = new THREE.PlaneGeometry(2, 2);
+    bgMaterial = new THREE.ShaderMaterial({
+        uniforms: shaderUniforms,
+        vertexShader: `
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                gl_Position = vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            uniform float uTime;
+            uniform float uScroll;
+            uniform float uMixMode;
+            varying vec2 vUv;
+            
+            void main() {
+                // Light mode colors (Gold/Beige luxury)
+                vec3 lightTop = vec3(1.0, 0.98, 0.95);
+                vec3 lightMid = vec3(0.98, 0.95, 0.90);
+                vec3 lightBot = vec3(0.95, 0.90, 0.85);
+                
+                // Dark mode colors (Deep black with gold undertones)
+                vec3 darkTop = vec3(0.08, 0.08, 0.09);
+                vec3 darkMid = vec3(0.12, 0.10, 0.08);
+                vec3 darkBot = vec3(0.03, 0.03, 0.03);
+                
+                // Slow breathing organic wave
+                float wave = sin(vUv.x * 4.0 + uTime * 0.3) * 0.15 + cos(vUv.y * 3.0 + uTime * 0.2) * 0.15;
+                float mixFactor = vUv.y + wave + uScroll * 0.2;
+                
+                // Mix light
+                vec3 lightColor = mix(lightBot, lightTop, mixFactor);
+                
+                // Mix dark
+                vec3 darkColor;
+                if (mixFactor > 0.5) {
+                    darkColor = mix(darkMid, darkTop, (clamp(mixFactor, 0.5, 1.0) - 0.5) * 2.0);
+                } else {
+                    darkColor = mix(darkBot, darkMid, clamp(mixFactor, 0.0, 0.5) * 2.0);
+                }
+                
+                // Add depth/vignette for dark mode
+                float vignette = vUv.x * vUv.y * (1.0 - vUv.x) * (1.0 - vUv.y);
+                darkColor *= 0.5 + 0.5 * smoothstep(0.0, 0.1, vignette);
+                
+                // Final blend based on scroll mode
+                vec3 finalColor = mix(lightColor, darkColor * 0.8, uMixMode);
+                
+                gl_FragColor = vec4(finalColor, 1.0);
+            }
+        `,
+        depthWrite: false,
+    });
+    
+    const quad = new THREE.Mesh(geometry, bgMaterial);
+    quad.frustumCulled = false;
+    quad.position.z = -1;
+    camera.add(quad);
+}
+
+scene = new THREE.Scene();
+scene.background = new THREE.Color('#000000');
+scene.fog = new THREE.FogExp2('#000000', 0.02);
+
+camera = new THREE.PerspectiveCamera(50, sizes.width / sizes.height, 0.1, 100);
+camera.position.set(0, 0, 4.0);
+scene.add(camera);
+
+createBackgroundShader();
+
+renderer = new THREE.WebGLRenderer({
+    canvas: canvas,
+    antialias: true,
+    alpha: false,
+    powerPreference: "high-performance"
+});
+renderer.setSize(sizes.width, sizes.height);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.5;
+
+// Premium Lighting setup
+const ambientLight = new THREE.AmbientLight('#ffffff', 0.6);
+scene.add(ambientLight);
+
+const keyLight = new THREE.SpotLight('#EAD29A', 15.0); // Gold highlight
+keyLight.position.set(4, 6, 3);
+keyLight.angle = Math.PI / 4;
+keyLight.penumbra = 0.8;
+keyLight.castShadow = true;
+scene.add(keyLight);
+
+const rimLight = new THREE.DirectionalLight('#ffffff', 8.0); // White rim
+rimLight.position.set(-5, 3, -4);
+scene.add(rimLight);
+
+const fillLight = new THREE.DirectionalLight('#D4AF37', 2.0); // Soft gold fill
+fillLight.position.set(-2, -4, 2);
+scene.add(fillLight);
+
+// Energy Particles
+function createSparkTexture() {
+    const cvs = document.createElement('canvas');
+    cvs.width = 32; cvs.height = 32;
+    const ctx = cvs.getContext('2d');
+    const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.8)');
+    gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 32, 32);
+    return new THREE.CanvasTexture(cvs);
+}
+
+function createSparks() {
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(sparkCount * 3);
+    const colors = new Float32Array(sparkCount * 3);
+
+    for (let i = 0; i < sparkCount; i++) {
+        const x = (Math.random() - 0.5) * 8.0;
+        const y = (Math.random() - 0.5) * 6.0 - 0.5;
+        const z = (Math.random() - 0.5) * 8.0;
+        positions[i * 3] = x;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = z;
+
+        if (Math.random() < 0.6) {
+            // 60% Electric Blue #3B82F6
+            colors[i * 3] = 0.23;
+            colors[i * 3 + 1] = 0.51;
+            colors[i * 3 + 2] = 0.96;
+        } else {
+            // 40% Cyan #06B6D4
+            colors[i * 3] = 0.02;
+            colors[i * 3 + 1] = 0.71;
+            colors[i * 3 + 2] = 0.83;
+        }
+
+        sparkData.push({
+            speedY: 0.05 + Math.random() * 0.1,
+            swaySpeed: 0.3 + Math.random() * 0.8,
+            swayRadius: 0.02 + Math.random() * 0.08,
+            phase: Math.random() * Math.PI * 2
+        });
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const material = new THREE.PointsMaterial({
+        size: 0.04,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.6,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        map: createSparkTexture()
+    });
+
+    sparkParticles = new THREE.Points(geometry, material);
+    scene.add(sparkParticles);
+}
+
+createSparks();
+
+// Exact NEXORA Serif 'N' and 8-pointed Star Frame Logo
+function loadModel() {
+    modelPivot = new THREE.Group();
+    scene.add(modelPivot);
+
+    const material = new THREE.MeshPhysicalMaterial({
+        color: 0xEAD29A, // Gold base
+        emissive: 0x3a2808,
+        metalness: 1.0,
+        roughness: 0.15,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1,
+        envMapIntensity: 2.0,
+    });
+
+    const extrudeSettings = {
+        depth: 0.15,
+        bevelEnabled: true,
+        bevelSegments: 4,
+        steps: 2,
+        bevelSize: 0.04,
+        bevelThickness: 0.04
+    };
+
+    // 1. Build the precise Serif 'N'
+    const nShape = new THREE.Shape();
+    nShape.moveTo(-0.5, -0.5); // Bottom-left of bottom-left serif
+    nShape.lineTo(-0.5, -0.4); // Up serif
+    nShape.lineTo(-0.4, -0.4); // Into stem
+    nShape.lineTo(-0.4, 0.4);  // Up left stem
+    nShape.lineTo(-0.5, 0.4);  // Out to top-left serif
+    nShape.lineTo(-0.5, 0.5);  // Top-left corner
+    nShape.lineTo(-0.1, 0.5);  // Top-right of diagonal start
+    nShape.lineTo(0.25, -0.2); // Down right edge of diagonal to intersection
+    nShape.lineTo(0.25, 0.4);  // Up left edge of right stem
+    nShape.lineTo(0.15, 0.4);  // Out to inner top-right serif
+    nShape.lineTo(0.15, 0.5);  // Up serif
+    nShape.lineTo(0.5, 0.5);   // Top-right corner
+    nShape.lineTo(0.5, 0.4);   // Down serif
+    nShape.lineTo(0.4, 0.4);   // Into stem
+    nShape.lineTo(0.4, -0.4);  // Down right edge of right stem
+    nShape.lineTo(0.5, -0.4);  // Out to top-right of bottom-right serif
+    nShape.lineTo(0.5, -0.5);  // Down to bottom-right corner
+    nShape.lineTo(0.1, -0.5);  // Left to bottom-left of diagonal
+    nShape.lineTo(-0.25, 0.2); // Up left edge of diagonal to intersection
+    nShape.lineTo(-0.25, -0.4);// Down right edge of left stem
+    nShape.lineTo(-0.15, -0.4);// Out to top-right of bottom-left inner serif
+    nShape.lineTo(-0.15, -0.5);// Down serif
+    nShape.lineTo(-0.5, -0.5); // Back to start
+
+    const nGeo = new THREE.ExtrudeGeometry(nShape, extrudeSettings);
+    nGeo.computeBoundingBox();
+    nGeo.translate(0, 0, -0.075); // Center depth
+    
+    const nMesh = new THREE.Mesh(nGeo, material);
+    nMesh.castShadow = true;
+    nMesh.receiveShadow = true;
+
+    // 2. Build the 8-pointed star frame (Rub el Hizb)
+    const R = 1.35; // Outer radius scaled up slightly to fit N comfortably
+    const S = R / Math.sqrt(2);
+    const I = R - S; // Inner notch depth
+
+    const frameShape = new THREE.Shape();
+    frameShape.moveTo(0, R);
+    frameShape.lineTo(I, S);
+    frameShape.lineTo(S, S);
+    frameShape.lineTo(S, I);
+    frameShape.lineTo(R, 0);
+    frameShape.lineTo(S, -I);
+    frameShape.lineTo(S, -S);
+    frameShape.lineTo(I, -S);
+    frameShape.lineTo(0, -R);
+    frameShape.lineTo(-I, -S);
+    frameShape.lineTo(-S, -S);
+    frameShape.lineTo(-S, -I);
+    frameShape.lineTo(-R, 0);
+    frameShape.lineTo(-S, I);
+    frameShape.lineTo(-S, S);
+    frameShape.lineTo(-I, S);
+    frameShape.lineTo(0, R);
+
+    // Inner hole for the frame (thickness = 0.12)
+    const r = R - 0.12; 
+    const s = r / Math.sqrt(2);
+    const i = r - s;
+
+    const hole = new THREE.Path();
+    // Holes must be drawn counter-clockwise in Three.js
+    hole.moveTo(0, r);
+    hole.lineTo(-i, s);
+    hole.lineTo(-s, s);
+    hole.lineTo(-s, i);
+    hole.lineTo(-r, 0);
+    hole.lineTo(-s, -i);
+    hole.lineTo(-s, -s);
+    hole.lineTo(-i, -s);
+    hole.lineTo(0, -r);
+    hole.lineTo(i, -s);
+    hole.lineTo(s, -s);
+    hole.lineTo(s, -i);
+    hole.lineTo(r, 0);
+    hole.lineTo(s, i);
+    hole.lineTo(s, s);
+    hole.lineTo(i, s);
+    hole.lineTo(0, r);
+
+    frameShape.holes.push(hole);
+
+    const frameGeo = new THREE.ExtrudeGeometry(frameShape, extrudeSettings);
+    frameGeo.computeBoundingBox();
+    frameGeo.translate(0, 0, -0.075); // Center depth
+
+    const frameMesh = new THREE.Mesh(frameGeo, material);
+    frameMesh.castShadow = true;
+    frameMesh.receiveShadow = true;
+
+    modelPivot.add(nMesh);
+    modelPivot.add(frameMesh);
+
+    // Initial scale adjustment
+    modelPivot.scale.setScalar(0.75); // Scale down to fit the screen bounds properly
+}
+
+loadModel();
+
+// Character splitting for text animation
+document.querySelectorAll('.slide-title').forEach(title => {
+    const text = title.innerHTML;
+    const split = text.split(/<br\s*\\?>/).map(line => {
+        return line.split('').map(char => char === ' ' ? '&nbsp;' : `<span class="char">${char}</span>`).join('');
+    }).join('<br>');
+    title.innerHTML = split;
+    
+    const chars = title.querySelectorAll('.char');
+    chars.forEach((char, i) => {
+        char.style.transitionDelay = `${i * 0.03}s`;
+    });
+});
+
+// Scroll Events
+let scrollY = window.scrollY;
+
+window.addEventListener('scroll', () => {
+    scrollY = window.scrollY;
+});
+
+// Cursor Events
+window.addEventListener('mousemove', (e) => {
+    targetMouseX = (e.clientX / sizes.width) * 2 - 1;
+    targetMouseY = -(e.clientY / sizes.height) * 2 + 1;
+    
+    cursorX = e.clientX;
+    cursorY = e.clientY;
+});
+
+// UI Elements
+const scrollIndicator = document.querySelector('#scroll-indicator');
+const cursorInner = document.querySelector('.cursor-inner');
+const cursorOuter = document.querySelector('.cursor-outer');
+const slides = document.querySelectorAll('.slide');
+const slide2Img = document.querySelector('#slide-2-img');
+const dashFills = [
+    document.querySelector('#dash-fill-1'),
+    document.querySelector('#dash-fill-2'),
+    document.querySelector('#dash-fill-3'),
+    document.querySelector('#dash-fill-4'),
+    document.querySelector('#dash-fill-5')
+];
+
+// Interactive cursor classes
+document.querySelectorAll('a, button, .nav-link').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+        cursorOuter.style.width = '60px';
+        cursorOuter.style.height = '60px';
+        cursorOuter.style.background = 'rgba(212, 175, 55, 0.1)';
+        cursorOuter.style.borderColor = 'rgba(212, 175, 55, 0.8)';
+    });
+    el.addEventListener('mouseleave', () => {
+        cursorOuter.style.width = '40px';
+        cursorOuter.style.height = '40px';
+        cursorOuter.style.background = 'transparent';
+        cursorOuter.style.borderColor = 'rgba(212, 175, 55, 0.7)';
+    });
+});
+
+// Color interpolation for Light/Dark mode
+const lerpColor = (c1, c2, t) => {
+    const r = Math.round(c1[0] + (c2[0] - c1[0]) * t);
+    const g = Math.round(c1[1] + (c2[1] - c1[1]) * t);
+    const b = Math.round(c1[2] + (c2[2] - c1[2]) * t);
+    return `rgb(${r},${g},${b})`;
+};
+
+const lightText = [255,255,255];
+const darkText = [17,24,39];
+const lightMuted = [209,213,219];
+const darkMuted = [107,114,128];
+
+// Resize Event
+window.addEventListener('resize', () => {
+    sizes.width = window.innerWidth;
+    sizes.height = window.innerHeight;
+    
+    camera.aspect = sizes.width / sizes.height;
+    camera.updateProjectionMatrix();
+    
+    renderer.setSize(sizes.width, sizes.height);
+    shaderUniforms.uResolution.value.set(sizes.width, sizes.height);
+});
+
+// Animation Loop
+const tick = () => {
+    const elapsedTime = clock.getElapsedTime();
+    
+    // Lerp Scroll
+    const scrollMax = Math.max(1, document.body.scrollHeight - window.innerHeight);
+    const scrollTarget = Math.max(0, Math.min(1, scrollY / scrollMax));
+    currentScroll += (scrollTarget - currentScroll) * 0.05;
+    
+    // Light/Dark mode transitions
+    let mixVal = Math.min(1, currentScroll * 2.5); // Reaches dark mode by 40% scroll
+    
+    shaderUniforms.uTime.value = elapsedTime;
+    shaderUniforms.uScroll.value = currentScroll;
+    shaderUniforms.uMixMode.value = mixVal;
+    
+    // Update CSS variables for seamless theme transition
+    document.documentElement.style.setProperty('--text-color', lerpColor(darkText, lightText, mixVal));
+    document.documentElement.style.setProperty('--text-muted', lerpColor(darkMuted, lightMuted, mixVal));
+    document.documentElement.style.setProperty('--border-color', `rgba(${Math.round(17 + (255-17)*mixVal)}, ${Math.round(24 + (255-24)*mixVal)}, ${Math.round(39 + (255-39)*mixVal)}, 0.2)`);
+    document.documentElement.style.setProperty('--btn-bg', `rgba(${Math.round(0 + 255*mixVal)}, ${Math.round(0 + 255*mixVal)}, ${Math.round(0 + 255*mixVal)}, 0.05)`);
+    document.documentElement.style.setProperty('--btn-hover', `rgba(${Math.round(0 + 255*mixVal)}, ${Math.round(0 + 255*mixVal)}, ${Math.round(0 + 255*mixVal)}, 0.1)`);
+    
+    // Hide scroll indicator on scroll
+    if (currentScroll > 0.02) {
+        scrollIndicator.classList.add('hidden');
+    } else {
+        scrollIndicator.classList.remove('hidden');
+    }
+    
+    // Lerp Mouse
+    mouseX += (targetMouseX - mouseX) * 0.05;
+    mouseY += (targetMouseY - mouseY) * 0.05;
+
+    // Premium slow floating motion & camera orbit
+    if (modelPivot) {
+        // Slow float up and down
+        modelPivot.position.y = Math.sin(elapsedTime * 0.5) * 0.1;
+        
+        // Scroll-driven orbit
+        modelPivot.rotation.y = currentScroll * Math.PI * 2.0 + mouseX * 0.1 + elapsedTime * 0.1;
+        modelPivot.rotation.x = mouseY * 0.1 + Math.sin(elapsedTime * 0.3) * 0.05;
+        modelPivot.rotation.z = currentScroll * Math.PI * 0.2 + Math.cos(elapsedTime * 0.4) * 0.05;
+    }
+
+    // Cursor update
+    if(cursorInner) cursorInner.style.transform = `translate(${cursorX}px, ${cursorY}px) translate(-50%, -50%)`;
+    
+    outerCursorX += (cursorX - outerCursorX) * 0.15;
+    outerCursorY += (cursorY - outerCursorY) * 0.15;
+    if(cursorOuter) cursorOuter.style.transform = `translate(${outerCursorX}px, ${outerCursorY}px) translate(-50%, -50%)`;
+
+    // Particles update
+    if (sparkParticles) {
+        const positions = sparkParticles.geometry.attributes.position.array;
+        for (let i = 0; i < sparkCount; i++) {
+            const data = sparkData[i];
+            const i3 = i * 3;
+            
+            // Slow elegant upward movement
+            positions[i3 + 1] += data.speedY * 0.016;
+            
+            // Organic sway
+            positions[i3] += Math.sin(elapsedTime * data.swaySpeed + data.phase) * data.swayRadius * 0.016;
+            positions[i3 + 2] += Math.cos(elapsedTime * data.swaySpeed + data.phase) * data.swayRadius * 0.016;
+
+            // Scroll turbulence
+            positions[i3] += (Math.random() - 0.5) * currentScroll * 0.02;
+            positions[i3 + 1] += currentScroll * 0.01;
+
+            // Seamless wrapping
+            if (positions[i3 + 1] > 4.0) {
+                positions[i3 + 1] = -3.5;
+                positions[i3] = (Math.random() - 0.5) * 8.0;
+                positions[i3 + 2] = (Math.random() - 0.5) * 8.0;
+            }
+        }
+        sparkParticles.geometry.attributes.position.needsUpdate = true;
+    }
+
+    // Slide Intervals (5 slides)
+    const slideInterval = 1 / 5;
+    
+    if (slides.length >= 5) {
+        // Slide 1
+        if (currentScroll < slideInterval * 0.8) {
+            slides[0].classList.add('active');
+        } else {
+            slides[0].classList.remove('active');
+        }
+
+        // Slide 2
+        if (currentScroll > slideInterval * 0.8 && currentScroll < slideInterval * 1.8) {
+            slides[1].classList.add('active');
+            if(slide2Img) slide2Img.classList.add('active');
+        } else {
+            slides[1].classList.remove('active');
+            if(slide2Img) slide2Img.classList.remove('active');
+        }
+
+        // Slide 3
+        if (currentScroll > slideInterval * 1.8 && currentScroll < slideInterval * 2.8) {
+            slides[2].classList.add('active');
+        } else {
+            slides[2].classList.remove('active');
+        }
+
+        // Slide 4
+        if (currentScroll > slideInterval * 2.8 && currentScroll < slideInterval * 3.8) {
+            slides[3].classList.add('active');
+        } else {
+            slides[3].classList.remove('active');
+        }
+        
+        // Slide 5
+        if (currentScroll > slideInterval * 3.8) {
+            slides[4].classList.add('active');
+        } else {
+            slides[4].classList.remove('active');
+        }
+    }
+
+    // Story progress updates
+    dashFills.forEach((fill, index) => {
+        if (!fill) return;
+        const start = index * 0.2;
+        const end = (index + 1) * 0.2;
+        let progress = 0;
+        
+        if (currentScroll >= end) {
+            progress = 100;
+        } else if (currentScroll > start && currentScroll < end) {
+            progress = ((currentScroll - start) / 0.2) * 100;
+        }
+        
+        fill.style.height = `${progress}%`;
+    });
+
+    renderer.render(scene, camera);
+    window.requestAnimationFrame(tick);
+};
+
+tick();
+</script>
+</body>
+</html>

@@ -4,6 +4,7 @@
 
 import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import { authService } from '@services/authService';
+import { identifyUser, resetUser } from '@services/analyticsService';
 
 // ── Initial state ─────────────────────────────────────────────────────────
 const initialState = {
@@ -81,13 +82,32 @@ export const AuthProvider = ({ children }) => {
     verifyAuth();
   }, []);
 
-  // ── Actions ───────────────────────────────────────────────────────────
   const login = useCallback(async (credentials) => {
     dispatch({ type: 'AUTH_LOADING' });
     try {
-      const { data } = await authService.login(credentials);
+      // Append guest cart if exists
+      let guestCart = [];
+      let guestWishlist = [];
+      try {
+        const storedCart = localStorage.getItem('nexora_cart');
+        if (storedCart) guestCart = JSON.parse(storedCart);
+        
+        const storedWishlist = localStorage.getItem('nexora_wishlist');
+        if (storedWishlist) guestWishlist = JSON.parse(storedWishlist);
+      } catch (e) {}
+
+      const { data } = await authService.login({ ...credentials, guestCart, guestWishlist });
       const { token, user } = data.data;
+      
       localStorage.setItem('nexora_token', token);
+      
+      // Successfully merged, clear guest data to prevent ghost reappearance
+      localStorage.removeItem('nexora_cart');
+      localStorage.removeItem('nexora_wishlist');
+
+      // Identify this user in PostHog for product analytics
+      identifyUser(user);
+
       dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
       return { success: true };
     } catch (error) {
@@ -99,9 +119,29 @@ export const AuthProvider = ({ children }) => {
   const register = useCallback(async (userData) => {
     dispatch({ type: 'AUTH_LOADING' });
     try {
-      const { data } = await authService.register(userData);
+      // Append guest cart if exists
+      let guestCart = [];
+      let guestWishlist = [];
+      try {
+        const storedCart = localStorage.getItem('nexora_cart');
+        if (storedCart) guestCart = JSON.parse(storedCart);
+        
+        const storedWishlist = localStorage.getItem('nexora_wishlist');
+        if (storedWishlist) guestWishlist = JSON.parse(storedWishlist);
+      } catch (e) {}
+
+      const { data } = await authService.register({ ...userData, guestCart, guestWishlist });
       const { token, user } = data.data;
+      
       localStorage.setItem('nexora_token', token);
+      
+      // Clear guest data
+      localStorage.removeItem('nexora_cart');
+      localStorage.removeItem('nexora_wishlist');
+
+      // Identify this user in PostHog for product analytics
+      identifyUser(user);
+
       dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
       return { success: true };
     } catch (error) {
@@ -115,6 +155,8 @@ export const AuthProvider = ({ children }) => {
       await authService.logout();
     } finally {
       localStorage.removeItem('nexora_token');
+      // Reset PostHog identity so the next session starts fresh
+      resetUser();
       dispatch({ type: 'AUTH_LOGOUT' });
     }
   }, []);
@@ -127,6 +169,12 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'CLEAR_ERROR' });
   }, []);
 
+  // Direct auth injection (used after password reset — no extra API call needed)
+  const loginWithData = useCallback((token, user) => {
+    localStorage.setItem('nexora_token', token);
+    dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
+  }, []);
+
   const value = {
     ...state,
     login,
@@ -134,8 +182,10 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateUser,
     clearError,
+    loginWithData,
     isAdmin: state.user?.role === 'admin',
   };
+
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
