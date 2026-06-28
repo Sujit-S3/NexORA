@@ -19,7 +19,7 @@ class ConversationSummarizer {
    * @param {Array} chatHistory 
    */
   compress(chatHistory) {
-    if (!this.needsCompression(chatHistory)) return chatHistory;
+    if (!this.needsCompression(chatHistory)) {return chatHistory;}
 
     // A simple heuristic: Keep the first message (original intent)
     // Keep the last 4 messages (immediate context)
@@ -31,7 +31,7 @@ class ConversationSummarizer {
     return [
       firstMsg,
       { role: 'system', content: '[...Conversation Summarized for brevity...]' },
-      ...recentMsgs
+      ...recentMsgs,
     ];
   }
 }

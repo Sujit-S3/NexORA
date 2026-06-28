@@ -44,18 +44,18 @@ const getDashboardStats = asyncHandler(async (req, res) => {
       $group: {
         _id: { month: { $month: '$createdAt' }, year: { $year: '$createdAt' } },
         revenue: { $sum: '$totalPrice' },
-        orders: { $sum: 1 }
-      }
+        orders: { $sum: 1 },
+      },
     },
-    { $sort: { '_id.year': 1, '_id.month': 1 } }
+    { $sort: { '_id.year': 1, '_id.month': 1 } },
   ]);
 
   // Format month names
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const revenueByMonth = monthlyRevenueData.map(item => ({
     name: `${monthNames[item._id.month - 1]}`,
     revenue: item.revenue,
-    orders: item.orders
+    orders: item.orders,
   }));
 
   // 6. User Growth Data (Last 6 Months)
@@ -64,20 +64,20 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     {
       $group: {
         _id: { month: { $month: '$createdAt' }, year: { $year: '$createdAt' } },
-        users: { $sum: 1 }
-      }
+        users: { $sum: 1 },
+      },
     },
-    { $sort: { '_id.year': 1, '_id.month': 1 } }
+    { $sort: { '_id.year': 1, '_id.month': 1 } },
   ]);
 
   const usersByMonth = monthlyUsersData.map(item => ({
     name: `${monthNames[item._id.month - 1]}`,
-    users: item.users
+    users: item.users,
   }));
 
   // 7. Orders by Status
   const orderStatusAgg = await Order.aggregate([
-    { $group: { _id: '$status', count: { $sum: 1 } } }
+    { $group: { _id: '$status', count: { $sum: 1 } } },
   ]);
   const ordersByStatus = orderStatusAgg.reduce((acc, s) => { acc[s._id] = s.count; return acc; }, {});
 
@@ -101,8 +101,8 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     recentOrders,
     charts: {
       revenueByMonth,
-      usersByMonth
-    }
+      usersByMonth,
+    },
   });
 });
 

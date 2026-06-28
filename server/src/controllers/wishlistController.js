@@ -8,14 +8,18 @@ const ApiError = require('../utils/ApiError');
 // @route   GET /api/wishlist
 // @access  Auth
 const getWishlist = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id).populate('wishlist');
+  const user = await User.findById(req.user._id).populate('wishlist.product');
   
   // Filter out products that were deleted from DB (populate returns null)
-  const validWishlist = user.wishlist.filter(item => item !== null);
+  const validWishlist = user.wishlist.filter(item => item && item.product);
   
   // Clean up if there were deleted products
   if (validWishlist.length !== user.wishlist.length) {
-    user.wishlist = validWishlist.map(p => p._id);
+    user.wishlist = validWishlist.map(item => ({
+      product: item.product._id,
+      size: item.size,
+      color: item.color,
+    }));
     await user.save();
   }
 
@@ -28,20 +32,28 @@ const { eventBus, EVENTS } = require('../services/ai/utils/eventBus');
 // @route   POST /api/wishlist
 // @access  Auth
 const addToWishlist = asyncHandler(async (req, res) => {
-  const { productId } = req.body;
-  if (!productId) throw ApiError.badRequest('Product ID is required');
+  const { productId, size = '', color = '' } = req.body;
+  if (!productId) {throw ApiError.badRequest('Product ID is required');}
 
   const user = await User.findById(req.user._id);
-  if (!user.wishlist.includes(productId)) {
-    user.wishlist.push(productId);
+  
+  const existingItem = user.wishlist.find(item => item.product.toString() === productId);
+  if (!existingItem) {
+    user.wishlist.push({ product: productId, size, color });
     await user.save();
     
     // Emit journey event
     const sessionId = req.headers['x-session-id'];
     eventBus.emit(EVENTS.ADD_TO_WISHLIST, { userId: req.user._id, sessionId });
+  } else {
+    // If it exists but with a different size/color, we might want to update it
+    let updated = false;
+    if (size && existingItem.size !== size) { existingItem.size = size; updated = true; }
+    if (color && existingItem.color !== color) { existingItem.color = color; updated = true; }
+    if (updated) {await user.save();}
   }
 
-  const updatedUser = await User.findById(req.user._id).populate('wishlist');
+  const updatedUser = await User.findById(req.user._id).populate('wishlist.product');
   sendResponse(res, 200, 'Added to wishlist', updatedUser.wishlist);
 });
 
@@ -52,10 +64,10 @@ const removeFromWishlist = asyncHandler(async (req, res) => {
   const { productId } = req.params;
 
   const user = await User.findById(req.user._id);
-  user.wishlist = user.wishlist.filter(id => id.toString() !== productId);
+  user.wishlist = user.wishlist.filter(item => item.product.toString() !== productId);
   await user.save();
 
-  const updatedUser = await User.findById(req.user._id).populate('wishlist');
+  const updatedUser = await User.findById(req.user._id).populate('wishlist.product');
   sendResponse(res, 200, 'Removed from wishlist', updatedUser.wishlist);
 });
 
@@ -73,5 +85,5 @@ module.exports = {
   getWishlist,
   addToWishlist,
   removeFromWishlist,
-  clearWishlist
+  clearWishlist,
 };

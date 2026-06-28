@@ -14,7 +14,7 @@ const getOrCreateCart = async (userId) => {
   } else {
     // Auto-clean any items whose product has been deleted from the database
     const originalLength = cart.items.length;
-    cart.items = cart.items.filter(item => item.product != null);
+    cart.items = cart.items.filter(item => item.product !== null);
     if (cart.items.length !== originalLength) {
       await cart.save();
     }
@@ -40,7 +40,7 @@ const getCart = asyncHandler(async (req, res) => {
 // @route   POST /api/cart/add
 // @access  Auth
 const addToCart = asyncHandler(async (req, res) => {
-  const { productId, quantity = 1, size = '' } = req.body;
+  const { productId, quantity = 1, size = '', color = '' } = req.body;
 
   if (!productId) {
     throw ApiError.badRequest('Product ID is required');
@@ -55,18 +55,44 @@ const addToCart = asyncHandler(async (req, res) => {
     throw ApiError.badRequest(`The ${product.name} is currently inactive and cannot be added to cart.`);
   }
 
-  // Handle variants/sizes
   let availableStock = product.stock;
+  let variantDetails = {};
   if (product.variants && product.variants.length > 0) {
     if (!size) {
       throw ApiError.badRequest(`Please select a size for ${product.name}.`);
     }
-    const variant = product.variants.find(v => v.size === size);
-    if (!variant) {
-      throw ApiError.badRequest(`Selected size ${size} is invalid for ${product.name}.`);
+    if (color) {
+      const variant = product.variants.find(v => v.size === size && v.color === color);
+      if (!variant) {
+        throw ApiError.badRequest(`Selected size ${size} with color ${color} is invalid for ${product.name}.`);
+      }
+      availableStock = variant.stock;
+      variantDetails = {
+        variantId: variant._id,
+        color: variant.color,
+        sku: variant.sku,
+        image: variant.image,
+      };
+    } else {
+      const variant = product.variants.find(v => v.size === size);
+      if (!variant) {
+        throw ApiError.badRequest(`Selected size ${size} is invalid for ${product.name}.`);
+      }
+      availableStock = variant.stock;
+      variantDetails = {
+        variantId: variant._id,
+        color: variant.color,
+        sku: variant.sku,
+        image: variant.image,
+      };
     }
-    availableStock = variant.stock;
   }
+
+  // Include Fit Intelligence properties in variant details
+  variantDetails.fitType = product.fitType || '';
+  variantDetails.recommendedSize = product.fitRecommendation?.recommendedSize || '';
+  variantDetails.confidence = product.fitRecommendation?.confidence || 0;
+  variantDetails.fitWarning = product.fitRecommendation?.fitWarnings?.[0] || '';
 
   if (availableStock === 0) {
     throw ApiError.badRequest(`The ${product.name}${size ? ` (Size: ${size})` : ''} is currently out of stock.`);
@@ -94,7 +120,8 @@ const addToCart = asyncHandler(async (req, res) => {
       product: productId,
       quantity,
       price: currentPrice,
-      size
+      size,
+      ...variantDetails,
     });
   }
 
@@ -178,7 +205,7 @@ const removeFromCart = asyncHandler(async (req, res) => {
   const cart = await getOrCreateCart(req.user._id);
 
   cart.items = cart.items.filter(item => {
-    if (!item.product) return false;
+    if (!item.product) {return false;}
     return item.product._id.toString() !== productId.toString();
   });
 

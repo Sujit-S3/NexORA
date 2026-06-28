@@ -105,7 +105,32 @@ const OrderDetail = () => {
                     <Link to={`/product/${item.product}`} className="font-semibold text-gray-900 dark:text-white hover:text-primary-600 transition-colors">
                       {item.name}
                     </Link>
-                    <p className="text-gray-500 text-sm mt-1">Quantity: {item.quantity}</p>
+                    <p className="text-gray-500 text-sm mt-1">
+                      Quantity: {item.quantity}
+                      {item.size && ` • Size: ${item.size}`}
+                      {item.color && ` • ${item.color}`}
+                    </p>
+                    
+                    {/* Fit Intelligence Tags */}
+                    {(item.fitType || item.fitWarning) && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {item.fitType && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase border border-[#D4AF37]/30 text-[#D4AF37] bg-black/5 dark:bg-black/20">
+                            Fit: {item.fitType}
+                          </span>
+                        )}
+                        {item.confidence && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase border border-gray-500/30 text-gray-500 bg-black/5 dark:bg-black/20">
+                            {item.confidence}%
+                          </span>
+                        )}
+                        {item.fitWarning && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase border border-red-500/30 text-red-500 bg-red-500/10">
+                            {item.fitWarning}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="text-right font-bold text-gray-900 dark:text-white">
                     ₹{item.price * item.quantity}

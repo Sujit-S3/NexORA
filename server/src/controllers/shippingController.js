@@ -28,7 +28,7 @@ const updateShippingZone = asyncHandler(async (req, res) => {
     new: true,
     runValidators: true,
   });
-  if (!zone) throw ApiError.notFound('Shipping zone not found');
+  if (!zone) {throw ApiError.notFound('Shipping zone not found');}
   sendResponse(res, 200, 'Shipping zone updated', zone);
 });
 
@@ -37,7 +37,7 @@ const updateShippingZone = asyncHandler(async (req, res) => {
 // @access Admin
 const deleteShippingZone = asyncHandler(async (req, res) => {
   const zone = await ShippingZone.findByIdAndDelete(req.params.id);
-  if (!zone) throw ApiError.notFound('Shipping zone not found');
+  if (!zone) {throw ApiError.notFound('Shipping zone not found');}
   sendResponse(res, 200, 'Shipping zone deleted');
 });
 

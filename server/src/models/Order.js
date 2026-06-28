@@ -15,8 +15,17 @@ const orderItemSchema = new mongoose.Schema(
     image: { type: String, default: '' },
     price: { type: Number, required: true, min: 0 },
     quantity: { type: Number, required: true, min: 1 },
+    
+    // Fit Intelligence & Variant Data
+    size: { type: String, default: '' },
+    color: { type: String, default: '' },
+    sku: { type: String, default: '' },
+    fitType: { type: String, default: '' },
+    recommendedSize: { type: String, default: '' },
+    confidence: { type: Number, default: 0 },
+    fitWarning: { type: String, default: '' },
   },
-  { _id: true }
+  { _id: true },
 );
 
 const shippingAddressSchema = new mongoose.Schema(
@@ -27,7 +36,7 @@ const shippingAddressSchema = new mongoose.Schema(
     zip: { type: String, required: true },
     country: { type: String, required: true },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const orderSchema = new mongoose.Schema(
@@ -85,7 +94,7 @@ const orderSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 // ── Indexes ──────────────────────────────────────────────────────────────

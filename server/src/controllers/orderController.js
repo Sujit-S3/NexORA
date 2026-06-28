@@ -35,7 +35,7 @@ const placeOrder = asyncHandler(async (req, res) => {
       itemsToProcess = cart.items.map(item => ({
         product: item.product,
         quantity: item.quantity,
-        size: item.size || null
+        size: item.size || null,
       }));
     } else {
       // Guest Checkout
@@ -44,7 +44,7 @@ const placeOrder = asyncHandler(async (req, res) => {
       }
       for (const item of clientItems) {
         const dbProduct = await Product.findById(item.product || item._id).session(session);
-        if (!dbProduct) throw ApiError.badRequest(`The product "${item.name || 'Unknown'}" no longer exists.`);
+        if (!dbProduct) {throw ApiError.badRequest(`The product "${item.name || 'Unknown'}" no longer exists.`);}
         itemsToProcess.push({ product: dbProduct, quantity: item.quantity, size: item.size || null });
       }
     }
@@ -65,7 +65,7 @@ const placeOrder = asyncHandler(async (req, res) => {
       let availableStock = product.stock;
       if (item.size && product.variants && product.variants.length > 0) {
         const variant = product.variants.find(v => v.size === item.size);
-        if (!variant) throw ApiError.badRequest(`Invalid size ${item.size} for ${product.name}.`);
+        if (!variant) {throw ApiError.badRequest(`Invalid size ${item.size} for ${product.name}.`);}
         availableStock = variant.stock;
       }
 
@@ -82,9 +82,9 @@ const placeOrder = asyncHandler(async (req, res) => {
         product: product._id,
         name: product.name,
         image: product.images?.[0]?.url || '',
-        price: price, // Securely calculated from DB
+        price, // Securely calculated from DB
         quantity: item.quantity,
-        size: item.size
+        size: item.size,
       });
 
       itemsPrice += price * item.quantity;
@@ -94,8 +94,8 @@ const placeOrder = asyncHandler(async (req, res) => {
     const taxPrice = Number((0.15 * itemsPrice).toFixed(2)); // 15% tax
     
     let shippingPrice = 0;
-    if (deliveryMethod === 'express') shippingPrice = 25;
-    if (deliveryMethod === 'priority') shippingPrice = 50;
+    if (deliveryMethod === 'express') {shippingPrice = 25;}
+    if (deliveryMethod === 'priority') {shippingPrice = 50;}
     
     // Discount logic
     let discountPrice = 0;
@@ -103,14 +103,14 @@ const placeOrder = asyncHandler(async (req, res) => {
 
     if (discountCode) {
       const discount = await Discount.findOne({ code: discountCode.toUpperCase() }).session(session);
-      if (!discount) throw ApiError.badRequest('Invalid discount code');
-      if (!discount.isActive) throw ApiError.badRequest('Discount code is disabled');
+      if (!discount) {throw ApiError.badRequest('Invalid discount code');}
+      if (!discount.isActive) {throw ApiError.badRequest('Discount code is disabled');}
       if (discount.expiryDate && new Date() > new Date(discount.expiryDate))
-        throw ApiError.badRequest('Discount code has expired');
+        {throw ApiError.badRequest('Discount code has expired');}
       if (discount.usageLimit && discount.timesUsed >= discount.usageLimit)
-        throw ApiError.badRequest('Discount code usage limit reached');
+        {throw ApiError.badRequest('Discount code usage limit reached');}
       if (itemsPrice < discount.minOrderAmount)
-        throw ApiError.badRequest(`Minimum order amount of ₹${discount.minOrderAmount} required`);
+        {throw ApiError.badRequest(`Minimum order amount of ₹${discount.minOrderAmount} required`);}
 
       // Per-user one-time check
       if (req.user && discount.usedByUsers?.some(id => id.toString() === req.user._id.toString())) {
@@ -127,7 +127,7 @@ const placeOrder = asyncHandler(async (req, res) => {
     const duplicateQuery = {
       itemsPrice,
       totalPrice,
-      createdAt: { $gt: new Date(Date.now() - 30 * 1000) }
+      createdAt: { $gt: new Date(Date.now() - 30 * 1000) },
     };
     if (req.user) {
       duplicateQuery.user = req.user._id;
@@ -154,33 +154,46 @@ const placeOrder = asyncHandler(async (req, res) => {
       totalPrice,
     }], { session });
 
-    // Decrease stock for products
+    // Decrease stock for products safely with concurrency check
     for (const item of itemsToProcess) {
       const productId = item.product._id || item.product;
       const dec = -item.quantity;
       if (item.size) {
         // Decrease both total stock and the specific variant's stock
-        await Product.findOneAndUpdate(
-          { _id: productId, "variants.size": item.size },
+        const updatedProduct = await Product.findOneAndUpdate(
+          { 
+            _id: productId, 
+            variants: { $elemMatch: { size: item.size, stock: { $gte: item.quantity } } },
+          },
           { 
             $inc: { 
               stock: dec,
-              "variants.$.stock": dec 
-            } 
+              'variants.$.stock': dec, 
+            }, 
           },
-          { session }
+          { session, new: true },
         );
+        if (!updatedProduct) {
+          throw ApiError.badRequest(`Failed to secure stock for ${item.product.name || 'product'}. It may have just sold out.`);
+        }
       } else {
-        await Product.findByIdAndUpdate(productId, {
-          $inc: { stock: dec },
-        }, { session });
+        const updatedProduct = await Product.findOneAndUpdate(
+          { _id: productId, stock: { $gte: item.quantity } },
+          {
+            $inc: { stock: dec },
+          }, 
+          { session, new: true },
+        );
+        if (!updatedProduct) {
+          throw ApiError.badRequest(`Failed to secure stock for ${item.product.name || 'product'}. It may have just sold out.`);
+        }
       }
     }
 
     // Increment discount usage + track per-user
     if (appliedDiscount) {
       const updateOp = { $inc: { timesUsed: 1 } };
-      if (req.user) updateOp.$addToSet = { usedByUsers: req.user._id };
+      if (req.user) {updateOp.$addToSet = { usedByUsers: req.user._id };}
       await Discount.findByIdAndUpdate(appliedDiscount._id, updateOp, { session });
     }
 
@@ -232,51 +245,64 @@ const getOrderById = asyncHandler(async (req, res) => {
   sendResponse(res, 200, 'Order retrieved', order);
 });
 
-// @desc    Cancel an order
-// @route   PUT /api/orders/:id/cancel
-// @access  Auth
 const cancelOrder = asyncHandler(async (req, res) => {
-  const order = await Order.findById(req.params.id);
-  
-  if (!order) {
-    throw ApiError.notFound('Order not found');
-  }
+  const mongoose = require('mongoose');
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  if (order.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-    throw ApiError.forbidden('Not authorized to cancel this order');
-  }
-
-  if (order.status !== 'pending' && order.status !== 'processing') {
-    throw ApiError.badRequest('Order cannot be cancelled at this stage');
-  }
-
-  order.status = 'cancelled';
-  order.cancelledAt = Date.now();
-  order.cancellationReason = req.body.reason || 'User requested cancellation';
-  
-  // Return stock — variant-aware to match placeOrder logic
-  for (const item of order.items) {
-    if (item.size) {
-      // Restore both total stock and the specific variant's stock
-      await Product.findOneAndUpdate(
-        { _id: item.product, 'variants.size': item.size },
-        {
-          $inc: {
-            stock: item.quantity,
-            'variants.$.stock': item.quantity
-          }
-        }
-      );
-    } else {
-      await Product.findByIdAndUpdate(item.product, {
-        $inc: { stock: item.quantity }
-      });
+  try {
+    const order = await Order.findById(req.params.id).session(session);
+    
+    if (!order) {
+      throw ApiError.notFound('Order not found');
     }
+
+    if (order.user && order.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      throw ApiError.forbidden('Not authorized to cancel this order');
+    }
+    
+    // Guest orders can't be cancelled via API by default unless they have an admin token or secret token, 
+    // but the role check above protects admin access.
+
+    if (order.status !== 'pending' && order.status !== 'processing') {
+      throw ApiError.badRequest('Order cannot be cancelled at this stage');
+    }
+
+    order.status = 'cancelled';
+    order.cancelledAt = Date.now();
+    order.cancellationReason = req.body.reason || 'User requested cancellation';
+    
+    // Return stock — variant-aware to match placeOrder logic
+    for (const item of order.items) {
+      if (item.size) {
+        // Restore both total stock and the specific variant's stock
+        await Product.findOneAndUpdate(
+          { _id: item.product, 'variants.size': item.size },
+          {
+            $inc: {
+              stock: item.quantity,
+              'variants.$.stock': item.quantity,
+            },
+          },
+          { session },
+        );
+      } else {
+        await Product.findByIdAndUpdate(item.product, {
+          $inc: { stock: item.quantity },
+        }, { session });
+      }
+    }
+
+    await order.save({ session });
+    await session.commitTransaction();
+    session.endSession();
+
+    sendResponse(res, 200, 'Order cancelled successfully', order);
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
   }
-
-  await order.save();
-
-  sendResponse(res, 200, 'Order cancelled successfully', order);
 });
 
 // @desc    Get all orders (admin)

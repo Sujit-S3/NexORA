@@ -10,26 +10,19 @@ class ExplanationService {
       const breakdown = [];
       const exp = product.explainability || {};
       
-      if (exp.brandMatch > 0) breakdown.push({ factor: 'Brand Match', score: exp.brandMatch });
-      if (exp.categoryMatch > 0) breakdown.push({ factor: 'Style Match', score: exp.categoryMatch });
-      if (exp.budgetMatch > 0) breakdown.push({ factor: 'Budget', score: exp.budgetMatch });
-      if (exp.historyMatch > 0) breakdown.push({ factor: 'History/Wishlist', score: exp.historyMatch });
-      if (exp.trendBonus > 0) breakdown.push({ factor: 'Trend', score: exp.trendBonus });
+      if (exp.brandMatch > 0) {breakdown.push({ factor: 'Brand Match', score: exp.brandMatch });}
+      if (exp.categoryMatch > 0) {breakdown.push({ factor: 'Style Match', score: exp.categoryMatch });}
+      if (exp.budgetMatch > 0) {breakdown.push({ factor: 'Budget', score: exp.budgetMatch });}
+      if (exp.historyMatch > 0) {breakdown.push({ factor: 'History/Wishlist', score: exp.historyMatch });}
+      if (exp.trendBonus > 0) {breakdown.push({ factor: 'Trend', score: exp.trendBonus });}
 
       // Sort breakdown by highest score first to show the most relevant reasons
       breakdown.sort((a, b) => b.score - a.score);
 
       return {
-        product: {
-          _id: product._id,
-          name: product.name,
-          brand: product.brand,
-          price: product.price,
-          discountPrice: product.discountPrice,
-          image: product.images?.[0]?.url || ''
-        },
+        ...product, // Send the full product object
         match: product.matchScore,
-        explainability: breakdown
+        explainability: breakdown,
       };
     });
   }

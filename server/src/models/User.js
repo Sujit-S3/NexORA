@@ -13,7 +13,7 @@ const addressSchema = new mongoose.Schema(
     country: { type: String, required: true, default: 'India' },
     isDefault: { type: Boolean, default: false },
   },
-  { _id: true }
+  { _id: true },
 );
 
 const userSchema = new mongoose.Schema(
@@ -63,7 +63,13 @@ const userSchema = new mongoose.Schema(
       default: 'INR',
     },
     addresses: [addressSchema],
-    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
+    wishlist: [
+      {
+        product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+        size: { type: String, default: '' },
+        color: { type: String, default: '' },
+      },
+    ],
     isActive: {
       type: Boolean,
       default: true,
@@ -76,7 +82,7 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 // ── Indexes ──────────────────────────────────────────────────────────────
@@ -85,7 +91,7 @@ userSchema.index({ role: 1 });
 
 // ── Pre-save: hash password ──────────────────────────────────────────────
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('password')) {return next();}
   const salt = await bcrypt.genSalt(12);
   this.password = await bcrypt.hash(this.password, salt);
   this.passwordChangedAt = Date.now() - 1000; // ensure token issued before

@@ -16,7 +16,7 @@ class OccasionEngine {
       'holiday': 'Holiday',
       'investment': 'Investment',
       'daily': 'Daily Wear',
-      'business': 'Business Attire'
+      'business': 'Business Attire',
     };
   }
 
@@ -24,7 +24,7 @@ class OccasionEngine {
    * Scans chat messages for occasion keywords and persists them to the user profile
    */
   async detectOccasion(userId, sessionId, userMessage) {
-    if (!userMessage) return;
+    if (!userMessage) {return;}
 
     const lowerMsg = userMessage.toLowerCase();
     const detectedOccasions = [];
@@ -36,7 +36,7 @@ class OccasionEngine {
     }
 
     if (detectedOccasions.length > 0) {
-      let query = userId ? { userId } : { sessionId };
+      const query = userId ? { userId } : { sessionId };
       let prefs = await UserPreference.findOne(query);
       if (!prefs) {
         prefs = new UserPreference({ userId, sessionId, occasions: [] });
@@ -57,9 +57,9 @@ class OccasionEngine {
    * Provides the active occasions to the Context Builder
    */
   async getActiveOccasions(userId, sessionId) {
-    let query = userId ? { userId } : { sessionId };
+    const query = userId ? { userId } : { sessionId };
     const prefs = await UserPreference.findOne(query).lean();
-    if (!prefs) return [];
+    if (!prefs) {return [];}
 
     return prefs.occasions || [];
   }

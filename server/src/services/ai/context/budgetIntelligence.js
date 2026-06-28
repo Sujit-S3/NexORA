@@ -23,9 +23,9 @@ class BudgetIntelligence {
   }
 
   async updateObservedBudget(userId, sessionId, price) {
-    let query = userId ? { userId } : { sessionId };
-    let prefs = await UserPreference.findOne(query);
-    if (!prefs) return;
+    const query = userId ? { userId } : { sessionId };
+    const prefs = await UserPreference.findOne(query);
+    if (!prefs) {return;}
 
     const currentAvg = prefs.budgets.observedAvg || 0;
     // Exponential moving average for recent budget
@@ -36,9 +36,9 @@ class BudgetIntelligence {
   }
 
   async updateMaxPurchase(userId, sessionId, price) {
-    let query = userId ? { userId } : { sessionId };
-    let prefs = await UserPreference.findOne(query);
-    if (!prefs) return;
+    const query = userId ? { userId } : { sessionId };
+    const prefs = await UserPreference.findOne(query);
+    if (!prefs) {return;}
 
     const currentMax = prefs.budgets.maxPurchase || 0;
     if (price > currentMax) {
@@ -74,7 +74,7 @@ class BudgetIntelligence {
    * Returns the user's active comfort range to feed into AI Context.
    */
   async getComfortRange(userId, sessionId) {
-    let query = userId ? { userId } : { sessionId };
+    const query = userId ? { userId } : { sessionId };
     const prefs = await UserPreference.findOne(query).lean();
     if (!prefs || !prefs.budgets || !prefs.budgets.comfortRange) {
       return { min: 0, max: null };

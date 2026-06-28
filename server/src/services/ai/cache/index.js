@@ -15,7 +15,7 @@ class AICache {
     const contextString = JSON.stringify({
       cart: context.cart || [],
       wishlist: context.wishlist || [],
-      preferences: context.preferences || {}
+      preferences: context.preferences || {},
     });
     return crypto.createHash('sha256').update(contextString).digest('hex');
   }
@@ -36,7 +36,7 @@ class AICache {
   set(key, data, ttlSeconds = 3600) {
     this.cache.set(key, {
       data,
-      expiresAt: Date.now() + (ttlSeconds * 1000)
+      expiresAt: Date.now() + (ttlSeconds * 1000),
     });
   }
 

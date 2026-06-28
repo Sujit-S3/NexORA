@@ -24,8 +24,8 @@ app.use(
     credentials: true, // Allow cookies
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     // x-session-id is required by the AI Concierge for anonymous session tracking
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id'],
-  })
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id', 'x-conversation-id'],
+  }),
 );
 
 // ── Request parsing ──────────────────────────────────────────────────────
@@ -65,3 +65,4 @@ app.use(notFound);
 app.use(errorHandler);
 
 module.exports = app;
+// ping

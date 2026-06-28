@@ -138,7 +138,12 @@ export default function Checkout() {
           name: item.name,
           image: item.image,
           price: item.price,
-          quantity: item.quantity
+          quantity: item.quantity,
+          size: item.size,
+          color: item.color,
+          fitType: item.fitType,
+          fitWarning: item.fitWarning,
+          confidence: item.confidence
         })),
         shippingAddress: address,
         paymentMethod: payment,
@@ -320,7 +325,7 @@ export default function Checkout() {
                                   {aiSuggestions.map(p => (
                                     <div key={p._id} className="shrink-0 w-[180px] rounded-lg overflow-hidden" style={{ border: `1px solid ${BORD}`, background: isDark ? '#111' : '#fff' }}>
                                       <div className="h-28 flex items-center justify-center p-3" style={{ background: isDark ? '#0d0d0d' : '#f5f0e8' }}>
-                                        <img src={p.images?.[0]?.url} alt={p.name} className="max-h-full max-w-full object-contain mix-blend-multiply dark:mix-blend-normal" />
+                                        <img src={p.primaryImage?.url || p.images?.[0]?.url || getLuxuryFallback(p.category?.name || p.category || 'default')} alt={p.name} className="max-h-full max-w-full object-contain mix-blend-multiply dark:mix-blend-normal" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getLuxuryFallback(p.category?.name || p.category || 'default'); }} />
                                       </div>
                                       <div className="p-3">
                                         <p className="text-[8px] uppercase tracking-widest mb-0.5" style={{ color: SUB }}>{p.brand}</p>
@@ -410,7 +415,8 @@ export default function Checkout() {
                         <div className="flex flex-col gap-4">
                           {cartItems.map(item => (
                             <div key={item._id} className="flex items-center gap-4">
-                              <img loading="lazy" src={item.image} alt={item.name} className="w-16 h-16 object-contain rounded" style={{ background: isDark ? '#111' : '#F2EDE4' }}  onError={(e) => {
+                              <img loading="lazy" src={item.image || getLuxuryFallback(item.category?.name || item.category || 'default')} alt={item.name} className="w-16 h-16 object-contain rounded" style={{ background: isDark ? '#111' : '#F2EDE4' }}  onError={(e) => {
+    e.currentTarget.onerror = null;
     let cat = 'default';
     try { if (typeof product !== 'undefined') cat = product?.category?.name || product?.category; } catch(err){}
     try { if (typeof item !== 'undefined' && cat === 'default') cat = item?.category?.name || item?.category; } catch(err){}
@@ -421,7 +427,32 @@ export default function Checkout() {
   }} />
                               <div className="flex-1">
                                 <p className="text-[13px] font-medium truncate">{item.name}</p>
-                                <p className="text-[11px]" style={{ color: SUB }}>Qty: {item.quantity}</p>
+                                <p className="text-[11px]" style={{ color: SUB }}>
+                                  Qty: {item.quantity} 
+                                  {item.size && ` • Size: ${item.size}`}
+                                  {item.color && ` • ${item.color}`}
+                                </p>
+                                
+                                {/* Fit Intelligence Tags */}
+                                {(item.fitType || item.fitWarning) && (
+                                  <div className="flex flex-wrap gap-2 mt-1">
+                                    {item.fitType && (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold tracking-widest uppercase border border-[#D4AF37]/30 text-[#D4AF37] bg-black/20">
+                                        Fit: {item.fitType}
+                                      </span>
+                                    )}
+                                    {item.confidence && (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold tracking-widest uppercase border border-gray-500/30 text-gray-400 bg-black/20">
+                                        {item.confidence}%
+                                      </span>
+                                    )}
+                                    {item.fitWarning && (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold tracking-widest uppercase border border-red-500/30 text-red-400 bg-red-500/10">
+                                        {item.fitWarning}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                               <span className="text-[14px] font-medium">{formatPrice(item.price * item.quantity)}</span>
                             </div>

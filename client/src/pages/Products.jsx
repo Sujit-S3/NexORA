@@ -10,6 +10,7 @@ import { useCart } from '@context/CartContext';
 import { useWishlist } from '@context/WishlistContext';
 import { getLuxuryFallback } from '../utils/getLuxuryFallback';
 import { formatPrice } from '../utils/formatPrice';
+import SEO from '../components/common/SEO';
 
 /* ─── HELPER COMPONENTS ────────────────────────────────────── */
 
@@ -117,6 +118,10 @@ export default function Products() {
 
   return (
     <div className="min-h-screen font-jakarta pb-20" style={{ background: BG, color: TEXT }}>
+      <SEO 
+        title="Luxury Collections | NexORA" 
+        description="Explore premium fashion, watches, electronics, accessories, lifestyle products and luxury gifts." 
+      />
       
       <style>{`
         @keyframes orbSpin   { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -286,7 +291,7 @@ export default function Products() {
                 <Search size={24} style={{ color: ACC }} />
               </div>
               <h3 className="font-playfair text-2xl mb-3">No results found</h3>
-              <p className="text-[14px] max-w-sm mb-6" style={{ color: SUB }}>We couldn't find any products matching your current filters. Try adjusting your search criteria.</p>
+              <p className="text-[14px] max-w-sm mb-6" style={{ color: SUB }}>We couldn&apos;t find any products matching your current filters. Try adjusting your search criteria.</p>
               <button onClick={clearFilters} className="px-6 py-3 text-[11px] font-bold tracking-widest uppercase transition-opacity hover:opacity-90" style={{ background: ACC, color: '#000', borderRadius: 2 }}>
                 Clear Filters
               </button>
@@ -322,47 +327,78 @@ export default function Products() {
                           )}
                         </div>
 
-                        {/* Image */}
-                        <img loading="lazy" 
-                          src={product.images[0]?.url} 
-                          alt={product.name}
-                          className="w-full h-full object-contain transition-transform duration-700 ease-out group-hover:scale-105"
-                          style={{ mixBlendMode: isDark ? 'normal' : 'multiply' }}
-                         onError={(e) => {
-    let cat = 'default';
-    try { if (typeof product !== 'undefined') cat = product?.category?.name || product?.category; } catch(err){}
-    try { if (typeof item !== 'undefined' && cat === 'default') cat = item?.category?.name || item?.category; } catch(err){}
-    try { if (typeof p !== 'undefined' && cat === 'default') cat = p?.category?.name || p?.category; } catch(err){}
-    try { if (typeof r !== 'undefined' && cat === 'default') cat = r?.category?.name || r?.category; } catch(err){}
-    try { if (typeof quickViewProduct !== 'undefined' && cat === 'default') cat = quickViewProduct?.category?.name || quickViewProduct?.category; } catch(err){}
-    e.currentTarget.src = getLuxuryFallback(cat);
-  }} />
+                        {/* Images */}
+                        <div className="relative w-full h-full flex items-center justify-center">
+                          <img loading="lazy" 
+                            src={product.primaryImage?.url || product.images?.[0]?.url} 
+                            alt={product.name}
+                            className="absolute inset-0 w-full h-full object-contain transition-all duration-300 ease-out group-hover:opacity-0 group-hover:scale-105"
+                            style={{ mixBlendMode: isDark ? 'normal' : 'multiply' }}
+                            onError={(e) => {
+                              const cat = product?.category?.name || product?.category || 'default';
+                              e.currentTarget.src = getLuxuryFallback(cat);
+                            }} 
+                          />
+                          {(product.hoverImage?.url || product.images?.[1]?.url) && (
+                            <img loading="lazy" 
+                              src={product.hoverImage?.url || product.images?.[1]?.url} 
+                              alt={`${product.name} alternate view`}
+                              className="absolute inset-0 w-full h-full object-contain transition-all duration-300 ease-out opacity-0 group-hover:opacity-100 group-hover:scale-105"
+                              style={{ mixBlendMode: isDark ? 'normal' : 'multiply' }}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }} 
+                            />
+                          )}
+                        </div>
 
                         {/* Hover Overlay Controls */}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex items-center justify-center gap-4">
-                          <button 
-                            onClick={(e) => { e.preventDefault(); toggleWishlist(product); }}
-                            className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-all ${isInWishlist(product._id) ? 'bg-white text-[#D4AF37]' : 'bg-white/10 hover:bg-white/20 text-white hover:text-[#D4AF37]'}`}
-                          >
-                            <Heart size={16} fill={isInWishlist(product._id) ? '#D4AF37' : 'none'} />
-                          </button>
-                          <button 
-                            onClick={(e) => { e.preventDefault(); setQuickViewProduct(product); }}
-                            className="w-10 h-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all text-white hover:text-[#D4AF37]"
-                          >
-                            <Eye size={16} />
-                          </button>
-                          <button 
-                            onClick={(e) => { 
-                              e.preventDefault(); 
-                              if (product.stock > 0 && product.isActive) addToCart(product, 1); 
-                            }}
-                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${product.stock === 0 || !product.isActive ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-[#D4AF37] hover:bg-[#B38945] text-black'}`}
-                            disabled={product.stock === 0 || !product.isActive}
-                            title={product.stock === 0 ? "Out of Stock" : !product.isActive ? "Currently Unavailable" : "Add to Cart"}
-                          >
-                            <ShoppingBag size={16} />
-                          </button>
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 flex flex-col items-center justify-center">
+                          
+                          {/* Quick Sizes */}
+                          {product.variants && product.variants.length > 0 && (
+                            <div className="flex gap-1 mb-4 flex-wrap justify-center px-4">
+                              {Array.from(new Set(product.variants.map(v => v.size))).map(size => {
+                                const stock = product.variants.filter(v => v.size === size).reduce((a, b) => a + b.stock, 0);
+                                return (
+                                  <span key={size} className={`text-[9px] font-bold tracking-wider px-2 py-1 rounded border ${stock === 0 ? 'border-gray-500/50 text-gray-400 line-through' : 'border-white/30 text-white bg-black/20 backdrop-blur-sm'}`}>
+                                    {size}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-4">
+                            <button 
+                              onClick={(e) => { e.preventDefault(); toggleWishlist(product); }}
+                              className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-all ${isInWishlist(product._id) ? 'bg-white text-[#D4AF37]' : 'bg-white/10 hover:bg-white/20 text-white hover:text-[#D4AF37]'}`}
+                            >
+                              <Heart size={16} fill={isInWishlist(product._id) ? '#D4AF37' : 'none'} />
+                            </button>
+                            <button 
+                              onClick={(e) => { e.preventDefault(); setQuickViewProduct(product); }}
+                              className="w-10 h-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all text-white hover:text-[#D4AF37]"
+                            >
+                              <Eye size={16} />
+                            </button>
+                            <button 
+                              onClick={(e) => { 
+                                e.preventDefault(); 
+                                if (product.variants && product.variants.length > 0) {
+                                  // Navigate to PDP for size selection
+                                  navigate(`/product/${product.slug}`);
+                                } else if (product.stock > 0 && product.isActive) {
+                                  addToCart(product, 1);
+                                }
+                              }}
+                              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${(product.stock === 0 || !product.isActive) ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-[#D4AF37] hover:bg-[#B38945] text-black'}`}
+                              disabled={product.stock === 0 || !product.isActive}
+                              title={product.stock === 0 ? "Out of Stock" : !product.isActive ? "Currently Unavailable" : product.variants?.length > 0 ? "Select Size" : "Add to Cart"}
+                            >
+                              <ShoppingBag size={16} />
+                            </button>
+                          </div>
                         </div>
                       </div>
 
@@ -471,15 +507,10 @@ export default function Products() {
 
               {/* Image */}
               <div className="w-full md:w-1/2 p-8 lg:p-12 flex items-center justify-center" style={{ background: isDark ? '#111' : '#F2EDE4' }}>
-                <img loading="lazy" src={quickViewProduct.images[0]?.url} alt={quickViewProduct.name} className="w-full h-auto object-contain max-h-[400px]" style={{ mixBlendMode: isDark ? 'normal' : 'multiply' }}  onError={(e) => {
-    let cat = 'default';
-    try { if (typeof product !== 'undefined') cat = product?.category?.name || product?.category; } catch(err){}
-    try { if (typeof item !== 'undefined' && cat === 'default') cat = item?.category?.name || item?.category; } catch(err){}
-    try { if (typeof p !== 'undefined' && cat === 'default') cat = p?.category?.name || p?.category; } catch(err){}
-    try { if (typeof r !== 'undefined' && cat === 'default') cat = r?.category?.name || r?.category; } catch(err){}
-    try { if (typeof quickViewProduct !== 'undefined' && cat === 'default') cat = quickViewProduct?.category?.name || quickViewProduct?.category; } catch(err){}
-    e.currentTarget.src = getLuxuryFallback(cat);
-  }} />
+                <img loading="lazy" src={quickViewProduct.primaryImage?.url || quickViewProduct.images?.[0]?.url} alt={quickViewProduct.name} className="w-full h-auto object-contain max-h-[400px]" style={{ mixBlendMode: isDark ? 'normal' : 'multiply' }}  onError={(e) => {
+                  const cat = quickViewProduct?.category?.name || quickViewProduct?.category || 'default';
+                  e.currentTarget.src = getLuxuryFallback(cat);
+                }} />
               </div>
 
               {/* Details */}

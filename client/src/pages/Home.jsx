@@ -5,11 +5,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Star, Package, ShieldCheck, Headphones, Gift, ArrowRight, Sparkles, Play } from 'lucide-react';
 import MainLogo from '../components/common/MainLogo';
-import axios from 'axios';
+import api from '../services/api';
 
 import { formatPrice } from '../utils/formatPrice';
 import { getSessionId } from '../hooks/usePreferenceTracking';
 import { getLuxuryFallback } from '../utils/getLuxuryFallback';
+import SEO from '../components/common/SEO';
 
 /* ─── STATIC DATA ─────────────────────────────────────────── */
 const CATEGORIES = [
@@ -211,7 +212,7 @@ export default function Home() {
   useEffect(() => {
     const fetchRecommendations = async () => {
       try {
-        const res = await axios.get('/api/preferences/homepage', {
+        const res = await api.get('/preferences/homepage', {
           headers: { 'x-session-id': getSessionId() }
         });
         if (res.data.success) {
@@ -237,6 +238,10 @@ export default function Home() {
 
   return (
     <div ref={containerRef} className="overflow-x-hidden font-jakarta" style={{ background: BG, color: TEXT }}>
+      <SEO 
+        title="Luxury Shopping | Personalized AI Concierge" 
+        description="Experience personalized luxury shopping at NexORA. Discover curated watches, designer bags, and premium gifts." 
+      />
 
       {/* Global keyframes */}
       <style>{`
@@ -293,7 +298,7 @@ export default function Home() {
             </h1>
 
             <p className="text-[15px] font-light leading-[1.7] max-w-[400px]" style={{ color: SUB }}>
-              NexORA combines AI-powered discovery with world-class luxury brands.
+              Discover, compare, and acquire extraordinary luxury — guided by an AI that knows your taste.
             </p>
 
             <div className="flex items-center gap-4 mt-2 flex-wrap">
@@ -306,17 +311,26 @@ export default function Home() {
               </button>
               <button
                 onClick={() => navigate('/concierge')}
-                className="flex items-center gap-2 px-7 py-3.5 text-[11px] font-medium tracking-widest uppercase transition-all duration-300"
+                className="relative flex items-center gap-2 px-7 py-3.5 text-[11px] font-medium tracking-widest uppercase transition-all duration-300 overflow-hidden group"
                 style={{
-                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.15)'}`,
-                  background: 'transparent',
-                  color: TEXT,
+                  border: `1px solid rgba(212,175,55,0.35)`,
+                  background: 'rgba(212,175,55,0.04)',
+                  color: '#D4AF37',
                   borderRadius: 2,
                 }}
               >
-                <Play size={11} style={{ color: '#D4AF37' }} fill="#D4AF37" />
-                Explore AI Concierge
+                <Sparkles size={11} className="group-hover:rotate-12 transition-transform" />
+                Ask AI Concierge
+                <span className="absolute inset-0 bg-[#D4AF37]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
               </button>
+            </div>
+
+            {/* AI trust bar */}
+            <div className="flex items-center gap-3 mt-4">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-pulse" />
+              <p className="text-[9px] uppercase tracking-[0.2em]" style={{ color: isDark ? 'rgba(212,175,55,0.5)' : 'rgba(180,140,60,0.7)' }}>
+                AI-powered · Verified inventory · Real-time availability
+              </p>
             </div>
           </motion.div>
 
@@ -609,78 +623,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ══════════════════════════════
-          7 · FOOTER
-      ══════════════════════════════ */}
-      <footer style={{ background: '#0B0B0B', borderTop: '1px solid #1A1A1A' }}>
-        <div className="container-app py-20">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-10 lg:gap-12">
-
-            {/* Brand */}
-            <div className="lg:col-span-1">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-9 h-9 flex items-center justify-center font-playfair font-bold text-black text-lg"
-                  style={{ background: 'linear-gradient(135deg, #D4AF37, #B38945)', borderRadius: 2 }}>N</div>
-                <span className="text-white font-playfair font-semibold text-lg tracking-wider">NEXORA</span>
-              </div>
-              <p className="text-[13px] leading-relaxed" style={{ color: '#6B7280' }}>
-                Curated luxury, powered by intelligence. Discover the finest products from around the world.
-              </p>
-            </div>
-
-            {/* Shop */}
-            <FooterCol title="Shop" links={['All Products','New Arrivals','Best Sellers','Collections','Sale']} to="/products" />
-
-            {/* Care */}
-            <FooterCol title="Customer Care" links={['Contact Us','Shipping Info','Returns & Refunds','FAQ','Affiliate Program']} to="/" />
-
-            {/* Company */}
-            <FooterCol title="Company" links={['About NexORA','Careers','Press','Privacy Policy','Terms of Service']} to="/" />
-
-            {/* Newsletter */}
-            <div>
-              <h4 className="text-white text-[10px] font-semibold tracking-widest uppercase mb-5">Newsletter</h4>
-              <p className="text-[13px] mb-5" style={{ color: '#6B7280' }}>
-                Be the first to know about new arrivals and exclusive offers.
-              </p>
-              <div className="flex">
-                <input
-                  type="email" placeholder="Enter your email"
-                  className="flex-1 px-4 py-2.5 text-[12px] bg-transparent outline-none text-white placeholder-gray-700"
-                  style={{ border: '1px solid #2A2A2A', borderRight: 'none' }}
-                />
-                <button className="px-4 py-2.5 text-[12px] font-bold" style={{ background: '#D4AF37', color: '#000' }}>→</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom bar */}
-        <div className="container-app py-5 flex flex-col md:flex-row items-center justify-between gap-4"
-          style={{ borderTop: '1px solid #1A1A1A' }}>
-          <p className="text-[11px]" style={{ color: '#4B5563' }}>© {new Date().getFullYear()} NexORA. All rights reserved.</p>
-          <div className="flex gap-6">
-            {['Privacy Policy','Terms of Service'].map(l => (
-              <Link key={l} to={l === 'Privacy Policy' ? '/privacy-policy' : '/terms-of-service'} className="text-[11px] hover:text-[#D4AF37] transition-colors" style={{ color: '#4B5563' }}>{l}</Link>
-            ))}
-          </div>
-        </div>
-      </footer>
-
     </div>
   );
 }
-
-/* ─── FOOTER COLUMN HELPER ─────────────────────────────────── */
-const FooterCol = ({ title, links, to }) => (
-  <div>
-    <h4 className="text-white text-[10px] font-semibold tracking-widest uppercase mb-5">{title}</h4>
-    <ul className="space-y-3">
-      {links.map(l => (
-        <li key={l}>
-          <Link to={l === 'Contact Us' ? '/contact' : l === 'Privacy Policy' ? '/privacy-policy' : l === 'Terms of Service' ? '/terms-of-service' : to} className="text-[13px] hover:text-[#D4AF37] transition-colors" style={{ color: '#6B7280' }}>{l}</Link>
-        </li>
-      ))}
-    </ul>
-  </div>
-);

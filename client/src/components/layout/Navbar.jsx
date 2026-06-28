@@ -136,6 +136,23 @@ export default function Navbar() {
 
               <ThemeToggle isDark={isDark} toggleTheme={toggleTheme} />
 
+              {/* V13: Universal AI Concierge button — accessible from every page */}
+              <button
+                onClick={() => navigate('/concierge')}
+                className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-bold tracking-[0.18em] uppercase transition-all duration-300 hover:scale-105 ${
+                  location.pathname === '/concierge' ? 'opacity-40 pointer-events-none' : ''
+                }`}
+                style={{
+                  background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.05))',
+                  border: '1px solid rgba(212,175,55,0.35)',
+                  color: '#D4AF37',
+                }}
+                title="AI Concierge"
+              >
+                <Sparkles size={9} />
+                <span className="hidden md:inline">Concierge</span>
+              </button>
+
               <Link to="/wishlist" className="relative p-2 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ color: SUB }}>
                 <Heart size={18} />
                 {wishlistCount > 0 && <span className="absolute top-1 right-0 w-3.5 h-3.5 text-[9px] font-bold rounded-full flex items-center justify-center text-black" style={{ background: ACC }}>{wishlistCount}</span>}
@@ -240,7 +257,7 @@ export default function Navbar() {
                   </div>
                 ) : searchQuery.trim() && searchResults.length === 0 ? (
                   <div className="text-center py-12">
-                    <p className="text-[14px]" style={{ color: SUB }}>No products found matching "{searchQuery}"</p>
+                    <p className="text-[14px]" style={{ color: SUB }}>No products found matching &quot;{searchQuery}&quot;</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-12">

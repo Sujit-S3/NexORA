@@ -29,7 +29,18 @@ export const WishlistProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       const { data } = await wishlistService.getWishlist();
-      setWishlistItems(data.data || []);
+      const flat = (data.data || []).map(item => {
+        if (item.product && item.product._id) {
+          return {
+            ...item.product,
+            wishlistItemId: item._id,
+            size: item.size,
+            color: item.color
+          };
+        }
+        return item;
+      });
+      setWishlistItems(flat);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to sync wishlist');
       console.error('Failed to fetch wishlist', err);
@@ -61,7 +72,7 @@ export const WishlistProvider = ({ children }) => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [isAuthenticated]);
 
-  const addToWishlist = async (product) => {
+  const addToWishlist = async (product, size = '', color = '') => {
     if (!product || !product._id) return;
     
     // Prevent duplicate entries by checking _id immediately
@@ -71,7 +82,7 @@ export const WishlistProvider = ({ children }) => {
       try {
         setLoading(true);
         setError(null);
-        await wishlistService.addToWishlist(product._id);
+        await wishlistService.addToWishlist(product._id, size, color);
         // Refresh from backend to ensure data integrity
         await fetchWishlist();
       } catch (err) {
@@ -83,7 +94,7 @@ export const WishlistProvider = ({ children }) => {
     } else {
       const local = getLocalWishlist();
       if (!local.find((item) => item._id === product._id)) {
-        local.push(product);
+        local.push({ ...product, size, color });
         saveLocalWishlist(local);
       }
     }
@@ -113,11 +124,11 @@ export const WishlistProvider = ({ children }) => {
     }
   };
 
-  const toggleWishlist = (product) => {
+  const toggleWishlist = (product, size = '', color = '') => {
     if (isInWishlist(product._id)) {
       removeFromWishlist(product._id);
     } else {
-      addToWishlist(product);
+      addToWishlist(product, size, color);
     }
   };
 

@@ -6,9 +6,9 @@ const journeyStateSchema = new mongoose.Schema({
   stage: { 
     type: String, 
     enum: ['browsing', 'viewed', 'compared', 'wishlist', 'cart', 'checkout', 'purchased', 'aftercare'],
-    default: 'browsing'
+    default: 'browsing',
   },
-  lastUpdated: { type: Date, default: Date.now }
+  lastUpdated: { type: Date, default: Date.now },
 }, { timestamps: true });
 
 journeyStateSchema.index({ userId: 1, sessionId: 1 });

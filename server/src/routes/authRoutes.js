@@ -25,9 +25,9 @@ router.post(
     body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
     body('email').trim().isEmail().withMessage('Please provide a valid email'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-    validate
+    validate,
   ],
-  register
+  register,
 );
 
 router.post(
@@ -36,9 +36,9 @@ router.post(
   [
     body('email').trim().isEmail().withMessage('Please provide a valid email'),
     body('password').notEmpty().withMessage('Password is required'),
-    validate
+    validate,
   ],
-  login
+  login,
 );
 
 
@@ -47,7 +47,7 @@ router.post(
 router.post('/forgot-password', authLimiter, forgotPassword);
 router.post('/reset-password/:token', authLimiter, [
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-  validate
+  validate,
 ], resetPassword);
 
 // Protected routes
@@ -59,9 +59,9 @@ router.put(
   [
     body('currentPassword').notEmpty().withMessage('Current password is required'),
     body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters'),
-    validate
+    validate,
   ],
-  changePassword
+  changePassword,
 );
 
 module.exports = router;

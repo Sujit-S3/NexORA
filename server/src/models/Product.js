@@ -31,7 +31,7 @@ const productSchema = new mongoose.Schema(
       min: [0, 'Discount price must be non-negative'],
       default: null,
       validate: {
-        validator: function (value) {
+        validator (value) {
           return value === null || value < this.price;
         },
         message: 'Discount price must be less than the original price',
@@ -47,6 +47,28 @@ const productSchema = new mongoose.Schema(
       trim: true,
       maxlength: [50, 'Brand name must not exceed 50 characters'],
     },
+    primaryImage: {
+      url: { type: String, default: '' },
+      publicId: { type: String, default: '' },
+      alt: { type: String, default: '' },
+    },
+    thumbnail: {
+      url: { type: String, default: '' },
+      publicId: { type: String, default: '' },
+      alt: { type: String, default: '' },
+    },
+    hoverImage: {
+      url: { type: String, default: '' },
+      publicId: { type: String, default: '' },
+      alt: { type: String, default: '' },
+    },
+    galleryImages: [
+      {
+        url: { type: String, required: true },
+        publicId: { type: String, required: true },
+        alt: { type: String, default: '' },
+      },
+    ],
     images: [
       {
         url: { type: String, required: true },
@@ -96,12 +118,39 @@ const productSchema = new mongoose.Schema(
       enum: ['Men', 'Women', 'Unisex', 'Kids'],
       default: 'Unisex',
     },
+    sku: {
+      type: String,
+      sparse: true,
+      trim: true,
+    },
     variants: [
       {
         size: { type: String, required: true, trim: true },
+        color: { type: String, trim: true, default: '' },
+        sku: { type: String, trim: true, default: '' },
         stock: { type: Number, required: true, min: 0, default: 0 },
+        availability: { type: Boolean, default: true },
+        priceAdjustment: { type: Number, default: 0 },
+        image: { type: String, trim: true, default: '' },
+        images: [
+          {
+            url: { type: String },
+            publicId: { type: String },
+            alt: { type: String },
+          },
+        ],
       },
     ],
+    sizeChart: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'SizeChart',
+      default: null,
+    },
+    fitType: {
+      type: String,
+      enum: ['Slim', 'Regular', 'Relaxed', 'Oversized', 'Athletic', ''],
+      default: '',
+    },
     sizeChartHtml: {
       type: String,
       default: '',
@@ -111,7 +160,7 @@ const productSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 // ── Indexes ──────────────────────────────────────────────────────────────
@@ -128,7 +177,7 @@ productSchema.virtual('effectivePrice').get(function () {
 });
 
 productSchema.virtual('discountPercent').get(function () {
-  if (!this.discountPrice) return 0;
+  if (!this.discountPrice) {return 0;}
   return Math.round(((this.price - this.discountPrice) / this.price) * 100);
 });
 

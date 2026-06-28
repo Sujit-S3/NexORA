@@ -27,8 +27,8 @@ const getProducts = asyncHandler(async (req, res) => {
     const catDoc = await Category.findOne({
       $or: [
         { slug: category },
-        ...(isObjectId ? [{ _id: category }] : [])
-      ]
+        ...(isObjectId ? [{ _id: category }] : []),
+      ],
     });
     
     if (catDoc) {
@@ -41,20 +41,20 @@ const getProducts = asyncHandler(async (req, res) => {
   // Price filter
   if (minPrice || maxPrice) {
     query.price = {};
-    if (minPrice) query.price.$gte = Number(minPrice);
-    if (maxPrice) query.price.$lte = Number(maxPrice);
+    if (minPrice) {query.price.$gte = Number(minPrice);}
+    if (maxPrice) {query.price.$lte = Number(maxPrice);}
   }
 
   // Flag filters
-  if (isFeatured === 'true') query.isFeatured = true;
-  if (isNewArrival === 'true') query.isNewArrival = true;
-  if (isBestSeller === 'true') query.isBestSeller = true;
+  if (isFeatured === 'true') {query.isFeatured = true;}
+  if (isNewArrival === 'true') {query.isNewArrival = true;}
+  if (isBestSeller === 'true') {query.isBestSeller = true;}
 
   // 2. Build Sort
   let sortOption = { createdAt: -1 }; // Default: Newest
-  if (sort === 'price_asc') sortOption = { price: 1 };
-  if (sort === 'price_desc') sortOption = { price: -1 };
-  if (sort === 'top_rated') sortOption = { 'ratings.average': -1 };
+  if (sort === 'price_asc') {sortOption = { price: 1 };}
+  if (sort === 'price_desc') {sortOption = { price: -1 };}
+  if (sort === 'top_rated') {sortOption = { 'ratings.average': -1 };}
 
   // 3. Pagination
   const pageNum = Number(page);
@@ -75,8 +75,8 @@ const getProducts = asyncHandler(async (req, res) => {
       page: pageNum,
       limit: limitNum,
       total,
-      pages: Math.ceil(total / limitNum)
-    }
+      pages: Math.ceil(total / limitNum),
+    },
   });
 });
 
@@ -97,7 +97,8 @@ const { eventBus, EVENTS } = require('../services/ai/utils/eventBus');
 // @access  Public
 const getProductBySlug = asyncHandler(async (req, res) => {
   const product = await Product.findOne({ slug: req.params.slug, isActive: true })
-    .populate('category', 'name slug');
+    .populate('category', 'name slug')
+    .populate('sizeChart');
   
   if (!product) {
     throw ApiError.notFound('Product not found');
@@ -138,7 +139,7 @@ const createProduct = asyncHandler(async (req, res) => {
 // @route   PUT /api/products/:id
 // @access  Admin
 const updateProduct = asyncHandler(async (req, res) => {
-  let product = await Product.findById(req.params.id);
+  const product = await Product.findById(req.params.id);
   
   if (!product) {
     throw ApiError.notFound('Product not found');
@@ -155,17 +156,17 @@ const updateProduct = asyncHandler(async (req, res) => {
     product.slug = slugify(name, { lower: true, strict: true });
   }
 
-  if (description) product.description = description;
-  if (price !== undefined) product.price = price;
-  if (discountPrice !== undefined) product.discountPrice = discountPrice || null;
-  if (category) product.category = category;
-  if (brand !== undefined) product.brand = brand;
-  if (stock !== undefined) product.stock = stock;
-  if (isFeatured !== undefined) product.isFeatured = isFeatured;
-  if (isNewArrival !== undefined) product.isNewArrival = isNewArrival;
-  if (isBestSeller !== undefined) product.isBestSeller = isBestSeller;
-  if (isActive !== undefined) product.isActive = isActive;
-  if (tags) product.tags = Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim());
+  if (description) {product.description = description;}
+  if (price !== undefined) {product.price = price;}
+  if (discountPrice !== undefined) {product.discountPrice = discountPrice || null;}
+  if (category) {product.category = category;}
+  if (brand !== undefined) {product.brand = brand;}
+  if (stock !== undefined) {product.stock = stock;}
+  if (isFeatured !== undefined) {product.isFeatured = isFeatured;}
+  if (isNewArrival !== undefined) {product.isNewArrival = isNewArrival;}
+  if (isBestSeller !== undefined) {product.isBestSeller = isBestSeller;}
+  if (isActive !== undefined) {product.isActive = isActive;}
+  if (tags) {product.tags = Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim());}
 
   await product.save();
   sendResponse(res, 200, 'Product updated successfully', product);
@@ -215,7 +216,7 @@ const uploadProductImages = asyncHandler(async (req, res) => {
 
   const newImages = results.map(result => ({
     url: result.secure_url,
-    publicId: result.public_id
+    publicId: result.public_id,
   }));
 
   product.images.push(...newImages);

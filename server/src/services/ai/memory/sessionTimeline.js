@@ -18,12 +18,12 @@ class SessionTimeline {
     const timeline = this.getTimeline(sessionId);
     
     // Keep only the last 20 actions to prevent token overflow
-    if (timeline.length >= 20) timeline.shift();
+    if (timeline.length >= 20) {timeline.shift();}
     
     timeline.push({
       time: new Date().toISOString(),
       action,
-      details
+      details,
     });
   }
 
@@ -54,7 +54,7 @@ class SessionTimeline {
    */
   formatTimelineForPrompt(sessionId) {
     const timeline = this.getTimeline(sessionId);
-    if (!timeline || timeline.length === 0) return 'No prior session events.';
+    if (!timeline || timeline.length === 0) {return 'No prior session events.';}
 
     return timeline.map(t => {
       const time = new Date(t.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

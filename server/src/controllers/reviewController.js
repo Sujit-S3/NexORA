@@ -55,7 +55,7 @@ const addReview = asyncHandler(async (req, res) => {
   const hasPurchased = await Order.findOne({
     user: req.user._id,
     'items.product': productId,
-    'paymentInfo.status': 'paid'
+    'paymentInfo.status': 'paid',
   });
 
   if (!hasPurchased) {
@@ -68,7 +68,7 @@ const addReview = asyncHandler(async (req, res) => {
     rating,
     title,
     comment,
-    isVerifiedPurchase: true
+    isVerifiedPurchase: true,
   });
 
   // Populate user data before sending response
@@ -94,9 +94,9 @@ const editReview = asyncHandler(async (req, res) => {
     throw ApiError.forbidden('Not authorized to edit this review');
   }
 
-  if (rating) review.rating = rating;
-  if (title !== undefined) review.title = title;
-  if (comment) review.comment = comment;
+  if (rating) {review.rating = rating;}
+  if (title !== undefined) {review.title = title;}
+  if (comment) {review.comment = comment;}
 
   await review.save();
   await review.populate('user', 'name avatar');

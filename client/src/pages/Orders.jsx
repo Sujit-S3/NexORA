@@ -39,7 +39,7 @@ const Orders = () => {
         <div className="glass-panel p-12 text-center max-w-lg mx-auto">
           <div className="text-5xl mb-4">📦</div>
           <h2 className="text-2xl font-bold mb-2 text-[#111827] dark:text-[#F5F5F5]">No orders yet</h2>
-          <p className="text-[#6B7280] dark:text-[#9CA3AF] mb-8">Looks like you haven't made any purchases.</p>
+          <p className="text-[#6B7280] dark:text-[#9CA3AF] mb-8">Looks like you haven&apos;t made any purchases.</p>
           <Link to="/products" className="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-[#D4AF37] to-[#B38945] text-white rounded-full font-semibold hover:shadow-[0_4px_20px_rgba(212,175,55,0.4)] transition-all">Start Shopping</Link>
         </div>
       ) : (

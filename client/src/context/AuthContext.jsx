@@ -109,7 +109,7 @@ export const AuthProvider = ({ children }) => {
       identifyUser(user);
 
       dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
-      return { success: true };
+      return { success: true, user };
     } catch (error) {
       dispatch({ type: 'AUTH_FAILURE', payload: error.message });
       return { success: false, message: error.message };

@@ -20,7 +20,7 @@ const settingSchema = new mongoose.Schema(
     },
     maintenanceMode: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model('Setting', settingSchema);

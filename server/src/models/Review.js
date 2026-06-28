@@ -44,7 +44,7 @@ const reviewSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 // ── Compound unique index: one review per user per product ───────────────
@@ -84,7 +84,11 @@ reviewSchema.post('save', function () {
 });
 
 reviewSchema.post('findOneAndDelete', function (doc) {
-  if (doc) doc.constructor.updateProductRatings(doc.product);
+  if (doc) {doc.constructor.updateProductRatings(doc.product);}
+});
+
+reviewSchema.post('deleteOne', { document: true, query: false }, function () {
+  this.constructor.updateProductRatings(this.product);
 });
 
 const Review = mongoose.model('Review', reviewSchema);

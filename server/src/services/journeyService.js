@@ -18,13 +18,13 @@ class JourneyService {
 
   async updateStage(userId, sessionId, newStage) {
     const query = userId ? { userId } : { sessionId };
-    if (!userId && !sessionId) return null;
+    if (!userId && !sessionId) {return null;}
 
     try {
       const state = await JourneyState.findOneAndUpdate(
         query,
         { stage: newStage, lastUpdated: new Date() },
-        { upsert: true, new: true }
+        { upsert: true, new: true },
       );
       return state.stage;
     } catch (err) {
@@ -35,7 +35,7 @@ class JourneyService {
 
   async getStage(userId, sessionId) {
     const query = userId ? { userId } : { sessionId };
-    if (!userId && !sessionId) return 'browsing';
+    if (!userId && !sessionId) {return 'browsing';}
     
     const state = await JourneyState.findOne(query);
     return state ? state.stage : 'browsing';

@@ -38,7 +38,7 @@ class ModelRouterService {
     this.providers = {
       'gemini': new GeminiProvider(),
       'openai': new OpenAIProvider(),
-      'claude': new ClaudeProvider()
+      'claude': new ClaudeProvider(),
     };
     this.defaultProvider = 'gemini';
   }
@@ -51,7 +51,7 @@ class ModelRouterService {
     const usePro = ['luxury-report', 'vip-styling-guide', 'inventory-forecast'].includes(intent);
     const provider = this.providers[providerName];
 
-    if (!provider) throw new Error(`Provider ${providerName} not supported`);
+    if (!provider) {throw new Error(`Provider ${providerName} not supported`);}
 
     const maxRetries = 3;
     const baseDelay = 2000; // 2 seconds

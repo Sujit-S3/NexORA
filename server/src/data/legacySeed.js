@@ -3,7 +3,7 @@ const categories = [
   { name: 'Watches', description: 'Luxury timepieces', slug: 'watches' },
   { name: 'Vehicles', description: 'Premium electric vehicles', slug: 'vehicles' },
   { name: 'Accessories', description: 'High-end accessories', slug: 'accessories' },
-  { name: 'Electronics', description: 'Premium tech', slug: 'electronics' }
+  { name: 'Electronics', description: 'Premium tech', slug: 'electronics' },
 ];
 
 const products = [
@@ -14,7 +14,7 @@ const products = [
     stock: 5,
     brand: 'Rolex',
     isFeatured: true,
-    images: [{ url: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80', publicId: 'rolex_submariner' }]
+    images: [{ url: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80', publicId: 'rolex_submariner' }],
   },
   {
     name: 'Tesla Model S Plaid',
@@ -23,7 +23,7 @@ const products = [
     stock: 2,
     brand: 'Tesla',
     isFeatured: true,
-    images: [{ url: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80', publicId: 'tesla_model_s' }]
+    images: [{ url: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80', publicId: 'tesla_model_s' }],
   },
   {
     name: 'Apple Vision Pro',
@@ -32,7 +32,7 @@ const products = [
     stock: 15,
     brand: 'Apple',
     isFeatured: true,
-    images: [{ url: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80', publicId: 'vision_pro' }]
+    images: [{ url: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80', publicId: 'vision_pro' }],
   },
   {
     name: 'Dior Saddle Bag',
@@ -41,7 +41,7 @@ const products = [
     stock: 8,
     brand: 'Dior',
     isFeatured: false,
-    images: [{ url: 'https://images.unsplash.com/photo-1584916201218-f4242ceb4809?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80', publicId: 'dior_saddle' }]
+    images: [{ url: 'https://images.unsplash.com/photo-1584916201218-f4242ceb4809?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80', publicId: 'dior_saddle' }],
   },
   {
     name: 'Patek Philippe Nautilus',
@@ -50,7 +50,7 @@ const products = [
     stock: 1,
     brand: 'Patek Philippe',
     isFeatured: true,
-    images: [{ url: 'https://images.unsplash.com/photo-1614164185128-e4ec99c436d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80', publicId: 'patek_nautilus' }]
+    images: [{ url: 'https://images.unsplash.com/photo-1614164185128-e4ec99c436d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80', publicId: 'patek_nautilus' }],
   },
   {
     name: 'Hermès Birkin 30',
@@ -59,8 +59,8 @@ const products = [
     stock: 3,
     brand: 'Hermès',
     isFeatured: false,
-    images: [{ url: 'https://images.unsplash.com/photo-1591561954557-26941169b49e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80', publicId: 'hermes_birkin' }]
-  }
+    images: [{ url: 'https://images.unsplash.com/photo-1591561954557-26941169b49e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80', publicId: 'hermes_birkin' }],
+  },
 ];
 
 module.exports = { categories, products };

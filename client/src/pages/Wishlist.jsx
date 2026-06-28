@@ -15,8 +15,8 @@ const Wishlist = () => {
   const navigate = useNavigate();
 
   const handleAddToCart = async (product) => {
-    // 1. Add to Cart
-    const result = await addToCart(product, 1);
+    // 1. Add to Cart with preferred size if exists
+    const result = await addToCart(product, 1, product.size || '');
     
     // 2. Confirm success
     if (result && result.success) {
@@ -25,8 +25,12 @@ const Wishlist = () => {
       // 4. Navigate to cart or let UI naturally refresh
       navigate('/cart');
     } else {
-      // Handle cart error (already shown by CartContext or we can alert)
-      console.error("Move to Cart failed:", result?.message);
+      if (result?.message?.includes('select a size')) {
+        // Redirect to product page to select size
+        navigate(`/product/${product.slug || product._id}`);
+      } else {
+        console.error("Move to Cart failed:", result?.message);
+      }
     }
   };
 
@@ -42,7 +46,7 @@ const Wishlist = () => {
             <Heart className="w-10 h-10 text-gray-400" />
           </div>
           <h2 className="text-3xl font-display font-bold text-[#111827] dark:text-[#F5F5F5] mb-4 tracking-tight">Your wishlist is empty</h2>
-          <p className="text-[#6B7280] dark:text-[#9CA3AF] mb-8">Save items you love and buy them when you're ready.</p>
+          <p className="text-[#6B7280] dark:text-[#9CA3AF] mb-8">Save items you love and buy them when you&apos;re ready.</p>
           <Link to="/products" className="btn-premium bg-gradient-to-r from-[#D4AF37] to-[#B38945] border-none text-white">Explore Collections</Link>
         </motion.div>
       </div>
@@ -100,7 +104,9 @@ const Wishlist = () => {
               </Link>
               
               <div className="flex flex-col flex-1 justify-end">
-                <h3 className="font-semibold text-lg text-[#111827] dark:text-[#F5F5F5] truncate mb-1">{product.name}</h3>
+                <h3 className="font-semibold text-lg text-[#111827] dark:text-[#F5F5F5] truncate mb-1">
+                  {product.name} {product.size ? `(Size: ${product.size})` : ''}
+                </h3>
                 <span className="text-[#D4AF37] font-bold text-xl mb-4">{formatPrice(product.price || 0)}</span>
                 
                 {product.stock === 0 || product.isActive === false ? (

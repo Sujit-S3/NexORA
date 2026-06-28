@@ -48,21 +48,9 @@ const removeBackground = (src) =>
  * Strips the background dynamically via canvas to provide a perfect transparent asset.
  */
 const GoldCartIcon = ({ size = 20, className = '' }) => {
-  const [src, setSrc] = useState(null);
-
-  useEffect(() => {
-    // We use the cart-gold.png and strip out the background
-    removeBackground('/cart-gold.png').then(setSrc);
-  }, []);
-
-  if (!src) {
-    // Show an invisible placeholder of the exact size while loading
-    return <div style={{ width: size, height: size, display: 'inline-block' }} className={className} />;
-  }
-
   return (
     <img
-      src={src}
+      src="/cart-gold.png"
       alt="Cart"
       width={size}
       height={size}

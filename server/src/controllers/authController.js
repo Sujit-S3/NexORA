@@ -39,25 +39,31 @@ const register = asyncHandler(async (req, res) => {
   // Send welcome email (fire-and-forget — never block registration on email failure)
   const emailService = require('../services/emailService');
   emailService.sendWelcomeEmail(user.email, user.name).catch(err =>
-    console.error('[Auth] Welcome email failed:', err.message)
+    console.error('[Auth] Welcome email failed:', err.message),
   );
 
   // Merge Guest Cart
   if (req.body.guestCart && req.body.guestCart.length > 0) {
     const Cart = require('../models/Cart');
+    const Product = require('../models/Product');
     let cart = await Cart.findOne({ user: user._id });
     if (!cart) {
       cart = await Cart.create({ user: user._id, items: [] });
     }
     for (const guestItem of req.body.guestCart) {
-      const existing = cart.items.find(i => i.product.toString() === guestItem.product.toString());
+      const existing = cart.items.find(i => i.product.toString() === guestItem.product.toString() && (i.size || '') === (guestItem.size || ''));
       if (existing) {
         existing.quantity += guestItem.quantity;
       } else {
-        cart.items.push({
-          product: guestItem.product,
-          quantity: guestItem.quantity
-        });
+        const product = await Product.findById(guestItem.product);
+        if (product && product.isActive) {
+          cart.items.push({
+            product: guestItem.product,
+            quantity: guestItem.quantity,
+            price: product.discountPrice !== null ? product.discountPrice : product.price,
+            size: guestItem.size || '',
+          });
+        }
       }
     }
     await cart.save();
@@ -73,7 +79,7 @@ const register = asyncHandler(async (req, res) => {
         modified = true;
       }
     }
-    if (modified) await user.save();
+    if (modified) {await user.save();}
   }
 
   sendResponse(res, 201, 'User registered successfully', {
@@ -121,19 +127,25 @@ const login = asyncHandler(async (req, res) => {
   // Merge Guest Cart
   if (req.body.guestCart && req.body.guestCart.length > 0) {
     const Cart = require('../models/Cart');
+    const Product = require('../models/Product');
     let cart = await Cart.findOne({ user: user._id });
     if (!cart) {
       cart = await Cart.create({ user: user._id, items: [] });
     }
     for (const guestItem of req.body.guestCart) {
-      const existing = cart.items.find(i => i.product.toString() === guestItem.product.toString());
+      const existing = cart.items.find(i => i.product.toString() === guestItem.product.toString() && (i.size || '') === (guestItem.size || ''));
       if (existing) {
         existing.quantity += guestItem.quantity;
       } else {
-        cart.items.push({
-          product: guestItem.product,
-          quantity: guestItem.quantity
-        });
+        const product = await Product.findById(guestItem.product);
+        if (product && product.isActive) {
+          cart.items.push({
+            product: guestItem.product,
+            quantity: guestItem.quantity,
+            price: product.discountPrice !== null ? product.discountPrice : product.price,
+            size: guestItem.size || '',
+          });
+        }
       }
     }
     await cart.save();
@@ -148,7 +160,7 @@ const login = asyncHandler(async (req, res) => {
         modified = true;
       }
     }
-    if (modified) await user.save();
+    if (modified) {await user.save();}
   }
 
   sendResponse(res, 200, 'Login successful', {
@@ -212,11 +224,11 @@ const changePassword = asyncHandler(async (req, res) => {
 
 // Helper for session merging
 const mergeSessionPreferences = async (userId, sessionId) => {
-  if (!sessionId) return;
+  if (!sessionId) {return;}
   const guestPref = await UserPreference.findOne({ sessionId, userId: null });
-  if (!guestPref) return;
+  if (!guestPref) {return;}
 
-  let userPref = await UserPreference.findOne({ userId });
+  const userPref = await UserPreference.findOne({ userId });
   if (!userPref) {
     guestPref.userId = userId;
     await guestPref.save();
@@ -254,7 +266,7 @@ const mergeSessionPreferences = async (userId, sessionId) => {
 // @access  Public
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
-  if (!email) throw ApiError.badRequest('Email is required');
+  if (!email) {throw ApiError.badRequest('Email is required');}
 
   const user = await User.findOne({ email: email.toLowerCase().trim() });
   // Always return 200 to prevent email enumeration
@@ -283,7 +295,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   sendResponse(res, 200, 'Password reset link sent. Please check your email.', {
     // Only expose token in development to allow frontend testing without email
-    ...(process.env.NODE_ENV === 'development' && { resetToken: rawToken, resetUrl })
+    ...(process.env.NODE_ENV === 'development' && { resetToken: rawToken, resetUrl }),
   });
 });
 
@@ -294,17 +306,17 @@ const resetPassword = asyncHandler(async (req, res) => {
   const { token } = req.params;
   const { password } = req.body;
 
-  if (!token)    throw ApiError.badRequest('Reset token is required');
-  if (!password || password.length < 6) throw ApiError.badRequest('Password must be at least 6 characters');
+  if (!token)    {throw ApiError.badRequest('Reset token is required');}
+  if (!password || password.length < 6) {throw ApiError.badRequest('Password must be at least 6 characters');}
 
   // Hash incoming token and find matching user
   const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
   const user = await User.findOne({
     passwordResetToken: hashedToken,
-    passwordResetExpires: { $gt: Date.now() }
+    passwordResetExpires: { $gt: Date.now() },
   });
 
-  if (!user) throw ApiError.badRequest('Reset token is invalid or has expired. Please request a new one.');
+  if (!user) {throw ApiError.badRequest('Reset token is invalid or has expired. Please request a new one.');}
 
   // Set new password and clear reset fields
   user.password = password;
@@ -317,7 +329,7 @@ const resetPassword = asyncHandler(async (req, res) => {
 
   sendResponse(res, 200, 'Password reset successful. You are now logged in.', {
     token: authToken,
-    user: { _id: user._id, name: user.name, email: user.email, role: user.role }
+    user: { _id: user._id, name: user.name, email: user.email, role: user.role },
   });
 });
 

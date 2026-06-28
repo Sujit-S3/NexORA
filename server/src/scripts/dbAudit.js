@@ -25,11 +25,11 @@ async function audit() {
     let hasLuxury = false;
     
     for (const img of p.images) {
-      if (!img.url) continue;
+      if (!img.url) {continue;}
       
       if (img.url.includes('unsplash.com') || img.url.includes('placeholder')) {
-        if (img.url.includes('unsplash.com')) hasExternal = true;
-        if (img.url.includes('placeholder')) hasPlaceholder = true;
+        if (img.url.includes('unsplash.com')) {hasExternal = true;}
+        if (img.url.includes('placeholder')) {hasPlaceholder = true;}
       } else if (img.url.includes('/assets/luxury/')) {
         hasLuxury = true;
       } else if (img.url.startsWith('http')) {
@@ -37,10 +37,10 @@ async function audit() {
       }
     }
     
-    if (hasExternal) external++;
-    else if (hasPlaceholder) placeholder++;
-    else if (hasLuxury) luxury++;
-    else missing++; // if none matched
+    if (hasExternal) {external++;}
+    else if (hasPlaceholder) {placeholder++;}
+    else if (hasLuxury) {luxury++;}
+    else {missing++;} // if none matched
   }
   
   console.log(`Total Products: ${total}`);

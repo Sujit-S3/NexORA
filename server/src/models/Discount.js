@@ -54,18 +54,18 @@ const discountSchema = new mongoose.Schema(
       ref: 'User',
     }],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Virtual: is expired
 discountSchema.virtual('isExpired').get(function () {
-  if (!this.expiryDate) return false;
+  if (!this.expiryDate) {return false;}
   return new Date() > this.expiryDate;
 });
 
 // Virtual: is usage exhausted
 discountSchema.virtual('isExhausted').get(function () {
-  if (!this.usageLimit) return false;
+  if (!this.usageLimit) {return false;}
   return this.timesUsed >= this.usageLimit;
 });
 

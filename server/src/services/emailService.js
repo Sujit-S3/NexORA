@@ -33,7 +33,7 @@ const sendEmail = async ({ to, subject, html }) => {
   }
 
   const client = getResend();
-  if (!client) return { success: false, error: 'Email client not configured' };
+  if (!client) {return { success: false, error: 'Email client not configured' };}
 
   try {
     const result = await client.emails.send({ from: FROM, to, subject, html });
@@ -51,8 +51,7 @@ const sendEmail = async ({ to, subject, html }) => {
  * @param {string} resetUrl - Full password reset URL (with token)
  * @param {string} name - User's display name
  */
-const sendPasswordReset = async (to, resetUrl, name = 'Valued Customer') => {
-  return sendEmail({
+const sendPasswordReset = async (to, resetUrl, name = 'Valued Customer') => sendEmail({
     to,
     subject: 'Reset Your NexORA Password',
     html: `
@@ -93,7 +92,6 @@ const sendPasswordReset = async (to, resetUrl, name = 'Valued Customer') => {
       </html>
     `,
   });
-};
 
 // ── Welcome Email ─────────────────────────────────────────────────────────────
 /**
@@ -101,8 +99,7 @@ const sendPasswordReset = async (to, resetUrl, name = 'Valued Customer') => {
  * @param {string} to - Recipient email address
  * @param {string} name - User's display name
  */
-const sendWelcomeEmail = async (to, name = 'Valued Customer') => {
-  return sendEmail({
+const sendWelcomeEmail = async (to, name = 'Valued Customer') => sendEmail({
     to,
     subject: 'Welcome to NexORA — Your Luxury Journey Begins',
     html: `
@@ -137,7 +134,6 @@ const sendWelcomeEmail = async (to, name = 'Valued Customer') => {
       </html>
     `,
   });
-};
 
 // ── Order Confirmation ────────────────────────────────────────────────────────
 /**

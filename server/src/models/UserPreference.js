@@ -21,8 +21,8 @@ const userPreferenceSchema = new mongoose.Schema({
     maxPurchase: { type: Number, default: null }, // Max item bought
     comfortRange: {
       min: { type: Number, default: 0 },
-      max: { type: Number, default: 0 }
-    }
+      max: { type: Number, default: 0 },
+    },
   },
   priceSensitivity: { type: String, enum: ['budget', 'mid', 'luxury', 'ultra-luxury'], default: 'luxury' },
 
@@ -44,6 +44,46 @@ const userPreferenceSchema = new mongoose.Schema({
   // ── Luxury Profile ─────────────────────────────────────────────────────
   luxuryLevel:          { type: Number, min: 1, max: 5, default: 3 }, // 1=entry, 5=ultra
 
+  // ── Physical Profile & Fit Intelligence ────────────────────────────────
+  physicalProfile: {
+    heightCm: { type: Number, default: null },
+    weightKg: { type: Number, default: null },
+    age: { type: Number, default: null },
+    gender: { type: String, enum: ['Male', 'Female', 'Non-Binary', 'Other', ''], default: '' },
+    bodyType: { type: String, enum: ['Slim', 'Athletic', 'Broad', 'Plus Size', 'Regular', ''], default: '' },
+    measurements: {
+      shoulderWidthCm: { type: Number, default: null },
+      chestCm: { type: Number, default: null },
+      waistCm: { type: Number, default: null },
+      hipCm: { type: Number, default: null },
+      inseamCm: { type: Number, default: null },
+      footLengthCm: { type: Number, default: null },
+      headCircumferenceCm: { type: Number, default: null },
+    },
+    preferredFit: { type: String, enum: ['Slim', 'Regular', 'Relaxed', 'Oversized', 'Athletic', ''], default: '' },
+    country: { type: String, enum: ['India', 'UK', 'US', 'EU', ''], default: '' },
+    preferredUnits: { type: String, enum: ['Metric', 'Imperial'], default: 'Metric' },
+  },
+  preferredSizes: {
+    shirt: { type: String, default: '' },
+    bottom: { type: String, default: '' },
+    shoe: { type: String, default: '' },
+    ring: { type: String, default: '' },
+    hat: { type: String, default: '' },
+    watch: { type: String, default: '' },
+  },
+  confidenceHistory: [
+    {
+      productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+      recommendedSize: String,
+      confidenceScore: Number,
+      actualSelectedSize: String,
+      wasReturned: { type: Boolean, default: false },
+      exchangedForSize: String,
+      date: { type: Date, default: Date.now },
+    },
+  ],
+
   // ── AI Analytics ──────────────────────────────────────────────────────
   aiSessionsOpened:     { type: Number, default: 0 },
   aiMessagesSent:       { type: Number, default: 0 },
@@ -53,7 +93,7 @@ const userPreferenceSchema = new mongoose.Schema({
   aiOrdersCompleted:    { type: Number, default: 0 },
   aiRevenueGenerated:   { type: Number, default: 0 },
 
-  lastActivity: { type: Date, default: Date.now }
+  lastActivity: { type: Date, default: Date.now },
 }, { timestamps: true });
 
 userPreferenceSchema.index({ userId: 1, sessionId: 1 });

@@ -6,7 +6,7 @@ class InventoryPolicy {
 
 class BudgetPolicy {
   enforce(products, context) {
-    if (!context.strictBudget) return products;
+    if (!context.strictBudget) {return products;}
     return products.filter(p => {
       const currentPrice = p.discountPrice || p.price;
       // Allow up to 10% stretch if budget intelligence is enabled, otherwise strict
@@ -41,7 +41,7 @@ class PolicyEngine {
       new InventoryPolicy(),
       new BudgetPolicy(),
       new SecurityPolicy(),
-      new ContextLimitPolicy()
+      new ContextLimitPolicy(),
     ];
   }
 

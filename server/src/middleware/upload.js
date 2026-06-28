@@ -31,8 +31,7 @@ const upload = multer({
  * @param {string} folder - Cloudinary folder
  * @returns {Promise<object>} Cloudinary result { secure_url, public_id }
  */
-const uploadToCloudinary = (buffer, folder = 'nexora/misc') => {
-  return new Promise((resolve, reject) => {
+const uploadToCloudinary = (buffer, folder = 'nexora/misc') => new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
         folder,
@@ -40,20 +39,17 @@ const uploadToCloudinary = (buffer, folder = 'nexora/misc') => {
         transformation: [{ width: 1200, height: 1200, crop: 'limit', quality: 'auto' }],
       },
       (error, result) => {
-        if (error) return reject(new ApiError(500, `Cloudinary upload failed: ${error.message}`));
+        if (error) {return reject(new ApiError(500, `Cloudinary upload failed: ${error.message}`));}
         resolve(result);
-      }
+      },
     );
     stream.end(buffer);
   });
-};
 
 /**
  * Delete a file from Cloudinary by public_id.
  * @param {string} publicId
  */
-const deleteFromCloudinary = async (publicId) => {
-  return cloudinary.uploader.destroy(publicId);
-};
+const deleteFromCloudinary = async (publicId) => cloudinary.uploader.destroy(publicId);
 
 module.exports = { upload, uploadToCloudinary, deleteFromCloudinary };

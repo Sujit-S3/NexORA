@@ -1,18 +1,21 @@
-// NexORA V7 — Luxury Product Detail Experience
+// NexORA V13 — Luxury Product Detail Experience
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Heart, Star, Shield, Truck, Package, RotateCcw, ChevronDown, ChevronUp, Sparkles, MessageSquare, Plus, Minus, ArrowRight, CheckCircle2, Activity, X } from 'lucide-react';
+import { ShoppingBag, Heart, Star, Shield, Truck, Package, RotateCcw, ChevronDown, ChevronUp, Sparkles, MessageSquare, Plus, Minus, ArrowRight, CheckCircle2, Activity, X, Zap, GitCompare, Award, Clock } from 'lucide-react';
 import { productService } from '@services/productService';
 import { useCart } from '@context/CartContext';
 import { useWishlist } from '@context/WishlistContext';
 import ProductReviews from '@components/product/ProductReviews';
+import SizeSelector from '@components/product/SizeSelector';
+import SizeGuideModal from '@components/product/SizeGuideModal';
 import aiService from '@services/aiService';
 import axios from 'axios';
 import usePreferenceTracking, { getSessionId } from '../hooks/usePreferenceTracking';
 import { getLuxuryFallback } from '../utils/getLuxuryFallback';
 import { formatPrice } from '../utils/formatPrice';
+import SEO from '../components/common/SEO';
 
 export default function ProductDetail() {
   const { slug } = useParams();
@@ -41,12 +44,45 @@ export default function ProductDetail() {
   const [qty, setQty] = useState(1);
   const [activeSpec, setActiveSpec] = useState('materials');
   const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [sizeError, setSizeError] = useState(false);
 
   const hasVariants = product?.variants && product.variants.length > 0;
-  const currentVariant = hasVariants ? product.variants.find(v => v.size === selectedSize) : null;
-  const availableStock = hasVariants ? (currentVariant?.stock || 0) : product?.stock || 0;
+  
+  // Extract unique colors
+  const uniqueColors = hasVariants ? Array.from(new Set(product.variants.filter(v => v.color).map(v => v.color))) : [];
+  
+  // When variants load or color is missing but exists, set default color
+  useEffect(() => {
+    if (uniqueColors.length > 0 && !selectedColor) {
+      setSelectedColor(uniqueColors[0]);
+    }
+  }, [uniqueColors, selectedColor]);
+
+  // Determine available variants based on color
+  const filteredVariants = hasVariants && selectedColor 
+    ? product.variants.filter(v => v.color === selectedColor) 
+    : (product?.variants || []);
+
+  const currentVariant = hasVariants ? product.variants.find(v => v.size === selectedSize && (selectedColor ? v.color === selectedColor : true)) : null;
+  const availableStock = hasVariants 
+    ? (selectedSize ? (currentVariant?.stock || 0) : product.variants.reduce((sum, v) => sum + (v.stock || 0), 0)) 
+    : product?.stock || 0;
+
+  // Swappable Gallery
+  const allImages = [
+    ...(product?.primaryImage?.url ? [product.primaryImage] : []),
+    ...(product?.images || [])
+  ];
+  // Remove duplicates based on URL
+  const uniqueImages = allImages.filter((img, idx, self) => 
+    idx === self.findIndex(i => i.url === img.url)
+  );
+
+  const displayImages = (selectedColor && currentVariant?.images?.length > 0) 
+    ? currentVariant.images 
+    : (uniqueImages.length > 0 ? uniqueImages : []);
 
   // AI States
   const [aiReviewSummary, setAiReviewSummary] = useState('');
@@ -54,6 +90,20 @@ export default function ProductDetail() {
   const [aiQuestion, setAiQuestion] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+  const [conciergeHovered, setConciergeHovered] = useState(null);
+
+  // V13: Navigate to concierge with product pre-loaded
+  const openConcierge = useCallback((prompt) => {
+    if (!product) return;
+    // Store product context in sessionStorage so Concierge picks it up
+    sessionStorage.setItem('nexora_concierge_prompt', prompt || `Tell me about the ${product.name} by ${product.brand}`);
+    sessionStorage.setItem('nexora_concierge_product', JSON.stringify({
+      _id: product._id, name: product.name, brand: product.brand,
+      slug: product.slug, price: product.price, discountPrice: product.discountPrice,
+      category: product.category, images: product.images,
+    }));
+    navigate('/concierge');
+  }, [product, navigate]);
 
   // Preference Tracking
   usePreferenceTracking('view_product', { productId: product?._id, brand: product?.brand }, !!product);
@@ -120,7 +170,11 @@ export default function ProductDetail() {
 
   return (
     <div className="min-h-screen font-jakarta pb-20" style={{ background: BG, color: TEXT }}>
-      
+      <SEO 
+        title={product.name} 
+        description={product.description?.substring(0, 160)} 
+        image={product.images?.[0]?.url}
+      />
       {/* ══════════════════════════════
           1 · PRODUCT HERO
       ══════════════════════════════ */}
@@ -131,7 +185,7 @@ export default function ProductDetail() {
           <div className="flex gap-6 h-fit lg:sticky lg:top-32">
             {/* Thumbnails */}
             <div className="hidden md:flex flex-col gap-4 w-20 shrink-0">
-              {product.images?.map((img, i) => (
+              {displayImages.map((img, i) => (
                 <button 
                   key={i} 
                   onClick={() => setActiveImage(i)}
@@ -163,10 +217,14 @@ export default function ProductDetail() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 1.05 }}
                   transition={{ duration: 0.5 }}
-                  src={product.images[activeImage]?.url} 
+                  src={displayImages[activeImage]?.url || getLuxuryFallback(product?.category?.name || 'default')} 
                   alt={product.name}
                   className="w-full h-full object-contain filter drop-shadow-2xl transition-transform duration-700 group-hover:scale-110"
                   style={{ mixBlendMode: isDark ? 'normal' : 'multiply' }}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = getLuxuryFallback(product?.category?.name || 'default');
+                  }}
                 />
               </AnimatePresence>
             </div>
@@ -213,32 +271,35 @@ export default function ProductDetail() {
             <div className="p-8 rounded-[24px] shadow-2xl mb-10" style={{ background: SURF, border: `1px solid ${BORD}` }}>
               {product.isActive && (hasVariants || product.stock > 0) ? (
                 <>
-                  {hasVariants && (
+                  {hasVariants && uniqueColors.length > 0 && (
                     <div className="mb-6">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-[12px] font-bold tracking-widest uppercase" style={{ color: SUB }}>Select Size</span>
-                        {product.sizeChartHtml && (
-                          <button onClick={() => setShowSizeGuide(true)} className="text-[11px] uppercase tracking-widest hover:underline" style={{ color: ACC }}>Size Guide</button>
-                        )}
-                      </div>
-                      <div className={`flex flex-wrap gap-3 p-2 -m-2 rounded transition-colors duration-300 ${sizeError ? 'bg-red-500/10 border border-red-500/30' : ''}`}>
-                        {product.variants.map(v => (
+                      <span className="text-[12px] font-bold tracking-widest uppercase mb-3 block" style={{ color: SUB }}>Select Color: {selectedColor}</span>
+                      <div className="flex flex-wrap gap-3">
+                        {uniqueColors.map(color => (
                           <button 
-                            key={v.size}
-                            disabled={v.stock === 0}
-                            onClick={() => { setSelectedSize(v.size); setSizeError(false); setQty(1); }}
-                            className={`min-w-[48px] h-12 flex items-center justify-center px-4 rounded transition-all text-sm font-medium ${v.stock === 0 ? 'opacity-30 cursor-not-allowed line-through' : selectedSize === v.size ? 'border-2 scale-105 shadow-lg' : 'hover:border opacity-80'}`}
-                            style={{ 
-                              border: selectedSize === v.size ? `2px solid ${ACC}` : `1px solid ${BORD}`, 
-                              background: selectedSize === v.size ? ACC : SURF, 
-                              color: selectedSize === v.size ? '#000' : TEXT 
-                            }}
-                          >
-                            {v.size}
-                          </button>
+                            key={color}
+                            onClick={() => { setSelectedColor(color); setActiveImage(0); setQty(1); setSelectedSize(''); }}
+                            className={`w-8 h-8 rounded-full border-2 transition-all ${selectedColor === color ? 'border-[#D4AF37] scale-110 shadow-lg' : 'border-transparent hover:scale-105'}`}
+                            style={{ backgroundColor: color.toLowerCase() }}
+                            title={color}
+                          />
                         ))}
                       </div>
-                      {sizeError && <p className="text-red-500 text-xs mt-2 font-medium">Please select a size to continue</p>}
+                    </div>
+                  )}
+
+                  {hasVariants && (
+                    <div className="mb-8">
+                      <SizeSelector 
+                        variants={filteredVariants}
+                        selectedSize={selectedSize}
+                        setSelectedSize={setSelectedSize}
+                        sizeError={sizeError}
+                        setSizeError={setSizeError}
+                        setShowSizeGuide={setShowSizeGuide}
+                        fitType={product.fitType}
+                        fitRecommendation={product.fitRecommendation} // Comes from AI injection in recommendationService
+                      />
                     </div>
                   )}
 
@@ -259,7 +320,7 @@ export default function ProductDetail() {
                           setTimeout(() => setSizeError(false), 2000);
                           return;
                         }
-                        await addToCart(product, Math.min(qty, availableStock), selectedSize);
+                        await addToCart(product, Math.min(qty, availableStock), selectedSize, selectedColor);
                       }} className="w-full py-4 text-[12px] font-bold tracking-widest uppercase transition-opacity hover:opacity-90 flex items-center justify-center gap-3" style={{ background: ACC, color: '#000', borderRadius: 4 }}>
                         <ShoppingBag size={16} /> Add To Cart
                       </button>
@@ -270,7 +331,7 @@ export default function ProductDetail() {
                             setTimeout(() => setSizeError(false), 2000);
                             return;
                           }
-                          await addToCart(product, Math.min(qty, availableStock), selectedSize);
+                          await addToCart(product, Math.min(qty, availableStock), selectedSize, selectedColor);
                           navigate('/cart');
                         }} className="flex-1 py-4 text-[12px] font-bold tracking-widest uppercase transition-colors flex items-center justify-center gap-3 hover:bg-[#D4AF37] hover:text-black" style={{ background: 'transparent', border: `1px solid ${ACC}`, color: ACC, borderRadius: 4 }}>
                           Buy Now
@@ -384,66 +445,110 @@ export default function ProductDetail() {
       </section>
 
       {/* ══════════════════════════════
-          7 · AI PRODUCT CONCIERGE
+          7 · AI PRODUCT CONCIERGE V13
       ══════════════════════════════ */}
       <section className="py-24">
-        <div className="container-app max-w-5xl">
-          <div className="rounded-[24px] p-12 md:p-16 relative overflow-hidden" style={{ background: '#0B0B0B', border: '1px solid #1A1A1A' }}>
-            <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at right center, rgba(212,175,55,0.1) 0%, transparent 60%)' }} />
-            
-            <div className="relative z-10 flex flex-col md:flex-row items-center gap-12">
-              <div className="md:w-1/2">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded text-[9px] font-bold tracking-[0.22em] uppercase mb-6" style={{ background: 'rgba(212,175,55,0.1)', color: ACC, border: '1px solid rgba(212,175,55,0.2)' }}>
-                  <Sparkles size={10} /> AI Product Concierge
+        <div className="container-app max-w-6xl">
+          <div className="rounded-[28px] relative overflow-hidden" style={{ background: '#050505', border: '1px solid #1A1A1A' }}>
+            {/* Ambient glow */}
+            <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 70% at 80% 50%, rgba(212,175,55,0.08) 0%, transparent 70%)' }} />
+            <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(212,175,55,0.4), transparent)' }} />
+
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-0">
+              {/* LEFT: Header + quick prompts */}
+              <div className="p-12 md:p-16 border-r border-[#1A1A1A]">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-sm text-[9px] font-bold tracking-[0.22em] uppercase mb-8" style={{ background: 'rgba(212,175,55,0.08)', color: ACC, border: '1px solid rgba(212,175,55,0.2)' }}>
+                  <Sparkles size={9} /> Private AI Concierge
                 </div>
-                <h2 className="font-playfair text-white text-3xl lg:text-4xl mb-6">Ask AI About This Product</h2>
-                <p className="text-[14px] text-gray-400 leading-relaxed mb-8">
-                  Unsure if this is the right choice? Our AI Concierge can provide detailed pros and cons, compare it with alternatives, or suggest the best use cases for your lifestyle.
+                <h2 className="font-playfair text-white text-4xl lg:text-5xl mb-5 leading-tight">Ask our<br />Concierge.</h2>
+                <p className="text-[14px] text-gray-500 leading-relaxed mb-10 max-w-sm">
+                  Not sure if this is right for you? Our private advisor compares alternatives, explains craftsmanship, and curates a personalised recommendation — in real time.
                 </p>
+
+                {/* Quick question chips */}
                 <div className="flex flex-col gap-3">
-                  {['Compare with similar items', 'What are the pros and cons?', 'Is this good for a luxury gift?'].map((q, i) => (
-                    <button 
-                      key={i} 
-                      onClick={async () => {
-                        setAiQuestion(q);
-                        setAiLoading(true);
-                        try {
-                          const res = await aiService.chat(`Regarding ${product.name}: ${q}`, []);
-                          setAiResponse(res.data.data.response);
-                        } catch (e) {
-                          setAiResponse('AI insights are temporarily unavailable.');
-                        }
-                        setAiLoading(false);
-                      }}
-                      className="text-left px-5 py-3.5 text-[13px] text-gray-300 hover:text-[#D4AF37] transition-colors rounded" style={{ background: '#141414', border: '1px solid #1E1E1E' }}
+                  {[
+                    { label: 'Compare with similar pieces',  prompt: `Compare the ${product?.name} with similar ${product?.category?.name || 'luxury'} alternatives in the same price range.` },
+                    { label: 'Is this a good gift?',         prompt: `Is the ${product?.name} by ${product?.brand} a good luxury gift? Who would appreciate it most?` },
+                    { label: 'Tell me about craftsmanship',  prompt: `Explain the craftsmanship, materials, and heritage behind the ${product?.name} by ${product?.brand}.` },
+                    { label: 'Find me something similar',   prompt: `Find me luxury products similar to the ${product?.name} by ${product?.brand}.` },
+                  ].map((item, i) => (
+                    <motion.button
+                      key={i}
+                      onMouseEnter={() => setConciergeHovered(i)}
+                      onMouseLeave={() => setConciergeHovered(null)}
+                      onClick={() => openConcierge(item.prompt)}
+                      className="group relative text-left px-5 py-4 rounded-xl transition-all duration-300 overflow-hidden"
+                      style={{ background: conciergeHovered === i ? 'rgba(212,175,55,0.06)' : '#0B0B0B', border: `1px solid ${conciergeHovered === i ? 'rgba(212,175,55,0.4)' : '#1A1A1A'}` }}
+                      whileHover={{ x: 4 }}
                     >
-                      {q}
-                    </button>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[13px] text-gray-300 group-hover:text-white transition-colors font-medium">{item.label}</span>
+                        <ArrowRight size={14} className="text-[#D4AF37] opacity-0 group-hover:opacity-100 transition-all" />
+                      </div>
+                    </motion.button>
                   ))}
                 </div>
               </div>
-              <div className="md:w-1/2 flex justify-center w-full">
-                {aiResponse || aiLoading ? (
-                  <div className="w-full bg-[#111] p-6 rounded-xl border border-[#D4AF37]/20 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent opacity-30" />
-                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-[#D4AF37] mb-3">Concierge Response</h3>
-                    {aiLoading ? (
-                      <div className="flex items-center gap-3 text-gray-400 text-sm py-4">
-                        <Activity className="animate-spin text-[#D4AF37]" size={16} /> Analyzing product context...
+
+              {/* RIGHT: CTA + Product card */}
+              <div className="p-12 md:p-16 flex flex-col">
+                {/* Product mini card */}
+                {product && (
+                  <div className="mb-8 p-5 rounded-2xl flex items-center gap-5" style={{ background: '#0B0B0B', border: '1px solid #1A1A1A' }}>
+                    <div className="w-20 h-20 rounded-xl overflow-hidden flex items-center justify-center shrink-0" style={{ background: '#111' }}>
+                      <img
+                        src={product.images?.[0]?.url}
+                        alt={product.name}
+                        className="w-full h-full object-contain p-2"
+                        onError={e => { e.currentTarget.src = getLuxuryFallback(product?.category?.name); }}
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[8px] uppercase tracking-widest text-gray-500 mb-0.5">{product.brand}</p>
+                      <h4 className="font-playfair text-white text-[15px] leading-tight truncate">{product.name}</h4>
+                      <p className="text-[#D4AF37] text-[13px] mt-1">{formatPrice(product.discountPrice || product.price)}</p>
+                    </div>
+                    <div className="ml-auto shrink-0">
+                      <div className="flex flex-col items-center">
+                        <Star size={12} className="text-[#D4AF37] fill-[#D4AF37]" />
+                        <span className="text-[11px] text-gray-400 mt-0.5">{(product.ratings?.average || 5).toFixed(1)}</span>
                       </div>
-                    ) : (
-                      <p className="text-sm leading-relaxed text-gray-300">{aiResponse}</p>
-                    )}
-                    <button onClick={() => {setAiResponse(''); setAiQuestion('')}} className="mt-4 text-[10px] uppercase tracking-widest text-[#6B7280] hover:text-white transition-colors">Clear</button>
-                  </div>
-                ) : (
-                  <div className="relative w-64 h-64 flex items-center justify-center">
-                    <div className="absolute inset-0 rounded-full border border-[#D4AF37]/30" style={{ animation: 'orbSpin 10s linear infinite' }} />
-                    <div className="w-48 h-48 rounded-full flex items-center justify-center bg-[#050505] shadow-[0_0_50px_rgba(212,175,55,0.15)]" style={{ border: '1px solid rgba(212,175,55,0.5)' }}>
-                      <MessageSquare size={48} style={{ color: ACC }} />
                     </div>
                   </div>
                 )}
+
+                {/* Main CTA */}
+                <motion.button
+                  onClick={() => openConcierge()}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full py-5 rounded-xl text-black font-bold text-[13px] tracking-widest uppercase flex items-center justify-center gap-3 mb-5 relative overflow-hidden"
+                  style={{ background: 'linear-gradient(135deg, #D4AF37 0%, #F5D78E 50%, #D4AF37 100%)' }}
+                >
+                  <Sparkles size={15} />
+                  Open in Concierge
+                </motion.button>
+
+                {/* Stat grid */}
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { icon: Zap, label: 'Real-time', sub: 'Inventory' },
+                    { icon: GitCompare, label: 'Smart', sub: 'Compare' },
+                    { icon: Award, label: 'Expert', sub: 'Advisory' },
+                  ].map(({ icon: Icon, label, sub }, i) => (
+                    <div key={i} className="p-4 rounded-xl text-center" style={{ background: '#0B0B0B', border: '1px solid #1A1A1A' }}>
+                      <Icon size={16} className="text-[#D4AF37] mx-auto mb-2" />
+                      <p className="text-[11px] text-white font-semibold">{label}</p>
+                      <p className="text-[9px] text-gray-500 uppercase tracking-widest">{sub}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Trust line */}
+                <p className="mt-6 text-center text-[9px] text-gray-600 uppercase tracking-widest">
+                  Powered by Gemini · Verified MongoDB Inventory
+                </p>
               </div>
             </div>
           </div>
@@ -536,20 +641,11 @@ export default function ProductDetail() {
       {/* ══════════════════════════════
           8 · SIZE CHART MODAL
       ══════════════════════════════ */}
-      <AnimatePresence>
-        {showSizeGuide && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowSizeGuide(false)} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-2xl rounded-2xl overflow-hidden p-8 max-h-[90vh] overflow-y-auto shadow-2xl" style={{ background: SURF, border: `1px solid ${BORD}` }}>
-              <button onClick={() => setShowSizeGuide(false)} className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 transition-colors z-10">
-                <X size={16} />
-              </button>
-              <h2 className="font-playfair text-3xl mb-8 text-center" style={{ color: TEXT }}>Size Guide</h2>
-              <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: product.sizeChartHtml }} />
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <SizeGuideModal 
+        isOpen={showSizeGuide} 
+        onClose={() => setShowSizeGuide(false)} 
+        sizeChart={product.sizeChart || product.sizeChartHtml} 
+      />
 
     </div>
   );

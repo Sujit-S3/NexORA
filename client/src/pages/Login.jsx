@@ -33,7 +33,8 @@ const Login = () => {
     try {
       const result = await login({ email: formData.email, password: formData.password });
       if (result && result.success) {
-        const from = location.state?.from?.pathname || '/';
+        const fallbackPath = result.user?.role === 'admin' ? '/admin' : '/';
+        const from = location.state?.from?.pathname || fallbackPath;
         navigate(from, { replace: true });
       } else {
         setFormError(result?.message || 'Invalid credentials');
@@ -100,7 +101,7 @@ const Login = () => {
 
         <div className="mt-8 text-center">
           <p className="text-gray-500 dark:text-gray-400 text-sm">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link to="/register" className="font-semibold text-[#1A1A1A] dark:text-[#F5F2E8] hover:text-[#D4AF37] dark:hover:text-[#D4AF37] transition-colors">
               Join NEXORA
             </Link>

@@ -9,9 +9,29 @@ const cartItemSchema = new mongoose.Schema(
       ref: 'Product',
       required: true,
     },
+    variantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+    },
     size: {
       type: String,
       default: '', // Empty if product has no sizes
+    },
+    color: {
+      type: String,
+      default: '',
+    },
+    sku: {
+      type: String,
+      default: '',
+    },
+    fitType: { type: String, default: '' },
+    recommendedSize: { type: String, default: '' },
+    confidence: { type: Number, default: 0 },
+    fitWarning: { type: String, default: '' },
+    image: {
+      type: String,
+      default: '',
     },
     quantity: {
       type: Number,
@@ -26,7 +46,7 @@ const cartItemSchema = new mongoose.Schema(
       min: 0,
     },
   },
-  { _id: true }
+  { _id: true },
 );
 
 const cartSchema = new mongoose.Schema(
@@ -43,7 +63,7 @@ const cartSchema = new mongoose.Schema(
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 // ── Virtual: total price ─────────────────────────────────────────────────
@@ -59,7 +79,7 @@ cartSchema.virtual('itemCount').get(function () {
 // ── Instance method: find item by product and size ───────────────────────
 cartSchema.methods.findItem = function (productId, size = '') {
   return this.items.find((item) => {
-    if (!item.product) return false;
+    if (!item.product) {return false;}
     const id = item.product._id ? item.product._id.toString() : item.product.toString();
     return id === productId.toString() && (item.size || '') === size;
   });

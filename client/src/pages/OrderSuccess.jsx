@@ -142,6 +142,31 @@ export default function OrderSuccess() {
             </div>
           )}
 
+          {/* V13: Post-purchase Concierge CTA */}
+          <div className="mb-10 w-full max-w-xl mx-auto rounded-xl p-6 relative overflow-hidden" style={{ background: '#050505', border: '1px solid #1A1A1A' }}>
+            <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, rgba(212,175,55,0.1) 0%, transparent 70%)' }} />
+            <div className="relative z-10 flex flex-col items-center text-center">
+              <div className="w-8 h-8 rounded-full mb-3 flex items-center justify-center bg-[#D4AF37]/10 border border-[#D4AF37]/25">
+                <Sparkles size={12} className="text-[#D4AF37]" />
+              </div>
+              <h3 className="font-playfair text-white text-lg mb-2">Have a question about your order?</h3>
+              <p className="text-[12px] text-gray-400 mb-4">
+                Ask our AI Concierge about expected delivery dates, care instructions, or warranty details for your new purchase.
+              </p>
+              <button
+                onClick={() => {
+                  sessionStorage.setItem('nexora_concierge_prompt', `I just placed order #${orderId || 'PENDING'}. Can you tell me when it will arrive and how I should care for it?`);
+                  navigate('/concierge');
+                }}
+                className="w-full py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:bg-[#D4AF37] hover:text-black"
+                style={{ border: '1px solid rgba(212,175,55,0.3)', color: '#D4AF37', background: 'transparent' }}
+              >
+                <MessageCircle size={12} />
+                Ask Concierge
+              </button>
+            </div>
+          </div>
+
           {/* Actions */}
           <div className="flex justify-center gap-3">
             <button onClick={() => navigate('/orders')} className="px-7 py-3.5 text-[10px] font-bold tracking-widest uppercase transition-colors" style={{ background: ACC, color: '#000', borderRadius: 4 }}>

@@ -30,13 +30,19 @@ const cartReducer = (state, action) => {
             name: item.product.name,
             brand: item.product.brand,
             slug: item.product.slug,
-            image: item.product.images?.[0]?.url || item.product.image || '',
+            image: item.image || item.product.primaryImage?.url || item.product.images?.[0]?.url || item.product.image || '',
             price: item.product.discountPrice !== null && item.product.discountPrice !== undefined ? item.product.discountPrice : item.product.price,
             originalPrice: item.product.price,
             stock: item.product.stock,
             variants: item.product.variants,
             isActive: item.product.isActive,
             size: item.size || '',
+            color: item.color || '',
+            sku: item.sku || '',
+            fitType: item.fitType || '',
+            recommendedSize: item.recommendedSize || '',
+            confidence: item.confidence || 0,
+            fitWarning: item.fitWarning || '',
           };
         }
         return item; // fallback
@@ -67,14 +73,20 @@ export const CartProvider = ({ children }) => {
   const { isAuthenticated } = useAuth();
 
   const saveLocalCart = (items) => {
-    localStorage.setItem('nexora_cart', JSON.stringify(items));
+    // Repair missing prices for existing broken local items
+    const repairedItems = items.map(i => ({
+      ...i,
+      price: i.price ?? i.originalPrice ?? 0
+    }));
+
+    localStorage.setItem('nexora_cart', JSON.stringify(repairedItems));
     let totalPrice = 0;
     let itemCount = 0;
-    items.forEach(i => {
+    repairedItems.forEach(i => {
       totalPrice += i.price * i.quantity;
       itemCount += i.quantity;
     });
-    dispatch({ type: 'SET_CART', payload: { items, totalPrice, itemCount } });
+    dispatch({ type: 'SET_CART', payload: { items: repairedItems, totalPrice, itemCount } });
   };
 
   const getLocalCartItems = () => {
@@ -105,14 +117,14 @@ export const CartProvider = ({ children }) => {
     }
   }, []);
 
-  const addToCart = useCallback(async (productOrId, quantity = 1, size = '') => {
+  const addToCart = useCallback(async (productOrId, quantity = 1, size = '', color = '') => {
     dispatch({ type: 'CART_LOADING' });
     
     const productId = typeof productOrId === 'string' ? productOrId : productOrId._id;
     
     if (isAuthenticated) {
       try {
-        const { data } = await cartService.addItem(productId, quantity, size);
+        const { data } = await cartService.addItem(productId, quantity, size, color);
         dispatch({ type: 'SET_CART', payload: data.data });
         return { success: true };
       } catch (error) {
@@ -145,7 +157,7 @@ export const CartProvider = ({ children }) => {
         if (availableStock < quantity) throw new Error(`Insufficient stock. Only ${availableStock} available.`);
         
         const localItems = getLocalCartItems();
-        const existing = localItems.find(i => (i._id === productId || i.product === productId) && (i.size || '') === size);
+        const existing = localItems.find(i => (i._id === productId || i.product === productId) && (i.size || '') === size && (i.color || '') === color);
         
         if (existing) {
           if (existing.quantity + quantity > availableStock) {
@@ -159,14 +171,19 @@ export const CartProvider = ({ children }) => {
             name: productData.name,
             brand: productData.brand,
             slug: productData.slug,
-            image: productData.images?.[0]?.url || '',
-            price: productData.discountPrice !== null ? productData.discountPrice : productData.price,
+            image: productData.primaryImage?.url || productData.images?.[0]?.url || productData.image || '',
+            price: (productData.discountPrice !== null && productData.discountPrice !== undefined) ? productData.discountPrice : productData.price,
             originalPrice: productData.price,
             stock: productData.stock,
             variants: productData.variants,
             isActive: productData.isActive,
             quantity: quantity,
-            size: size
+            size: size,
+            color: color,
+            fitType: productData.fitType || '',
+            recommendedSize: productData.fitRecommendation?.recommendedSize || '',
+            confidence: productData.fitRecommendation?.confidence || 0,
+            fitWarning: productData.fitRecommendation?.fitWarnings?.[0] || '',
           });
         }
         

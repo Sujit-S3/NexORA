@@ -8,7 +8,7 @@ const { sendResponse } = require('../utils/ApiResponse');
 // @access Public
 const getSettings = asyncHandler(async (req, res) => {
   let setting = await Setting.findOne();
-  if (!setting) setting = await Setting.create({});
+  if (!setting) {setting = await Setting.create({});}
   sendResponse(res, 200, 'Settings retrieved', setting);
 });
 

@@ -24,7 +24,7 @@ export default function AIStudio() {
   ];
 
   return (
-    <div className="min-h-screen p-8 text-white bg-[#050505] font-jakarta">
+    <div className="min-h-screen p-8 text-gray-900 dark:text-white bg-[#FDFDFD] dark:bg-[#050505] transition-colors duration-300 font-jakarta">
       <div className="max-w-6xl mx-auto">
         <div className="mb-10 flex items-center justify-between flex-wrap gap-4">
           <div>
@@ -35,17 +35,17 @@ export default function AIStudio() {
             <h1 className="text-4xl font-playfair tracking-tight">AI Studio</h1>
             <p className="text-[11px] text-gray-500 mt-1 uppercase tracking-widest">Executive Intelligence Platform</p>
           </div>
-          <div className="px-4 py-2 bg-[#111] border border-white/10 rounded-lg text-xs font-mono">
+          <div className="px-4 py-2 bg-gray-50 dark:bg-[#111] transition-colors duration-300 border border-gray-200 dark:border-white/10 rounded-lg text-xs font-mono">
             Status: <span className="text-green-400">Online</span> | Failover: 3 models
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-white/10 mb-8 overflow-x-auto">
+        <div className="flex border-b border-gray-200 dark:border-white/10 mb-8 overflow-x-auto">
           {tabs.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-5 py-4 text-[11px] font-bold uppercase tracking-widest transition-colors whitespace-nowrap ${
-                activeTab === tab.id ? 'text-[#D4AF37] border-b-2 border-[#D4AF37]' : 'text-[#6B7280] hover:text-white'
+                activeTab === tab.id ? 'text-[#D4AF37] border-b-2 border-[#D4AF37]' : 'text-gray-500 dark:text-[#6B7280] hover:text-gray-900 dark:hover:text-white'
               }`}>
               <tab.icon size={14} /> {tab.label}
             </button>
@@ -53,7 +53,7 @@ export default function AIStudio() {
         </div>
 
         {/* Content */}
-        <div className="bg-[#0B0B0B] border border-white/5 rounded-2xl p-8 min-h-[500px]">
+        <div className="bg-white dark:bg-[#0B0B0B] transition-colors duration-300 border border-gray-200 dark:border-white/5 rounded-2xl p-8 min-h-[500px]">
           <AnimatePresence mode="wait">
             {activeTab === 'analytics'  && <AnalyticsTab key="analytics" />}
             {activeTab === 'insights'   && <InsightsTab key="insights" />}
@@ -74,25 +74,25 @@ export default function AIStudio() {
 // ── Shared Atoms ──────────────────────────────────────────────────────────────
 function StatBox({ label, value, highlight }) {
   return (
-    <div className={`p-6 rounded-xl border ${highlight ? 'border-[#D4AF37]/30 bg-[#D4AF37]/5' : 'border-white/5 bg-[#111]'}`}>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-[#6B7280] mb-2">{label}</p>
-      <p className={`text-2xl font-mono ${highlight ? 'text-[#D4AF37]' : 'text-white'}`}>{value}</p>
+    <div className={`p-6 rounded-xl border ${highlight ? 'border-[#D4AF37]/30 bg-[#D4AF37]/5' : 'border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-[#111] transition-colors duration-300'}`}>
+      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-[#6B7280] mb-2">{label}</p>
+      <p className={`text-2xl font-mono ${highlight ? 'text-[#D4AF37]' : 'text-gray-900 dark:text-white'}`}>{value}</p>
     </div>
   );
 }
 
 function ResultBox({ label, content }) {
   return (
-    <div className="p-5 bg-[#111] rounded-xl border border-white/5">
-      <span className="text-[10px] font-bold uppercase text-[#6B7280] block mb-2">{label}</span>
-      <p className="text-sm whitespace-pre-wrap text-gray-200">{content}</p>
+    <div className="p-5 bg-gray-50 dark:bg-[#111] transition-colors duration-300 rounded-xl border border-gray-200 dark:border-white/5">
+      <span className="text-[10px] font-bold uppercase text-gray-500 dark:text-[#6B7280] block mb-2">{label}</span>
+      <p className="text-sm whitespace-pre-wrap text-gray-700 dark:text-gray-200">{content}</p>
     </div>
   );
 }
 
 function AINarrative({ text, loading }) {
   if (loading) return (
-    <div className="p-6 bg-[#111] rounded-xl border border-white/5">
+    <div className="p-6 bg-gray-50 dark:bg-[#111] transition-colors duration-300 rounded-xl border border-gray-200 dark:border-white/5">
       <div className="flex items-center gap-2 text-[#D4AF37] text-[11px] uppercase tracking-widest animate-pulse">
         <Sparkles size={12} /> Generating executive insights…
       </div>
@@ -105,7 +105,7 @@ function AINarrative({ text, loading }) {
         <Sparkles size={12} className="text-[#D4AF37]" />
         <span className="text-[10px] font-bold uppercase tracking-widest text-[#D4AF37]">AI Executive Analysis</span>
       </div>
-      <p className="text-[13px] text-gray-200 whitespace-pre-wrap leading-relaxed">{text}</p>
+      <p className="text-[13px] text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">{text}</p>
     </div>
   );
 }
@@ -144,10 +144,10 @@ function AnalyticsTab() {
         <StatBox label="Est. API Cost" value={`$${(data?.overview?.totalCost || 0).toFixed(4)}`} highlight />
         <StatBox label="Avg Latency"   value={`${(data?.overview?.avgLatency || 0).toFixed(0)}ms`} />
       </div>
-      <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#6B7280] mb-4">Endpoint Distribution</h3>
-      <div className="bg-[#111] rounded-xl border border-white/5 p-6">
+      <h3 className="text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-[#6B7280] mb-4">Endpoint Distribution</h3>
+      <div className="bg-gray-50 dark:bg-[#111] transition-colors duration-300 rounded-xl border border-gray-200 dark:border-white/5 p-6">
         {data?.endpoints?.map(ep => (
-          <div key={ep._id} className="flex justify-between items-center py-3 border-b border-white/5 last:border-0">
+          <div key={ep._id} className="flex justify-between items-center py-3 border-b border-gray-200 dark:border-white/5 last:border-0">
             <span className="font-mono text-[12px]">{ep._id || 'Unknown'}</span>
             <span className="text-[#D4AF37] font-bold text-[12px]">{ep.count} reqs</span>
           </div>
@@ -180,19 +180,19 @@ function InsightsTab() {
         <StatBox label="Gift Finder Uses" value={Object.values(data?.popularRecipients || {}).reduce((a, b) => a + b, 0)} />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-[#111] rounded-xl border border-white/5 p-6">
-          <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#6B7280] mb-4">Top Brands</h3>
+        <div className="bg-gray-50 dark:bg-[#111] transition-colors duration-300 rounded-xl border border-gray-200 dark:border-white/5 p-6">
+          <h3 className="text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-[#6B7280] mb-4">Top Brands</h3>
           {Object.entries(data?.popularBrands || {}).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([b, c]) => (
-            <div key={b} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+            <div key={b} className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-white/5 last:border-0">
               <span className="text-[12px]">{b}</span>
               <span className="text-[#D4AF37] text-[12px] font-bold">{c}</span>
             </div>
           ))}
         </div>
-        <div className="bg-[#111] rounded-xl border border-white/5 p-6">
-          <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#6B7280] mb-4">Gift Recipients</h3>
+        <div className="bg-gray-50 dark:bg-[#111] transition-colors duration-300 rounded-xl border border-gray-200 dark:border-white/5 p-6">
+          <h3 className="text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-[#6B7280] mb-4">Gift Recipients</h3>
           {Object.entries(data?.popularRecipients || {}).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([r, c]) => (
-            <div key={r} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+            <div key={r} className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-white/5 last:border-0">
               <span className="text-[12px]">{r}</span>
               <span className="text-[#D4AF37] text-[12px] font-bold">{c}</span>
             </div>
@@ -226,7 +226,7 @@ function ProductStudioTab() {
       <div className="flex gap-3 mb-6">
         <input type="text" value={productId} onChange={e => setProductId(e.target.value)}
           placeholder="Enter Product ID (MongoDB ObjectId)…"
-          className="flex-1 bg-[#111] border border-white/10 rounded-lg p-3 text-[13px] focus:outline-none focus:border-[#D4AF37] text-white" />
+          className="flex-1 bg-gray-50 dark:bg-[#111] transition-colors duration-300 border border-gray-200 dark:border-white/10 rounded-lg p-3 text-[13px] focus:outline-none focus:border-[#D4AF37] text-gray-900 dark:text-white" />
         <button onClick={handleGenerate} disabled={loading || !productId.trim()}
           className="px-6 py-3 bg-[#D4AF37] text-black text-[11px] font-bold uppercase tracking-widest rounded flex items-center gap-2 hover:bg-[#B38945] disabled:opacity-40 transition-colors">
           {loading ? <Activity className="animate-spin" size={14} /> : <Sparkles size={14} />} Generate
@@ -238,10 +238,10 @@ function ProductStudioTab() {
           <ResultBox label="SEO Title" content={result.seoTitle} />
           <ResultBox label="Meta Description" content={result.metaDescription} />
           <ResultBox label="Instagram Caption" content={result.instagramCaption} />
-          <div className="p-5 bg-[#111] rounded-xl border border-white/5">
-            <span className="text-[10px] font-bold uppercase text-[#6B7280] block mb-3">Tags</span>
+          <div className="p-5 bg-gray-50 dark:bg-[#111] transition-colors duration-300 rounded-xl border border-gray-200 dark:border-white/5">
+            <span className="text-[10px] font-bold uppercase text-gray-500 dark:text-[#6B7280] block mb-3">Tags</span>
             <div className="flex gap-2 flex-wrap">
-              {result.tags?.map(t => <span key={t} className="px-3 py-1 bg-white/10 rounded text-[11px]">{t}</span>)}
+              {result.tags?.map(t => <span key={t} className="px-3 py-1 bg-gray-200 dark:bg-white/10 rounded text-[11px]">{t}</span>)}
             </div>
           </div>
         </div>
@@ -273,7 +273,7 @@ function ReviewAnalyserTab() {
       <div className="flex gap-3 mb-6">
         <input type="text" value={productId} onChange={e => setProductId(e.target.value)}
           placeholder="Enter Product ID to analyse reviews…"
-          className="flex-1 bg-[#111] border border-white/10 rounded-lg p-3 text-[13px] focus:outline-none focus:border-[#D4AF37] text-white" />
+          className="flex-1 bg-gray-50 dark:bg-[#111] transition-colors duration-300 border border-gray-200 dark:border-white/10 rounded-lg p-3 text-[13px] focus:outline-none focus:border-[#D4AF37] text-gray-900 dark:text-white" />
         <button onClick={handleAnalyze} disabled={loading || !productId.trim()}
           className="px-6 py-3 bg-[#D4AF37] text-black text-[11px] font-bold uppercase tracking-widest rounded hover:bg-[#B38945] disabled:opacity-40 transition-colors">
           {loading ? <Activity className="animate-spin" size={14} /> : 'Analyse'}
@@ -282,11 +282,11 @@ function ReviewAnalyserTab() {
       {error && <ErrorBox message={error} />}
       {result && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="col-span-2 p-6 bg-[#111] border border-[#D4AF37]/30 rounded-xl">
+          <div className="col-span-2 p-6 bg-gray-50 dark:bg-[#111] transition-colors duration-300 border border-[#D4AF37]/30 rounded-xl">
             <h3 className="text-[11px] uppercase tracking-widest text-[#D4AF37] mb-2">Executive Summary</h3>
             <p className="text-[15px] font-playfair">{result.summary}</p>
-            <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
-              <span className="text-[10px] uppercase text-[#6B7280]">Sentiment Score</span>
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-white/5 flex justify-between items-center">
+              <span className="text-[10px] uppercase text-gray-500 dark:text-[#6B7280]">Sentiment Score</span>
               <span className={`text-2xl font-bold ${result.sentiment > 70 ? 'text-green-400' : result.sentiment < 40 ? 'text-red-400' : 'text-yellow-400'}`}>
                 {result.sentiment}/100
               </span>
@@ -320,18 +320,18 @@ function SalesAnalystTab() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col h-[500px]">
       <h2 className="text-xl font-playfair mb-6">Sales Intelligence</h2>
-      <div className="flex-1 bg-[#111] border border-white/5 rounded-xl p-6 mb-4 overflow-y-auto">
-        {loading && <p className="text-[#6B7280] animate-pulse text-[13px]">Analysing store metrics…</p>}
+      <div className="flex-1 bg-gray-50 dark:bg-[#111] transition-colors duration-300 border border-gray-200 dark:border-white/5 rounded-xl p-6 mb-4 overflow-y-auto">
+        {loading && <p className="text-gray-500 dark:text-[#6B7280] animate-pulse text-[13px]">Analysing store metrics…</p>}
         {error && <ErrorBox message={error} />}
-        {response && <p className="text-[13px] whitespace-pre-wrap text-gray-200 leading-relaxed">{response}</p>}
+        {response && <p className="text-[13px] whitespace-pre-wrap text-gray-700 dark:text-gray-200 leading-relaxed">{response}</p>}
         {!loading && !error && !response && (
-          <p className="text-[#6B7280] text-[13px]">Ask the CRO AI about store performance. e.g. "Why are watch sales dropping this month?"</p>
+          <p className="text-gray-500 dark:text-[#6B7280] text-[13px]">Ask the CRO AI about store performance. e.g. &quot;Why are watch sales dropping this month?&quot;</p>
         )}
       </div>
       <div className="flex gap-3">
         <input type="text" value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAsk()}
           placeholder="Ask a question about sales data…"
-          className="flex-1 bg-[#111] border border-white/10 rounded-lg p-4 text-[13px] focus:outline-none focus:border-[#D4AF37] text-white" />
+          className="flex-1 bg-gray-50 dark:bg-[#111] transition-colors duration-300 border border-gray-200 dark:border-white/10 rounded-lg p-4 text-[13px] focus:outline-none focus:border-[#D4AF37] text-gray-900 dark:text-white" />
         <button onClick={handleAsk} disabled={loading || !query.trim()}
           className="px-8 bg-[#D4AF37] text-black text-[11px] font-bold uppercase tracking-widest rounded hover:bg-[#B38945] disabled:opacity-40 transition-colors">
           Ask
@@ -365,7 +365,7 @@ function RevenueTab() {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-playfair">Weekly Revenue Summary</h2>
-        <button onClick={fetchRevenue} className="flex items-center gap-1.5 text-[10px] text-gray-500 hover:text-white transition-colors uppercase tracking-widest">
+        <button onClick={fetchRevenue} className="flex items-center gap-1.5 text-[10px] text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors uppercase tracking-widest">
           <RefreshCw size={12} /> Refresh
         </button>
       </div>
@@ -442,22 +442,22 @@ function MarketingTab() {
       <h2 className="text-xl font-playfair mb-6">Marketing Copy Studio</h2>
       <div className="grid grid-cols-2 gap-6 mb-6">
         <div>
-          <label className="text-[10px] font-bold uppercase tracking-widest text-[#6B7280] block mb-3">Campaign Type</label>
+          <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-[#6B7280] block mb-3">Campaign Type</label>
           <div className="flex flex-col gap-2">
             {campaignTypes.map(t => (
               <button key={t.id} onClick={() => setType(t.id)}
-                className={`px-4 py-3 text-left rounded-lg border text-[12px] transition-all ${type === t.id ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-white/10 text-gray-400 hover:border-white/20'}`}>
+                className={`px-4 py-3 text-left rounded-lg border text-[12px] transition-all ${type === t.id ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-gray-200 dark:border-white/10 text-gray-400 hover:border-gray-200 dark:border-white/20'}`}>
                 {t.label}
               </button>
             ))}
           </div>
         </div>
         <div>
-          <label className="text-[10px] font-bold uppercase tracking-widest text-[#6B7280] block mb-3">Target Audience</label>
+          <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-[#6B7280] block mb-3">Target Audience</label>
           <div className="flex flex-col gap-2">
             {segments.map(s => (
               <button key={s.id} onClick={() => setSegment(s.id)}
-                className={`px-4 py-3 text-left rounded-lg border text-[12px] transition-all ${segment === s.id ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-white/10 text-gray-400 hover:border-white/20'}`}>
+                className={`px-4 py-3 text-left rounded-lg border text-[12px] transition-all ${segment === s.id ? 'border-[#D4AF37] bg-[#D4AF37]/10 text-[#D4AF37]' : 'border-gray-200 dark:border-white/10 text-gray-400 hover:border-gray-200 dark:border-white/20'}`}>
                 {s.label}
               </button>
             ))}
@@ -471,14 +471,14 @@ function MarketingTab() {
       </button>
       {error && <ErrorBox message={error} />}
       {copy && (
-        <div className="p-6 bg-[#111] rounded-xl border border-white/5">
+        <div className="p-6 bg-gray-50 dark:bg-[#111] transition-colors duration-300 rounded-xl border border-gray-200 dark:border-white/5">
           <div className="flex items-center gap-2 mb-4">
             <Mail size={14} className="text-[#D4AF37]" />
             <span className="text-[10px] font-bold uppercase tracking-widest text-[#D4AF37]">Generated Copy</span>
           </div>
-          <p className="text-[13px] whitespace-pre-wrap text-gray-200 leading-relaxed">{copy}</p>
+          <p className="text-[13px] whitespace-pre-wrap text-gray-700 dark:text-gray-200 leading-relaxed">{copy}</p>
           <button onClick={() => navigator.clipboard?.writeText(copy)}
-            className="mt-4 text-[10px] uppercase tracking-widest text-gray-500 hover:text-white transition-colors">
+            className="mt-4 text-[10px] uppercase tracking-widest text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
             Copy to Clipboard
           </button>
         </div>
@@ -532,10 +532,10 @@ function CustomerTrendsTab() {
           <StatBox label="Total Profiles"   value={analytics.totalProfiles || 0} highlight />
           <StatBox label="Avg Budget"        value={`₹${(analytics.averageBudget || 0).toLocaleString('en-IN')}`} />
           <StatBox label="Concierge Intents" value={Object.values(analytics.popularConciergeIntents || {}).reduce((a, b) => a + b, 0)} />
-          <div className="md:col-span-3 bg-[#111] rounded-xl border border-white/5 p-5">
-            <h3 className="text-[11px] font-bold uppercase tracking-widest text-[#6B7280] mb-4">Top Concierge Intents</h3>
+          <div className="md:col-span-3 bg-gray-50 dark:bg-[#111] transition-colors duration-300 rounded-xl border border-gray-200 dark:border-white/5 p-5">
+            <h3 className="text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-[#6B7280] mb-4">Top Concierge Intents</h3>
             {Object.entries(analytics.popularConciergeIntents || {}).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([intent, count]) => (
-              <div key={intent} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+              <div key={intent} className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-white/5 last:border-0">
                 <span className="text-[11px] text-gray-300 truncate max-w-xs">{intent}</span>
                 <span className="text-[#D4AF37] text-[11px] font-bold shrink-0 ml-4">{count}</span>
               </div>

@@ -12,12 +12,12 @@ class RankingService {
     const weights = experiments.getRankingWeights(sessionId);
 
     const scoredProducts = products.map(product => {
-      let scoreBreakdown = {
+      const scoreBreakdown = {
         brandMatch: 0,
         categoryMatch: 0,
         budgetMatch: 0,
         historyMatch: 0,
-        trendBonus: 0
+        trendBonus: 0,
       };
 
       // Brand Match (Dynamic Weight)
@@ -44,12 +44,12 @@ class RankingService {
 
       // User History (20 points)
       const productIdStr = product._id.toString();
-      if (wishlist.some(id => id.toString() === productIdStr)) scoreBreakdown.historyMatch += 10;
-      if (cart.some(item => item.product.toString() === productIdStr)) scoreBreakdown.historyMatch += 10;
+      if (wishlist.some(id => id.toString() === productIdStr)) {scoreBreakdown.historyMatch += 10;}
+      if (cart.some(item => item.product.toString() === productIdStr)) {scoreBreakdown.historyMatch += 10;}
 
       // New Arrival / Best Seller bonuses
-      if (product.isNewArrival) scoreBreakdown.trendBonus += 5;
-      if (product.isBestSeller) scoreBreakdown.trendBonus += 5;
+      if (product.isNewArrival) {scoreBreakdown.trendBonus += 5;}
+      if (product.isBestSeller) {scoreBreakdown.trendBonus += 5;}
 
       const totalScore = Math.min(
         scoreBreakdown.brandMatch + 
@@ -57,13 +57,13 @@ class RankingService {
         scoreBreakdown.budgetMatch + 
         scoreBreakdown.historyMatch + 
         scoreBreakdown.trendBonus, 
-        100
+        100,
       );
 
       return {
         ...product,
         matchScore: totalScore,
-        explainability: scoreBreakdown
+        explainability: scoreBreakdown,
       };
     });
 

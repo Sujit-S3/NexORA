@@ -26,9 +26,9 @@ exports.getHealth = async (req, res, next) => {
       cache: {
         status: featureFlags.cachingEnabled ? 'ACTIVE' : 'INACTIVE',
         catalogVersion: aiCache.CATALOG_VERSION,
-        itemsCached: aiCache.cache ? aiCache.cache.size : 0
+        itemsCached: aiCache.cache ? aiCache.cache.size : 0,
       },
-      flags: featureFlags
+      flags: featureFlags,
     };
 
     res.json({ success: true, data: healthData });
@@ -40,7 +40,7 @@ exports.getHealth = async (req, res, next) => {
 exports.testAI = async (req, res, next) => {
   try {
     const { prompt } = req.body;
-    if (!prompt) return res.status(400).json({ success: false, message: 'Prompt is required' });
+    if (!prompt) {return res.status(400).json({ success: false, message: 'Prompt is required' });}
     const result = await aiService.testConnection(prompt);
     res.json({ success: true, data: result });
   } catch (err) { next(err); }
@@ -51,7 +51,7 @@ exports.testAI = async (req, res, next) => {
 exports.extractIntent = async (req, res, next) => {
   try {
     const { message, memory } = req.body;
-    if (!message) return res.status(400).json({ success: false, message: 'Message is required' });
+    if (!message) {return res.status(400).json({ success: false, message: 'Message is required' });}
     const intent = await aiService.extractIntent(message, memory || {});
     res.json({ success: true, data: intent });
   } catch (err) { next(err); }
@@ -65,7 +65,7 @@ exports.chat = async (req, res, next) => {
     const userId    = req.user ? req.user._id : null;
     const sessionId = req.headers['x-session-id'] || null;
 
-    if (!message) return res.status(400).json({ success: false, message: 'Message is required' });
+    if (!message) {return res.status(400).json({ success: false, message: 'Message is required' });}
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -78,7 +78,7 @@ exports.chat = async (req, res, next) => {
       UserPreference.findOneAndUpdate(
         userId ? { userId } : { sessionId },
         { $inc: { aiSessionsOpened: 1, aiMessagesSent: 1 }, $set: { lastActivity: new Date() } },
-        { upsert: true, new: true }
+        { upsert: true, new: true },
       ).catch(() => {});
     }
 
@@ -86,16 +86,16 @@ exports.chat = async (req, res, next) => {
     const featureFlags = require('../config/featureFlags');
 
     if (!featureFlags.aiCommerce) {
-      res.write(`data: ${JSON.stringify({ error: true, text: "The AI Concierge is currently offline for upgrades." })}\n\n`);
+      res.write(`data: ${JSON.stringify({ error: true, text: 'The AI Concierge is currently offline for upgrades.' })}\n\n`);
       return res.end();
     }
 
     await pipelineService.processRequest(
-      message, req.user, req.headers, history || [], res
+      message, req.user, req.headers, history || [], memory || {}, res,
     );
   } catch (err) {
     console.error('Chat stream outer error:', err);
-    if (!res.headersSent) return next(err);
+    if (!res.headersSent) {return next(err);}
     res.write(`data: ${JSON.stringify({ error: 'Connection interrupted' })}\n\n`);
     res.end();
   }
@@ -139,7 +139,7 @@ exports.getPostPurchase = async (req, res, next) => {
       UserPreference.findOneAndUpdate(
         { userId },
         { $inc: { aiOrdersCompleted: 1 } },
-        { upsert: true }
+        { upsert: true },
       ).catch(() => {});
     }
 
@@ -153,9 +153,9 @@ exports.getPostPurchase = async (req, res, next) => {
 exports.generateProductMetadata = async (req, res, next) => {
   try {
     const { productId } = req.body;
-    if (!productId) return res.status(400).json({ success: false, message: 'Product ID required' });
+    if (!productId) {return res.status(400).json({ success: false, message: 'Product ID required' });}
     const product  = await Product.findById(productId);
-    if (!product)  return res.status(404).json({ success: false, message: 'Product not found' });
+    if (!product)  {return res.status(404).json({ success: false, message: 'Product not found' });}
     const metadata = await aiService.generateProductMetadata(product, req.user._id);
     res.json({ success: true, data: metadata });
   } catch (err) { next(err); }
@@ -166,9 +166,9 @@ exports.generateProductMetadata = async (req, res, next) => {
 exports.analyzeReviews = async (req, res, next) => {
   try {
     const { productId } = req.body;
-    if (!productId) return res.status(400).json({ success: false, message: 'Product ID required' });
+    if (!productId) {return res.status(400).json({ success: false, message: 'Product ID required' });}
     const product  = await Product.findById(productId).populate('reviews.user', 'name');
-    if (!product)  return res.status(404).json({ success: false, message: 'Product not found' });
+    if (!product)  {return res.status(404).json({ success: false, message: 'Product not found' });}
     const analysis = await aiService.analyzeReviews(product.reviews, req.user._id);
     res.json({ success: true, data: analysis });
   } catch (err) { next(err); }
@@ -190,7 +190,7 @@ exports.getCartRecommendations = async (req, res, next) => {
 exports.analyzeSales = async (req, res, next) => {
   try {
     const { salesData, query } = req.body;
-    if (!query) return res.status(400).json({ success: false, message: 'Query is required' });
+    if (!query) {return res.status(400).json({ success: false, message: 'Query is required' });}
     const analysis = await aiService.analyzeSales(salesData, query, req.user._id);
     res.json({ success: true, data: analysis });
   } catch (err) { next(err); }
@@ -210,7 +210,7 @@ exports.getAnalytics = async (req, res, next) => {
 exports.adminStudio = async (req, res, next) => {
   try {
     const { tool, payload } = req.body;
-    if (!tool) return res.status(400).json({ success: false, message: 'Tool identifier required' });
+    if (!tool) {return res.status(400).json({ success: false, message: 'Tool identifier required' });}
     
     const result = await aiService.runAdminStudioTool(tool, payload, req.user._id);
     res.json({ success: true, data: result });
@@ -290,7 +290,7 @@ exports.exportMemory = async (req, res, next) => {
       platform: 'NexORA',
       model: 'Gemini 3.1 Pro',
       profile: profileData,
-      note: 'This is all the preference data NexORA has stored about your shopping session.'
+      note: 'This is all the preference data NexORA has stored about your shopping session.',
     };
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition', 'attachment; filename="nexora-memory-export.json"');

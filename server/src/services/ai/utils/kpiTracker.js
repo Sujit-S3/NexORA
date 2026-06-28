@@ -10,7 +10,7 @@ class KPITracker {
       cartConversions: 0,
       upsellAcceptance: 0,
       crossSellAcceptance: 0,
-      aiConversationsCompleted: 0
+      aiConversationsCompleted: 0,
     };
 
     this.subscribeToEvents();

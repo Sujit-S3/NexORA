@@ -1,0 +1,375 @@
+{
+  "migrated": 64,
+  "repaired": 64,
+  "skipped": 0,
+  "warnings": [],
+  "duplicateSKUs": [
+    {
+      "id": "6a3ea420e65ee6b6c581f309",
+      "sku": "ELE-APP-6A3EA4"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f30f",
+      "sku": "ELE-APP-6A3EA4"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f315",
+      "sku": "ELE-SON-6A3EA4"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f317",
+      "sku": "ELE-APP-6A3EA4"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f32b",
+      "sku": "WAT-PAT-6A3EA4"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f34f",
+      "sku": "LIF-DYS-6A3EA4"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f355",
+      "sku": "LIF-MOL-6A3EA4"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f365",
+      "sku": "LUX-NEX-6A3EA4"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f367",
+      "sku": "LUX-NEX-6A3EA4"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f369",
+      "sku": "LUX-NEX-6A3EA4"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f36b",
+      "sku": "LUX-NEX-6A3EA4"
+    }
+  ],
+  "missingImages": [],
+  "products": [
+    {
+      "id": "6a3ea420e65ee6b6c581f2ed",
+      "status": "migrated",
+      "name": "Gucci Wool Cashmere Jacket"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f2ef",
+      "status": "migrated",
+      "name": "Prada Re-Nylon Sneakers"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f2f1",
+      "status": "migrated",
+      "name": "Versace Medusa Silk Shirt"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f2f3",
+      "status": "migrated",
+      "name": "Balenciaga Triple S Sneakers"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f2f5",
+      "status": "migrated",
+      "name": "Louis Vuitton Monogram Belt"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f2f7",
+      "status": "migrated",
+      "name": "Dior B23 High-Top Sneakers"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f2f9",
+      "status": "migrated",
+      "name": "Hermès Cashmere Scarf"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f2fb",
+      "status": "migrated",
+      "name": "Nike Air Jordan 1 Retro High OG"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f2fd",
+      "status": "migrated",
+      "name": "Off-White Industrial Belt"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f2ff",
+      "status": "migrated",
+      "name": "Moncler Grenoble Down Jacket"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f301",
+      "status": "migrated",
+      "name": "Chanel Classic Tweed Jacket"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f303",
+      "status": "migrated",
+      "name": "Burberry Kensington Heritage Trench"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f305",
+      "status": "migrated",
+      "name": "Christian Louboutin So Kate Pumps"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f307",
+      "status": "migrated",
+      "name": "Apple MacBook Pro 16\" M4 Max"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f309",
+      "status": "migrated",
+      "name": "iPhone 16 Pro Max"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f30b",
+      "status": "migrated",
+      "name": "Sony WH-1000XM6"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f30d",
+      "status": "migrated",
+      "name": "Samsung Galaxy S26 Ultra"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f30f",
+      "status": "migrated",
+      "name": "Apple iPad Pro 13\" M4"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f311",
+      "status": "migrated",
+      "name": "Bose QuietComfort Ultra"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f313",
+      "status": "migrated",
+      "name": "Dell XPS 15 OLED"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f315",
+      "status": "migrated",
+      "name": "Sony PlayStation 5 Pro"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f317",
+      "status": "migrated",
+      "name": "Apple Watch Ultra 2"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f319",
+      "status": "migrated",
+      "name": "Microsoft Surface Pro 11"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f31b",
+      "status": "migrated",
+      "name": "Dyson Zone Headphones"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f31d",
+      "status": "migrated",
+      "name": "Nvidia RTX 5090 GPU"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f31f",
+      "status": "migrated",
+      "name": "LG OLED Flex 42\""
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f321",
+      "status": "migrated",
+      "name": "Rode NT-USB+ Microphone"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f323",
+      "status": "migrated",
+      "name": "GoPro Hero 13 Black"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f325",
+      "status": "migrated",
+      "name": "Rolex Submariner Date 41mm"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f327",
+      "status": "migrated",
+      "name": "Omega Seamaster 300 Co‑Axial"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f329",
+      "status": "migrated",
+      "name": "Patek Philippe Calatrava"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f32b",
+      "status": "migrated",
+      "name": "Patek Philippe Nautilus 5711/1R"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f32d",
+      "status": "migrated",
+      "name": "Audemars Piguet Royal Oak"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f32f",
+      "status": "migrated",
+      "name": "Casio G-Shock GA-2100"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f331",
+      "status": "migrated",
+      "name": "Tissot PRX Powermatic 80"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f333",
+      "status": "migrated",
+      "name": "Grand Seiko SBGA413 Spring Drive"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f335",
+      "status": "migrated",
+      "name": "Breitling Navitimer B01"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f337",
+      "status": "migrated",
+      "name": "Seiko Presage Sharp Edged"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f339",
+      "status": "migrated",
+      "name": "Louis Vuitton Keepall 55"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f33b",
+      "status": "migrated",
+      "name": "Hermès Birkin 30 Togo"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f33d",
+      "status": "migrated",
+      "name": "Ray-Ban Aviator Classic"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f33f",
+      "status": "migrated",
+      "name": "Gucci Dionysus GG Canvas Bag"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f341",
+      "status": "migrated",
+      "name": "Montblanc Meisterstück Wallet"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f343",
+      "status": "migrated",
+      "name": "Bottega Veneta Intrecciato Cardholder"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f345",
+      "status": "migrated",
+      "name": "Prada Saffiano Leather Backpack"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f347",
+      "status": "migrated",
+      "name": "Tom Ford Aviator Sunglasses"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f349",
+      "status": "migrated",
+      "name": "Rimowa Essential Trunk Plus"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f34b",
+      "status": "migrated",
+      "name": "Cartier Santos Chain Bracelet"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f34d",
+      "status": "migrated",
+      "name": "Dyson V15 Detect Absolute"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f34f",
+      "status": "migrated",
+      "name": "Dyson Airwrap Multi-Styler"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f351",
+      "status": "migrated",
+      "name": "Aesop Resurrection Hand Balm 75ml"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f353",
+      "status": "migrated",
+      "name": "Moleskine Limited Edition Smart Writing Set"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f355",
+      "status": "migrated",
+      "name": "Moleskine Smart Writing Set"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f357",
+      "status": "migrated",
+      "name": "Le Labo Santal 33 Eau de Parfum"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f359",
+      "status": "migrated",
+      "name": "Bang & Olufsen Beolit 20"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f35b",
+      "status": "migrated",
+      "name": "Smeg 2-Slice Toaster TSF01"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f35d",
+      "status": "migrated",
+      "name": "Nespresso Vertuo Next"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f35f",
+      "status": "migrated",
+      "name": "Theragun Pro Gen 6"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f361",
+      "status": "migrated",
+      "name": "Yeti Rambler 30oz Tumbler"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f363",
+      "status": "migrated",
+      "name": "The Executive Gift Set"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f365",
+      "status": "migrated",
+      "name": "The Luxury Watch Starter Set"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f367",
+      "status": "migrated",
+      "name": "The Wellness Ritual Box"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f369",
+      "status": "migrated",
+      "name": "The Tech Lover Hamper"
+    },
+    {
+      "id": "6a3ea420e65ee6b6c581f36b",
+      "status": "migrated",
+      "name": "The Fashion Connoisseur Box"
+    }
+  ]
+}

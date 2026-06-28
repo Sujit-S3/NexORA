@@ -246,8 +246,8 @@ const AddProduct = () => {
                   <div className="w-6 h-6 rounded-full bg-[#D4AF37] flex items-center justify-center text-[#0B1220] text-xs font-bold">5</div>
                   <h2 className="text-base font-semibold text-gray-900 dark:text-white">Sizes & Variations</h2>
                 </div>
-                <button type="button" onClick={() => setForm(f => ({ ...f, variants: [...f.variants, { size: '', stock: 0 }] }))} className="text-xs font-bold uppercase tracking-widest text-[#D4AF37] hover:text-[#B38945]">
-                  + Add Size
+                <button type="button" onClick={() => setForm(f => ({ ...f, variants: [...f.variants, { size: '', color: '', sku: '', stock: 0 }] }))} className="text-xs font-bold uppercase tracking-widest text-[#D4AF37] hover:text-[#B38945]">
+                  + Add Variant
                 </button>
               </div>
               
@@ -256,17 +256,27 @@ const AddProduct = () => {
               ) : (
                 <div className="space-y-3">
                   {form.variants.map((v, i) => (
-                    <div key={i} className="flex items-center gap-3">
+                    <div key={i} className="flex items-center gap-2">
                       <input type="text" value={v.size} onChange={e => {
                         const newVars = [...form.variants];
                         newVars[i].size = e.target.value;
                         set('variants', newVars);
-                      }} placeholder="Size (e.g. M)" className={inputCls} />
+                      }} placeholder="Size" className={inputCls} />
+                      <input type="text" value={v.color || ''} onChange={e => {
+                        const newVars = [...form.variants];
+                        newVars[i].color = e.target.value;
+                        set('variants', newVars);
+                      }} placeholder="Color" className={inputCls} />
+                      <input type="text" value={v.sku || ''} onChange={e => {
+                        const newVars = [...form.variants];
+                        newVars[i].sku = e.target.value;
+                        set('variants', newVars);
+                      }} placeholder="SKU" className={inputCls} />
                       <input type="number" min="0" value={v.stock} onChange={e => {
                         const newVars = [...form.variants];
                         newVars[i].stock = e.target.value;
                         set('variants', newVars);
-                      }} placeholder="Stock" className={inputCls} />
+                      }} placeholder="Stock" className={inputCls + ' w-24'} />
                       <button type="button" onClick={() => {
                         const newVars = [...form.variants];
                         newVars.splice(i, 1);

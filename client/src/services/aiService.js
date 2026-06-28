@@ -1,102 +1,74 @@
-// NexORA V10 — Client AI Service
+// NexORA V13 — Client AI Service
 import axios from 'axios';
 import { getSessionId } from '../hooks/usePreferenceTracking';
 
 const API_URL = '/api/ai';
 
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('nexora_token');
+  const token         = localStorage.getItem('nexora_token');
+  const sessionId     = getSessionId();
+  const conversationId= localStorage.getItem('nexora_conversation_id') || sessionId;
   return {
-    'Content-Type': 'application/json',
-    'x-session-id': getSessionId(),
+    'Content-Type':       'application/json',
+    'x-session-id':       sessionId,
+    'x-conversation-id':  conversationId,
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 };
 
 const aiService = {
   // ── Health ──────────────────────────────────────────────────────────────
-  checkHealth: async () => {
-    return axios.get(`${API_URL}/health`);
-  },
+  checkHealth: async () => axios.get(`${API_URL}/health`),
 
   // ── Intent Extraction ───────────────────────────────────────────────────
-  extractIntent: async (message, memory = {}) => {
-    return axios.post(`${API_URL}/intent`, { message, memory }, { headers: getAuthHeaders() });
-  },
+  extractIntent: async (message, memory = {}) =>
+    axios.post(`${API_URL}/intent`, { message, memory }, { headers: getAuthHeaders() }),
 
-  // ── Chat Stream (SSE) ───────────────────────────────────────────────────────────────────
-  // V10: sends cartItems + wishlistIds for intent-aware context retrieval
-  chatStream: async (message, history, memory, cartItems = [], wishlistIds = []) => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 60000);
-    try {
-      const response = await fetch(`${API_URL}/chat`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ message, history, memory, cartItems, wishlistIds }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-      return response;
-    } catch (err) {
-      clearTimeout(timeout);
-      throw err;
-    }
+  // ── Chat Stream (SSE) ────────────────────────────────────────────────────
+  // V13: passes memory so pipeline accumulates filters; supports AbortController signal
+  chatStream: async (message, history, memory, cartItems = [], wishlistIds = [], signal = null) => {
+    const headers = getAuthHeaders();
+    return fetch(`${API_URL}/chat`, {
+      method:  'POST',
+      headers,
+      body: JSON.stringify({ message, history, memory, cartItems, wishlistIds }),
+      signal,
+    });
   },
 
   // ── Compare Products ─────────────────────────────────────────────────────
-  compareProducts: async (productIds) => {
-    return axios.post(`${API_URL}/compare`, { productIds }, { headers: getAuthHeaders() });
-  },
+  compareProducts: async (productIds) =>
+    axios.post(`${API_URL}/compare`, { productIds }, { headers: getAuthHeaders() }),
 
   // ── Checkout Suggestions ─────────────────────────────────────────────────
-  getCheckoutSuggestions: async (cartProductIds) => {
-    return axios.post(`${API_URL}/checkout-suggest`, { cartProductIds }, { headers: getAuthHeaders() });
-  },
+  getCheckoutSuggestions: async (cartProductIds) =>
+    axios.post(`${API_URL}/checkout-suggest`, { cartProductIds }, { headers: getAuthHeaders() }),
 
   // ── Post-Purchase Package ────────────────────────────────────────────────
-  getPostPurchase: async (orderId) => {
-    return axios.post(`${API_URL}/post-purchase`, { orderId }, { headers: getAuthHeaders() });
-  },
+  getPostPurchase: async (orderId) =>
+    axios.post(`${API_URL}/post-purchase`, { orderId }, { headers: getAuthHeaders() }),
 
   // ── Cart Recommendations ─────────────────────────────────────────────────
-  getCartRecommendations: async (cartItems) => {
-    return axios.post(`${API_URL}/cart/recommend`, { cartItems }, { headers: getAuthHeaders() });
-  },
+  getCartRecommendations: async (cartItems) =>
+    axios.post(`${API_URL}/cart/recommend`, { cartItems }, { headers: getAuthHeaders() }),
 
-  // ── Admin: SEO Generator ─────────────────────────────────────────────────
-  generateProductMetadata: async (productId) => {
-    return axios.post(`${API_URL}/product/generate`, { productId });
-  },
+  // ── Admin Tools ──────────────────────────────────────────────────────────
+  generateProductMetadata: async (productId) =>
+    axios.post(`${API_URL}/product/generate`, { productId }),
+  analyzeReviews: async (productId) =>
+    axios.post(`${API_URL}/reviews/analyze`, { productId }),
+  analyzeSales: async (salesData, query) =>
+    axios.post(`${API_URL}/sales/analyze`, { salesData, query }),
+  getAnalytics: async () =>
+    axios.get(`${API_URL}/analytics`),
+  runAdminStudioTool: async (tool, payload = {}) =>
+    axios.post(`${API_URL}/admin/studio`, { tool, payload }),
 
-  // ── Admin: Review Analyzer ───────────────────────────────────────────────
-  analyzeReviews: async (productId) => {
-    return axios.post(`${API_URL}/reviews/analyze`, { productId });
-  },
-
-  // ── Admin: Sales Analyst ─────────────────────────────────────────────────
-  analyzeSales: async (salesData, query) => {
-    return axios.post(`${API_URL}/sales/analyze`, { salesData, query });
-  },
-
-  // ── Admin: Analytics Dashboard ───────────────────────────────────────────
-  getAnalytics: async () => {
-    return axios.get(`${API_URL}/analytics`);
-  },
-
-  // ── Admin: AI Studio (Unified) ───────────────────────────────────────────────
-  runAdminStudioTool: async (tool, payload = {}) => {
-    return axios.post(`${API_URL}/admin/studio`, { tool, payload });
-  },
-
-  // ── Memory Export / Forget Me (V10) ─────────────────────────────────────────
-  exportMemory: async (format = 'json') => {
-    return axios.post(`${API_URL}/memory/export`, { format }, { headers: getAuthHeaders(), responseType: 'blob' });
-  },
-
-  forgetMe: async () => {
-    return axios.post(`${API_URL}/memory/forget`, {}, { headers: getAuthHeaders() });
-  }
+  // ── Memory Export / Forget Me ─────────────────────────────────────────────
+  exportMemory: async (format = 'json') =>
+    axios.post(`${API_URL}/memory/export`, { format }, { headers: getAuthHeaders(), responseType: 'blob' }),
+  forgetMe: async () =>
+    axios.post(`${API_URL}/memory/forget`, {}, { headers: getAuthHeaders() }),
 };
 
 export default aiService;

@@ -28,7 +28,7 @@ const shippingZoneSchema = new mongoose.Schema(
       default: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model('ShippingZone', shippingZoneSchema);

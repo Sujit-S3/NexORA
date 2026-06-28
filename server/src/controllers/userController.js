@@ -39,7 +39,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
 // @access  Admin
 const getUserById = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id).select('-password');
-  if (!user) throw ApiError.notFound('User not found');
+  if (!user) {throw ApiError.notFound('User not found');}
   sendResponse(res, 200, 'User retrieved', user);
 });
 
@@ -48,7 +48,7 @@ const getUserById = asyncHandler(async (req, res) => {
 // @access  Admin
 const updateUserRole = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
-  if (!user) throw ApiError.notFound('User not found');
+  if (!user) {throw ApiError.notFound('User not found');}
 
   user.role = req.body.role || user.role;
   await user.save({ validateBeforeSave: false });
@@ -57,7 +57,7 @@ const updateUserRole = asyncHandler(async (req, res) => {
     _id: user._id,
     name: user.name,
     email: user.email,
-    role: user.role
+    role: user.role,
   });
 });
 
@@ -66,7 +66,7 @@ const updateUserRole = asyncHandler(async (req, res) => {
 // @access  Admin
 const deleteUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
-  if (!user) throw ApiError.notFound('User not found');
+  if (!user) {throw ApiError.notFound('User not found');}
   
   if (user.role === 'admin') {
     throw ApiError.badRequest('Cannot delete an admin user');

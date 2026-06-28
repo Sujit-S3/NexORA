@@ -8,7 +8,7 @@ class AIStateMachine {
       COMPARISON: 'COMPARISON',
       DECISION: 'DECISION',
       CHECKOUT_ASSISTANCE: 'CHECKOUT_ASSISTANCE',
-      AFTERCARE: 'AFTERCARE'
+      AFTERCARE: 'AFTERCARE',
     };
 
     // Valid transitions
@@ -20,7 +20,7 @@ class AIStateMachine {
       [this.STATES.COMPARISON]: [this.STATES.DECISION, this.STATES.RECOMMENDATION],
       [this.STATES.DECISION]: [this.STATES.CHECKOUT_ASSISTANCE],
       [this.STATES.CHECKOUT_ASSISTANCE]: [this.STATES.AFTERCARE, this.STATES.DECISION],
-      [this.STATES.AFTERCARE]: [this.STATES.DISCOVERY]
+      [this.STATES.AFTERCARE]: [this.STATES.DISCOVERY],
     };
   }
 
@@ -31,15 +31,15 @@ class AIStateMachine {
     let nextState = currentState || this.STATES.GREETING;
 
     // Fast-path overrides based on explicit commerce events
-    if (events.includes('START_CHECKOUT')) return this.STATES.CHECKOUT_ASSISTANCE;
-    if (events.includes('COMPARE_PRODUCTS')) return this.STATES.COMPARISON;
-    if (events.includes('ORDER_COMPLETED')) return this.STATES.AFTERCARE;
+    if (events.includes('START_CHECKOUT')) {return this.STATES.CHECKOUT_ASSISTANCE;}
+    if (events.includes('COMPARE_PRODUCTS')) {return this.STATES.COMPARISON;}
+    if (events.includes('ORDER_COMPLETED')) {return this.STATES.AFTERCARE;}
 
     // Intent-based transitions
     switch (intent) {
       case 'gift-finder':
       case 'luxury-advisor':
-        if (currentState === this.STATES.GREETING || !currentState) nextState = this.STATES.DISCOVERY;
+        if (currentState === this.STATES.GREETING || !currentState) {nextState = this.STATES.DISCOVERY;}
         break;
       case 'comparison':
         nextState = this.STATES.COMPARISON;

@@ -11,8 +11,8 @@ class EventBus extends EventEmitter {
         timestamp: new Date().toISOString(),
         requestId: reqContext.requestId || 'UNKNOWN',
         sessionId: reqContext.sessionId || 'UNKNOWN',
-        customerId: reqContext.customerId || 'ANONYMOUS'
-      }
+        customerId: reqContext.customerId || 'ANONYMOUS',
+      },
     };
     this.emit(eventName, fullPayload);
   }
@@ -43,10 +43,10 @@ const EVENTS = {
   PAYMENT_FAILED: 'PAYMENT_FAILED',
   ORDER_COMPLETED: 'ORDER_COMPLETED',
   RETURN_PRODUCT: 'RETURN_PRODUCT',
-  CONCIERGE_CHAT: 'CONCIERGE_CHAT'
+  CONCIERGE_CHAT: 'CONCIERGE_CHAT',
 };
 
 module.exports = {
   eventBus,
-  EVENTS
+  EVENTS,
 };

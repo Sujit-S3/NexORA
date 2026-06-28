@@ -74,7 +74,7 @@ const parseGeminiError = (error) => {
   else if (msg.includes('400') || msg.includes('invalid')){ status = 400; code = 'ERROR_INVALID_ARGUMENT'; }
   else if (msg.includes('401') || msg.includes('403'))    { status = 401; code = 'ERROR_UNAUTHORIZED'; }
   else if (msg.includes('AbortError') || msg.includes('fetch failed')) { status = 504; code = 'ERROR_NETWORK'; }
-  if (error.status) status = error.status;
+  if (error.status) {status = error.status;}
   return new AIError(msg, status, code, { original: msg });
 };
 
@@ -84,13 +84,13 @@ const withTimeoutAndRetry = async (asyncFn, options = { timeoutMs: 15000, maxRet
   while (attempt <= options.maxRetries) {
     try {
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('AbortError: Request timed out')), options.timeoutMs)
+        setTimeout(() => reject(new Error('AbortError: Request timed out')), options.timeoutMs),
       );
       return await Promise.race([asyncFn(), timeoutPromise]);
     } catch (err) {
       const parsedErr = parseGeminiError(err);
       const retryable = [429, 500, 502, 503, 504].includes(parsedErr.httpStatus) || parsedErr.geminiCode === 'ERROR_NETWORK';
-      if (!retryable || attempt >= options.maxRetries) throw parsedErr;
+      if (!retryable || attempt >= options.maxRetries) {throw parsedErr;}
       console.warn(`[AI SERVICE] Attempt ${attempt + 1} failed (${parsedErr.httpStatus}). Retrying in ${(attempt + 1)}s…`);
       attempt++;
       await new Promise(res => setTimeout(res, 1000 * attempt));
@@ -106,13 +106,13 @@ const executeWithFailover = async (executeFn) => {
     try {
       const result = await withTimeoutAndRetry(
         () => executeFn(modelToTry),
-        { timeoutMs: 15000, maxRetries: 1 }
+        { timeoutMs: 15000, maxRetries: 1 },
       );
       currentActiveModel = modelToTry;
       return result;
     } catch (err) {
       lastError = err;
-      if (err.httpStatus === 400 || err.httpStatus === 401 || err.httpStatus === 403) break;
+      if (err.httpStatus === 400 || err.httpStatus === 401 || err.httpStatus === 403) {break;}
       console.warn(`[AI SERVICE] Model ${modelToTry} failed (${err.httpStatus}). Trying next model…`);
       currentActiveModel = SUPPORTED_MODELS[i + 1] || SUPPORTED_MODELS[0];
     }
@@ -141,7 +141,7 @@ const isSafePrompt = (prompt) => {
 const aiCache = new Map();
 const getCached = async (key, ttlMinutes, fn) => {
   const cached = aiCache.get(key);
-  if (cached && cached.expiresAt > Date.now()) return cached.data;
+  if (cached && cached.expiresAt > Date.now()) {return cached.data;}
   const data = await fn();
   aiCache.set(key, { data, expiresAt: Date.now() + ttlMinutes * 60 * 1000 });
   return data;
@@ -149,7 +149,7 @@ const getCached = async (key, ttlMinutes, fn) => {
 
 // ── Generic Text Generator ─────────────────────────────────────────────────
 const generateText = async (prompt, systemInstruction = '', userId = null, endpoint = '/general') => {
-  if (!isSafePrompt(prompt)) throw new AIError('Prompt rejected by guardrails.', 400, 'ERROR_PROMPT_VALIDATION');
+  if (!isSafePrompt(prompt)) {throw new AIError('Prompt rejected by guardrails.', 400, 'ERROR_PROMPT_VALIDATION');}
 
   const reqId = crypto.randomUUID();
   const t0    = Date.now();
@@ -198,11 +198,28 @@ Return ONLY a JSON object (no markdown, no explanation) with these keys:
   "preferredBrands": ["brand1","brand2"],
   "colors": ["color1"],
   "materials": ["material1"],
-  "luxuryLevel": <1-5 or null>
+  "luxuryLevel": <1-5 or null>,
+  "physicalProfile": {
+    "heightCm": <number or null>,
+    "weightKg": <number or null>,
+    "bodyType": "Slim|Athletic|Broad|Plus Size|Regular|null",
+    "preferredFit": "Slim|Regular|Relaxed|Oversized|Athletic|null",
+    "country": "India|UK|US|EU|null"
+  },
+  "preferredSizes": {
+    "shirt": "<size or null>",
+    "bottom": "<size or null>",
+    "shoe": "<size or null>",
+    "ring": "<size or null>",
+    "hat": "<size or null>",
+    "watch": "<size or null>"
+  }
 }
 
 Rules:
 - Parse budget from text: "2 lakh" = 200000, "50k" = 50000, "₹2,00,000" = 200000
+- If the customer says "I wear Medium" or "I am a UK 8 shoe", populate preferredSizes accordingly.
+- If they give height/weight in feet/lbs, convert to cm/kg (e.g., 5'10" = 178, 160lbs = 72).
 - Only fill fields explicitly mentioned or strongly implied
 - Merge with existingMemory (do not overwrite unless explicitly changed)
 - Return null for unknown fields
@@ -234,14 +251,14 @@ exports.chatWithConciergeStream = async (message, history, memory, userId, sessi
 
     // STEP 2: Retrieve products from MongoDB (deterministic — backend decides ranking)
     const topProducts = await RecommendationService.getConciergeRecommendations(
-      message, memory, userId, sessionId
+      message, memory, userId, sessionId,
     );
 
     // STEP 3: Intent-aware selective context retrieval (not everything — only what skill needs)
     const context = await ConciergeContext.assembleContext({
       skill, userId, sessionId,
       clientCartItems: clientCart || [],
-      clientWishlistIds: clientWishlist || []
+      clientWishlistIds: clientWishlist || [],
     });
 
     // STEP 4: Build lean product summary for Gemini (backend decided ranking/pricing)
@@ -253,7 +270,7 @@ exports.chatWithConciergeStream = async (message, history, memory, userId, sessi
       rating:   p.ratings?.average?.toFixed(1) || '5.0',
       inStock:  p.stock > 0,
       rank:     p.conciergeRank,
-      reasonBadge: p.reasonBadge
+      reasonBadge: p.reasonBadge,
     }));
 
     // STEP 5: Build suggested actions
@@ -295,8 +312,8 @@ exports.chatWithConciergeStream = async (message, history, memory, userId, sessi
     console.error(`[AI V10] Chat stream error (${err.httpStatus}):`, err.message);
 
     let userMsg = 'Our concierge is currently assisting other clients. Please try again shortly.';
-    if (err.httpStatus === 429) userMsg = 'Our concierge is experiencing high demand. Please try again in a moment.';
-    if (err.httpStatus === 504) userMsg = 'The connection timed out. Our team has been notified.';
+    if (err.httpStatus === 429) {userMsg = 'Our concierge is experiencing high demand. Please try again in a moment.';}
+    if (err.httpStatus === 504) {userMsg = 'The connection timed out. Our team has been notified.';}
 
     res.write(`data: ${JSON.stringify({ error: userMsg })}\n\n`);
     res.write('data: [DONE]\n\n');
@@ -310,24 +327,24 @@ exports.chatWithConciergeStream = async (message, history, memory, userId, sessi
 // ── Skill Action Builder ───────────────────────────────────────────────────
 function buildSkillActions(skill, products, memory, context) {
   const actions = [];
-  if (products.length >= 2) actions.push('Compare Products');
-  if (skill === 'gift-finder' || memory?.recipient) actions.push('Gift Finder');
-  if (context.cart?.itemCount > 0) actions.push('Cart Advisor');
-  if (context.discounts?.length > 0) actions.push('Apply Discount');
-  if (skill !== 'wishlist-advisor') actions.push('Show Similar');
-  if (skill !== 'post-purchase' && skill !== 'care-guide') actions.push('Luxury Alternatives');
-  if (!memory?.budget) actions.push('Set Budget');
+  if (products.length >= 2) {actions.push('Compare Products');}
+  if (skill === 'gift-finder' || memory?.recipient) {actions.push('Gift Finder');}
+  if (context.cart?.itemCount > 0) {actions.push('Cart Advisor');}
+  if (context.discounts?.length > 0) {actions.push('Apply Discount');}
+  if (skill !== 'wishlist-advisor') {actions.push('Show Similar');}
+  if (skill !== 'post-purchase' && skill !== 'care-guide') {actions.push('Luxury Alternatives');}
+  if (!memory?.budget) {actions.push('Set Budget');}
   return actions.slice(0, 5);
 }
 
 // ── Journey Stage Detector ────────────────────────────────────────────────
 function detectJourneyStage(skill, context) {
-  if (['order-assistance', 'warranty', 'care-guide', 'post-purchase'].includes(skill)) return 'aftercare';
-  if (skill === 'checkout-assistant') return 'checkout';
-  if (skill === 'cart-advisor' || context.cart?.itemCount > 0) return 'cart';
-  if (skill === 'compare-products') return 'comparison';
-  if (['personalized-recs', 'wishlist-advisor', 'upsell'].includes(skill)) return 'selection';
-  if (['gift-finder', 'ceo-collection', 'occasion-shopping', 'budget-planner'].includes(skill)) return 'discovery';
+  if (['order-assistance', 'warranty', 'care-guide', 'post-purchase'].includes(skill)) {return 'aftercare';}
+  if (skill === 'checkout-assistant') {return 'checkout';}
+  if (skill === 'cart-advisor' || context.cart?.itemCount > 0) {return 'cart';}
+  if (skill === 'compare-products') {return 'comparison';}
+  if (['personalized-recs', 'wishlist-advisor', 'upsell'].includes(skill)) {return 'selection';}
+  if (['gift-finder', 'ceo-collection', 'occasion-shopping', 'budget-planner'].includes(skill)) {return 'discovery';}
   return 'browsing';
 }
 
@@ -385,7 +402,7 @@ function getSkillGuidance(skill, context) {
     'compare-products':  'Present a balanced, honest comparison. Do not declare a winner — let the client decide based on their priorities.',
     'occasion-shopping': 'Match the product to the occasion\'s dress code, setting, and expected impression.',
     'outfit-builder':    'Suggest complementary pieces that form a cohesive, polished look. Reference colours, materials, and occasions.',
-    'budget-planner':    `Present the best options within the client\'s budget. ${context.discounts?.length ? `Mention available offers: ${context.discounts.map(d => `${d.code} (${d.type === 'percentage' ? d.value + '% off' : '₹' + d.value + ' off'})`).join(', ')}.` : ''}`,
+    'budget-planner':    `Present the best options within the client's budget. ${context.discounts?.length ? `Mention available offers: ${context.discounts.map(d => `${d.code} (${d.type === 'percentage' ? d.value + '% off' : '₹' + d.value + ' off'})`).join(', ')}.` : ''}`,
     'wishlist-advisor':  'Reference the client\'s saved items. Suggest complementary pieces or highlight any price changes.',
     'cart-advisor':      `The client has ${context.cart?.itemCount || 0} item(s) in their cart worth ₹${(context.cart?.totalPrice || 0).toLocaleString('en-IN')}. Suggest complementary additions or flag applicable discounts.`,
     'checkout-assistant':context.discounts?.length ? `Available discount codes: ${context.discounts.map(d => `${d.code} — ${d.description}`).join('; ')}.` : 'Guide the client smoothly through checkout.',
@@ -397,7 +414,6 @@ function getSkillGuidance(skill, context) {
     'product-education': 'Educate with authority and passion. Reference craftsmanship, heritage, materials, and what makes this piece exceptional.',
     'personalized-recs': 'Use the client\'s history and preferences to justify every recommendation.',
     'upsell':            'Suggest a premium alternative that offers additional value. Never push — present the option and its benefits.',
-    'outfit-builder':    'Build a complete look. Reference how pieces complement each other in colour, material, and formality.',
   };
   return guides[skill] || 'Provide an elegant, helpful response relevant to the client\'s request.';
 }
@@ -409,13 +425,13 @@ function getSkillGuidance(skill, context) {
 // ══════════════════════════════════════════════════════════════════════════════
 exports.generateComparison = async (productIds, userId) => {
   const products = await RecommendationService.getComparableProducts(productIds);
-  if (products.length < 2) throw new AIError('Need at least 2 products to compare.', 400, 'ERROR_INVALID_ARGUMENT');
+  if (products.length < 2) {throw new AIError('Need at least 2 products to compare.', 400, 'ERROR_INVALID_ARGUMENT');}
 
   const productData = products.map(p => ({
     id: p._id, name: p.name, brand: p.brand,
     category: p.category?.name, price: p.discountPrice || p.price,
     rating: p.ratings?.average, stock: p.stock,
-    specifications: p.specifications ? Object.fromEntries(p.specifications) : {}
+    specifications: p.specifications ? Object.fromEntries(p.specifications) : {},
   }));
 
   const prompt = `
@@ -460,11 +476,11 @@ Rules:
         { field: 'Rating', values: products.map(p => `${p.ratings?.average || 'N/A'}/5`) },
         { field: 'Brand', values: products.map(p => p.brand || 'N/A') },
         { field: 'Category', values: products.map(p => p.category?.name || 'N/A') },
-        { field: 'Stock', values: products.map(p => p.stock > 0 ? `${p.stock} units` : 'Out of Stock') }
+        { field: 'Stock', values: products.map(p => p.stock > 0 ? `${p.stock} units` : 'Out of Stock') },
       ],
       verdict: { winner: products[0].name, reason: 'Based on overall rating and value.' },
       pros: {}, cons: {},
-      products
+      products,
     };
   }
 };
@@ -472,9 +488,7 @@ Rules:
 // ══════════════════════════════════════════════════════════════════════════════
 // PHASE 9 — Checkout Suggestions (deterministic — no Gemini for selection)
 // ══════════════════════════════════════════════════════════════════════════════
-exports.getCheckoutSuggestions = async (cartProductIds, userId) => {
-  return RecommendationService.getCheckoutSuggestions(cartProductIds);
-};
+exports.getCheckoutSuggestions = async (cartProductIds, userId) => RecommendationService.getCheckoutSuggestions(cartProductIds);
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PHASE 10 — Post-Purchase
@@ -485,26 +499,26 @@ const CARE_GUIDES = {
   electronics: 'Use only certified accessories and chargers. Keep firmware updated. Store at room temperature and avoid moisture.',
   jewel:       'Store separately in a soft pouch to prevent scratching. Clean gently with a soft cloth. Schedule professional cleaning annually.',
   shoe:        'Use shoe trees when not worn. Rotate pairs to extend life. Apply leather conditioner every 30 days.',
-  default:     'Handle with care and store in the original packaging when not in use. Keep away from humidity and direct sunlight.'
+  default:     'Handle with care and store in the original packaging when not in use. Keep away from humidity and direct sunlight.',
 };
 
 const getCareGuide = (categoryName = '') => {
   const cat = categoryName.toLowerCase();
-  if (cat.includes('watch'))   return CARE_GUIDES.watch;
-  if (cat.includes('bag') || cat.includes('leather')) return CARE_GUIDES.bag;
-  if (cat.includes('tech') || cat.includes('elec'))   return CARE_GUIDES.electronics;
-  if (cat.includes('jewel'))   return CARE_GUIDES.jewel;
-  if (cat.includes('shoe') || cat.includes('foot'))   return CARE_GUIDES.shoe;
+  if (cat.includes('watch'))   {return CARE_GUIDES.watch;}
+  if (cat.includes('bag') || cat.includes('leather')) {return CARE_GUIDES.bag;}
+  if (cat.includes('tech') || cat.includes('elec'))   {return CARE_GUIDES.electronics;}
+  if (cat.includes('jewel'))   {return CARE_GUIDES.jewel;}
+  if (cat.includes('shoe') || cat.includes('foot'))   {return CARE_GUIDES.shoe;}
   return CARE_GUIDES.default;
 };
 
 exports.getPostPurchasePackage = async (orderId, userId) => {
   try {
     const order = await Order.findById(orderId).populate({
-      path: 'items.product', populate: { path: 'category', select: 'name' }
+      path: 'items.product', populate: { path: 'category', select: 'name' },
     });
 
-    if (!order) throw new AIError('Order not found', 404, 'NOT_FOUND');
+    if (!order) {throw new AIError('Order not found', 404, 'NOT_FOUND');}
 
     const products   = order.items.map(i => i.product).filter(Boolean);
     const categories = products.map(p => p.category?.name || '').filter(Boolean);
@@ -522,7 +536,7 @@ exports.getPostPurchasePackage = async (orderId, userId) => {
       careText,
       categories,
       estimatedDelivery: deliveryDate.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' }),
-      recommendations
+      recommendations,
     };
   } catch (e) {
     // Fallback with generic care
@@ -531,7 +545,7 @@ exports.getPostPurchasePackage = async (orderId, userId) => {
       careText: CARE_GUIDES.default,
       categories: [],
       estimatedDelivery: 'Within 5–7 business days',
-      recommendations: recs
+      recommendations: recs,
     };
   }
 };
@@ -550,7 +564,7 @@ exports.generateProductMetadata = async (productData, userId) => {
 };
 
 exports.analyzeReviews = async (reviews, userId) => {
-  if (!reviews || reviews.length === 0) return { sentiment: 100, summary: 'No client reviews yet.', pros: [], cons: [] };
+  if (!reviews || reviews.length === 0) {return { sentiment: 100, summary: 'No client reviews yet.', pros: [], cons: [] };}
   const prompt = `Analyze these client reviews:\n${JSON.stringify(reviews)}\nReturn JSON: { sentiment (0-100), summary (2 sentences), pros (array), cons (array) }`;
   try {
     const res = await generateText(prompt, 'You are an objective luxury product analyst. Return strictly valid JSON.', userId, '/review-analysis');
@@ -561,7 +575,7 @@ exports.analyzeReviews = async (reviews, userId) => {
 };
 
 exports.generateCartRecommendations = async (cartItems, userId) => {
-  if (!cartItems || cartItems.length === 0) return [];
+  if (!cartItems || cartItems.length === 0) {return [];}
   return RecommendationService.getCartRecommendations(cartItems, userId, null);
 };
 
@@ -570,7 +584,7 @@ exports.generateCartRecommendations = async (cartItems, userId) => {
 // ══════════════════════════════════════════════════════════════════════════════
 exports.runAdminStudioTool = async (tool, payload, userId) => {
   let prompt = '';
-  let sysInstruction = 'You are a Luxury Brand Executive. Be extremely concise. Format output in valid JSON.';
+  const sysInstruction = 'You are a Luxury Brand Executive. Be extremely concise. Format output in valid JSON.';
 
   try {
     if (tool === 'marketing') {
@@ -627,14 +641,14 @@ Return JSON with structure:
 `.trim();
     }
     else {
-      throw new Error("Unknown admin tool");
+      throw new Error('Unknown admin tool');
     }
 
     const raw = await generateText(prompt, sysInstruction, userId, `/admin/${tool}`);
     const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
     return parsed;
   } catch (e) {
-    console.error("Admin Tool Error:", e);
+    console.error('Admin Tool Error:', e);
     return { error: 'Service temporarily unavailable.' };
   }
 };
@@ -658,9 +672,7 @@ exports.checkHealth = () => {
 
 exports.testConnection = async (prompt) => {
   const t0 = Date.now();
-  const res = await executeWithFailover(async (modelName) => {
-    return genAI.getGenerativeModel({ model: modelName }).generateContent(prompt);
-  });
+  const res = await executeWithFailover(async (modelName) => genAI.getGenerativeModel({ model: modelName }).generateContent(prompt));
   const response = await res.response;
   return { text: response.text(), usage: response.usageMetadata, latency: Date.now() - t0 };
 };

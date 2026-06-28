@@ -96,8 +96,8 @@ const ManageUsers = () => {
                       value={user.role}
                       onChange={(e) => handleRoleChange(user._id, e.target.value)}
                     >
-                      <option value="user">User</option>
-                      <option value="admin">Admin</option>
+                      <option value="user" className="text-gray-600 dark:text-gray-300 bg-white dark:bg-[#1A1A1A]">User</option>
+                      <option value="admin" className="text-[#D4AF37] font-bold bg-white dark:bg-[#1A1A1A]">Admin</option>
                     </select>
                   </td>
                   <td className="px-6 py-4 text-right">

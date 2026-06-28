@@ -13,8 +13,7 @@ export default function Dashboard() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Force dark mode for Executive Admin Suite
-    document.documentElement.classList.add('dark');
+    // Removed forced dark mode
     
     adminService.getDashboardStats()
       .then(res => setStats(res.data.data))
@@ -22,15 +21,15 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="min-h-screen pt-32 flex justify-center bg-[#050505]"><div className="w-8 h-8 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div></div>;
-  if (error) return <div className="min-h-screen pt-32 text-center text-red-500 bg-[#050505]">{error}</div>;
+  if (loading) return <div className="min-h-screen pt-32 flex justify-center bg-[#FDFDFD] dark:bg-[#050505] transition-colors duration-300"><div className="w-8 h-8 border-2 border-[#D4AF37] border-t-transparent rounded-full animate-spin"></div></div>;
+  if (error) return <div className="min-h-screen pt-32 text-center text-red-500 bg-[#FDFDFD] dark:bg-[#050505] transition-colors duration-300">{error}</div>;
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-[#0B0B0B]/90 backdrop-blur-md border border-white/10 p-4 rounded-xl shadow-2xl">
-          <p className="text-[#9CA3AF] text-[10px] font-bold tracking-widest uppercase mb-2">{label}</p>
-          <p className="text-white font-mono text-lg">${payload[0].value.toLocaleString()}</p>
+        <div className="bg-white/90 dark:bg-[#0B0B0B]/90 backdrop-blur-md border border-gray-200 dark:border-white/10 p-4 rounded-xl shadow-2xl transition-colors duration-300">
+          <p className="text-gray-500 dark:text-[#9CA3AF] text-[10px] font-bold tracking-widest uppercase mb-2">{label}</p>
+          <p className="text-gray-900 dark:text-white font-mono text-lg">${payload[0].value.toLocaleString()}</p>
         </div>
       );
     }
@@ -38,24 +37,24 @@ export default function Dashboard() {
   };
 
   const ExecutiveCard = ({ title, value, icon: Icon, delay }) => (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay, duration: 0.5 }} className="relative p-6 rounded-2xl overflow-hidden group" style={{ background: '#0B0B0B', border: '1px solid rgba(255,255,255,0.05)' }}>
-      <div className="absolute -right-6 -top-6 text-white/5 transition-transform duration-700 group-hover:scale-110">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay, duration: 0.5 }} className="relative p-6 rounded-2xl overflow-hidden group bg-white dark:bg-[#0B0B0B] border border-gray-200 dark:border-white/5 transition-colors duration-300">
+      <div className="absolute -right-6 -top-6 text-gray-200 dark:text-white/5 transition-transform duration-700 group-hover:scale-110">
         <Icon size={120} />
       </div>
       <div className="relative z-10 flex justify-between items-start mb-8">
-        <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#9CA3AF]">{title}</p>
-        <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 border border-white/10">
+        <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 dark:text-[#9CA3AF]">{title}</p>
+        <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10">
           <Icon size={18} className="text-[#D4AF37]" />
         </div>
       </div>
       <div className="relative z-10">
-        <h3 className="text-3xl font-playfair tracking-tight text-white">{value}</h3>
+        <h3 className="text-3xl font-playfair tracking-tight text-gray-900 dark:text-white">{value}</h3>
       </div>
     </motion.div>
   );
 
   return (
-    <div className="min-h-screen pt-28 pb-20 font-jakarta text-white bg-[#050505]">
+    <div className="min-h-screen pt-28 pb-20 font-jakarta text-gray-900 dark:text-white bg-[#FDFDFD] dark:bg-[#050505] transition-colors duration-300">
       <div className="container-app max-w-7xl">
         
         {/* Header */}
@@ -67,7 +66,7 @@ export default function Dashboard() {
             <h1 className="text-4xl md:text-5xl font-playfair tracking-tight">Global Performance</h1>
           </div>
           <div className="flex gap-4">
-            <Link to="/admin/reports" className="px-6 py-3 text-[11px] font-bold tracking-widest uppercase rounded bg-white/5 hover:bg-white/10 transition-colors border border-white/10">Generate Report</Link>
+            <Link to="/admin/reports" className="px-6 py-3 text-[11px] font-bold tracking-widest uppercase rounded text-gray-900 dark:text-white bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 transition-colors border border-gray-200 dark:border-white/10">Generate Report</Link>
           </div>
         </div>
 
@@ -81,8 +80,8 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Main Chart */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5 }} className="lg:col-span-2 p-8 rounded-2xl" style={{ background: '#0B0B0B', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <h2 className="text-[12px] font-bold tracking-[0.2em] uppercase text-[#9CA3AF] mb-8">Revenue Trajectory</h2>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5 }} className="lg:col-span-2 p-8 rounded-2xl bg-white dark:bg-[#0B0B0B] border border-gray-200 dark:border-white/5 transition-colors duration-300">
+            <h2 className="text-[12px] font-bold tracking-[0.2em] uppercase text-gray-500 dark:text-[#9CA3AF] mb-8">Revenue Trajectory</h2>
             <div className="h-[320px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stats?.charts?.revenueByMonth || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -103,8 +102,8 @@ export default function Dashboard() {
           </motion.div>
 
           {/* User Growth */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.5 }} className="p-8 rounded-2xl" style={{ background: '#0B0B0B', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <h2 className="text-[12px] font-bold tracking-[0.2em] uppercase text-[#9CA3AF] mb-8">User Acquisition</h2>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.5 }} className="p-8 rounded-2xl bg-white dark:bg-[#0B0B0B] border border-gray-200 dark:border-white/5 transition-colors duration-300">
+            <h2 className="text-[12px] font-bold tracking-[0.2em] uppercase text-gray-500 dark:text-[#9CA3AF] mb-8">User Acquisition</h2>
             <div className="h-[320px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats?.charts?.usersByMonth || []} margin={{ top: 10, right: 10, left: -30, bottom: 0 }}>
@@ -121,9 +120,9 @@ export default function Dashboard() {
 
         {/* Critical Operations */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.5 }} className="p-8 rounded-2xl" style={{ background: '#0B0B0B', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.5 }} className="p-8 rounded-2xl bg-white dark:bg-[#0B0B0B] border border-gray-200 dark:border-white/5 transition-colors duration-300">
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-[12px] font-bold tracking-[0.2em] uppercase text-[#9CA3AF]">Fulfillment Status</h2>
+              <h2 className="text-[12px] font-bold tracking-[0.2em] uppercase text-gray-500 dark:text-[#9CA3AF]">Fulfillment Status</h2>
               <Link to="/admin/orders" className="text-[10px] font-bold uppercase tracking-widest text-[#D4AF37] hover:underline flex items-center gap-1">View Queue <ChevronRight size={12} /></Link>
             </div>
             
@@ -133,27 +132,27 @@ export default function Dashboard() {
                   <AlertCircle className="w-5 h-5 text-orange-400" />
                   <p className="text-[11px] font-bold tracking-widest uppercase text-orange-400">Pending</p>
                 </div>
-                <p className="text-3xl font-playfair text-white">{stats?.pendingOrders || 0}</p>
+                <p className="text-3xl font-playfair text-gray-900 dark:text-white">{stats?.pendingOrders || 0}</p>
               </div>
               <div className="p-6 rounded-xl border border-green-500/20 bg-green-500/5">
                 <div className="flex items-center gap-3 mb-4">
                   <CheckCircle2 className="w-5 h-5 text-green-400" />
                   <p className="text-[11px] font-bold tracking-widest uppercase text-green-400">Dispatched</p>
                 </div>
-                <p className="text-3xl font-playfair text-white">{stats?.completedOrders || 0}</p>
+                <p className="text-3xl font-playfair text-gray-900 dark:text-white">{stats?.completedOrders || 0}</p>
               </div>
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8, duration: 0.5 }} className="p-8 rounded-2xl" style={{ background: '#0B0B0B', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8, duration: 0.5 }} className="p-8 rounded-2xl bg-white dark:bg-[#0B0B0B] border border-gray-200 dark:border-white/5 transition-colors duration-300">
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-[12px] font-bold tracking-[0.2em] uppercase text-[#9CA3AF]">Low Inventory Alerts</h2>
+              <h2 className="text-[12px] font-bold tracking-[0.2em] uppercase text-gray-500 dark:text-[#9CA3AF]">Low Inventory Alerts</h2>
               <Link to="/admin/products" className="text-[10px] font-bold uppercase tracking-widest text-[#D4AF37] hover:underline flex items-center gap-1">Manage <ChevronRight size={12} /></Link>
             </div>
             {stats?.lowStockProducts?.length > 0 ? (
               <div className="space-y-4">
                 {stats.lowStockProducts.slice(0, 3).map(p => (
-                  <div key={p._id} className="flex justify-between items-center p-4 rounded-xl bg-white/5 border border-white/5">
+                  <div key={p._id} className="flex justify-between items-center p-4 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 transition-colors duration-300">
                     <p className="text-[13px] font-medium truncate">{p.name}</p>
                     <span className="text-[11px] font-bold font-mono text-red-400">{p.stock} left</span>
                   </div>

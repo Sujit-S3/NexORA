@@ -1,88 +1,131 @@
-const fs = require('fs');
-const path = require('path');
-
+// NexORA V13 — Prompt Builder
 class PromptBuilderService {
-  constructor() {
-    this.templatesPath = path.join(__dirname, '..', 'prompts');
-  }
 
   getSystemPrompt() {
-    return `You are NexORA's Private Client Advisor, an elite luxury styling and shopping concierge.
-You NEVER sound robotic. You NEVER sound like ChatGPT. You are a Luxury Stylist, Watch Specialist, and Fashion Consultant.
-Your tone is Elegant, Confident, Warm, Professional, Concise, and Luxury.
-CRITICAL RULES:
-- NEVER say "As an AI", "As an AI language model", "I cannot", "I am unable", or "My knowledge cutoff".
-- If asked about something outside your bounds, gracefully pivot like a true luxury advisor: "While my expertise lies in our curated luxury collections, I'd be delighted to assist you with..."
-- You NEVER invent products or prices. You only recommend products explicitly provided in the AVAILABLE INVENTORY block.
-- Always recommend, educate, compare, guide, curate, and upsell naturally based on the customer's profile.`;
+    return `You are the NexORA Private Client Advisor — an elite luxury shopping concierge for the world's most discerning clientele.
+
+PERSONA:
+You advise clients the way a senior associate at Rolex Geneva, Hermès Paris, or Cartier would.
+Tone: Elegant, confident, warm, concise. Never theatrical, never robotic, never sycophantic.
+Length: 2–4 sentences maximum per response. Be direct and precise.
+
+ABSOLUTE RULES:
+- NEVER say "As an AI", "I cannot", "I am unable", "My knowledge cutoff", "Certainly!", "Absolutely!", "Great choice!"
+- NEVER invent products, prices, discounts, specifications, or delivery dates not in the AVAILABLE INVENTORY block.
+- NEVER mention product IDs, match scores, or backend technical terms.
+- Only reference products explicitly listed in the AVAILABLE INVENTORY block.
+- If asked about something outside NexORA, gracefully redirect: "While my expertise lies in our curated collections, I'd be delighted to help you discover..."
+- After your response, do not add JSON, tables, or metadata.
+- When a client says "add it to cart" or "I'll take it" or selects a product, confirm naturally: "Of course. The [product name] has been added to your cart."
+
+LUXURY ADVISOR STYLE:
+- Educate with authority: reference heritage, craftsmanship, materials, investment value.
+- Curate, don't sell: present options, let the client decide.
+- Cross-sell elegantly: suggest complementary pieces naturally, never aggressively.
+- Use aspirational language: "acquisition", "collection", "curated", "distinction", "investment piece".
+
+FIT INTELLIGENCE ADVISOR:
+- If a client is looking for clothing/shoes and their profile is missing size data, gently ask: "Before I recommend one, what size do you usually wear?" or "What fit do you prefer?"
+- NEVER invent sizing. If they give you a size, act as if you'll remember it forever.
+- Explain recommendations based on their profile (e.g., "Medium is recommended with 98% confidence based on your preferred fit and previous selections").`;
   }
 
-  getIntentPrompt(intent) {
-    switch (intent) {
-      case 'gift-finder': return `Your goal is to help the user find the perfect gift. Ask clarifying questions about the recipient if needed.`;
-      case 'comparison': return `Your goal is to compare the provided products objectively, highlighting differences in materials, movement, and value.`;
-      case 'checkout-assistance': return `Your goal is to assist the user in completing their purchase. Explain shipping, returns, and warranties if relevant.`;
-      default: return `Your goal is to guide the user in discovering the perfect luxury timepiece or accessory.`;
-    }
+  getIntentGuidance(intent) {
+    const guides = {
+      'gift-finder':         'Help the client find the perfect gift. Ask one clarifying question if the recipient profile is unclear. Recommend 2–3 curated pieces with gifting rationale.',
+      'comparison':          'Compare the provided products objectively. Highlight differences in craftsmanship, movement, heritage, and value. Do not declare a winner — let the client decide.',
+      'checkout-assistance': 'Guide the client smoothly through checkout. Mention any applicable discount codes from the context. Reassure on delivery and warranty.',
+      'order-status':        'Assist with the client\'s order query. Reference only the order data provided. Offer helpful next steps.',
+      'care-guide':          'Provide precise, product-appropriate care and maintenance guidance. Reference materials and recommended service schedules.',
+
+      'luxury-advisor':      'Speak with connoisseur authority. Reference heritage, provenance, collector significance, and investment value.',
+      'refine-results':      'Acknowledge the refinement and explain how the new selection addresses it. Be brief — the products speak for themselves.',
+      'product-selection':   'Confirm the client\'s selection with confidence. Offer to add to cart, compare alternatives, or suggest complementary pieces.',
+      'confirm-add-to-cart': 'Confirm the addition to cart naturally. Suggest one complementary piece if appropriate.',
+      'navigate-checkout':   'Acknowledge the move to checkout. Mention any cart savings or applicable offers.',
+      'wishlist-advisor':    'Reference the client\'s saved items. Note any price changes or complementary pieces.',
+      'product-search':      'Introduce the curated selection briefly. Reference why these pieces align with the client\'s stated preferences.',
+      'product-inquiry':     'Educate with passion and precision. Reference the specific details requested.',
+    };
+    return guides[intent] || 'Provide an elegant, helpful response relevant to the client\'s request.';
   }
 
-  getCommercePrompt(context, rankedProducts) {
-    const customerName = context.user ? context.user.name : 'Valued Client';
-    const comfortRange = context.preferences?.budgets?.comfortRange;
-    const budgetStr = comfortRange && comfortRange.max ? 
-      `$${comfortRange.min} - $${comfortRange.max}` : 
-      (context.preferences?.budget || 'Unknown');
-    
+  getCommerceContext(context, rankedProducts) {
+    const profile = context.sessionMemory || {};
+    const profileLines = [
+      context.user?.name              ? `Client Name: ${context.user.name}` : null,
+      profile.budget                  ? `Budget: ₹${Number(profile.budget).toLocaleString('en-IN')}` : null,
+      profile.preferredBrands?.length ? `Preferred Brands: ${profile.preferredBrands.join(', ')}` : null,
+      profile.category                ? `Category Interest: ${profile.category}` : null,
+      profile.occasion                ? `Occasion: ${profile.occasion}` : null,
+      profile.recipient               ? `Shopping For: ${profile.recipient}` : null,
+      profile.materials?.length       ? `Preferred Materials: ${profile.materials.join(', ')}` : null,
+      profile.colors?.length          ? `Preferred Colors: ${profile.colors.join(', ')}` : null,
+      
+      // Fit Intelligence Profile
+      profile.physicalProfile?.heightCm ? `Height: ${profile.physicalProfile.heightCm}cm` : null,
+      profile.physicalProfile?.weightKg ? `Weight: ${profile.physicalProfile.weightKg}kg` : null,
+      profile.physicalProfile?.bodyType ? `Body Type: ${profile.physicalProfile.bodyType}` : null,
+      profile.physicalProfile?.preferredFit ? `Preferred Fit: ${profile.physicalProfile.preferredFit}` : null,
+      profile.preferredSizes?.shirt ? `Preferred Shirt Size: ${profile.preferredSizes.shirt}` : null,
+      profile.preferredSizes?.bottom ? `Preferred Bottom Size: ${profile.preferredSizes.bottom}` : null,
+      profile.preferredSizes?.shoe ? `Preferred Shoe Size: ${profile.preferredSizes.shoe}` : null,
+      profile.preferredSizes?.ring ? `Preferred Ring Size: ${profile.preferredSizes.ring}` : null,
+
+      context.cart?.itemCount > 0     ? `Cart: ${context.cart.itemCount} item(s), ₹${(context.cart.totalPrice || 0).toLocaleString('en-IN')}` : null,
+      context.discounts?.length       ? `Active Offers: ${context.discounts.map(d => d.code).join(', ')}` : null,
+      context.orders?.length          ? `Recent Orders: ${context.orders.map(o => `${o.orderNumber} (${o.status})`).join('; ')}` : null,
+    ].filter(Boolean).join('\n');
+
+    const productSummary = rankedProducts.slice(0, 8).map((p, i) => ({
+      position: i + 1,
+      name:     p.name,
+      brand:    p.brand,
+      category: p.category?.name,
+      price:    `₹${(p.discountPrice || p.price || 0).toLocaleString('en-IN')}`,
+      rating:   p.ratings?.average?.toFixed(1) || '5.0',
+      inStock:  (p.stock || 0) > 0,
+      variants: p.variants && p.variants.length > 0 ? p.variants.map(v => `${v.size}: ${v.stock > 0 ? 'In Stock' : 'Out of Stock'}`).join(', ') : undefined,
+      reasonBadge: p.reasonBadge,
+    }));
+
     return `
---- COMMERCE STATE ---
-Conversation Phase: ${context.aiState || 'DISCOVERY'}
-Customer Profile:
-- Name: ${customerName}
-- Comfort Range (Budget): ${budgetStr}
-- Preferred Brands: ${context.preferences?.brands?.join(', ') || 'None specified'}
+--- CONVERSATION PHASE ---
+${context.aiState || 'DISCOVERY'}
 
-Cart: ${JSON.stringify(context.cart || [])}
-Wishlist: ${JSON.stringify(context.wishlist || [])}
-Recent Orders: ${JSON.stringify(context.orders || [])}
+--- CLIENT PROFILE ---
+${profileLines || 'New client — no preferences captured yet.'}
 
---- AVAILABLE INVENTORY (Ground Truth) ---
-Retrieved Verified Inventory (DO NOT hallucinate other products. Do NOT change prices):
-${JSON.stringify(rankedProducts || [])}
-`;
+--- AVAILABLE INVENTORY (Ground Truth — recommend ONLY these products) ---
+${JSON.stringify(productSummary, null, 2)}
+
+--- CART & CONTEXT ---
+Cart Items: ${JSON.stringify(context.cart || [])}
+Wishlist: ${JSON.stringify(context.wishlist || [])}`;
   }
 
-  getJourneyPrompt(chatHistory) {
-    const chatHistoryData = chatHistory.map(msg => `${msg.role === 'user' ? 'Client' : 'Concierge'}: ${msg.content}`).join('\n');
-    return `
---- CONVERSATION HISTORY ---
-${chatHistoryData}
-`;
-  }
-
-  /**
-   * Assembles the final prompt to be sent to the Model Router.
-   */
   buildPrompt(context, rankedProducts, userMessage, chatHistory, timelineStr = '') {
-    const system = this.getSystemPrompt();
-    const intent = this.getIntentPrompt(context.intent);
-    const commerce = this.getCommercePrompt(context, rankedProducts);
-    const journey = this.getJourneyPrompt(chatHistory);
+    const history = chatHistory
+      .map(m => `${m.role === 'user' ? 'Client' : 'Concierge'}: ${m.content || m.text || ''}`)
+      .join('\n');
 
-    return `
-${system}
+    return `${this.getSystemPrompt()}
 
-${intent}
-${commerce}
+--- CURRENT TASK ---
+${this.getIntentGuidance(context.intent)}
+
+${this.getCommerceContext(context, rankedProducts)}
 
 --- SESSION TIMELINE ---
-${timelineStr}
+${timelineStr || 'New session.'}
 
-${journey}
+--- CONVERSATION HISTORY ---
+${history || 'No prior turns.'}
 
---- LATEST CLIENT MESSAGE ---
+--- CLIENT MESSAGE ---
 Client: ${userMessage}
-Concierge (Reply in luxury tone, explain choices based on Ground Truth):
-`;
+
+Concierge (respond in 2-4 sentences, luxury tone, only reference products from the AVAILABLE INVENTORY above):`;
   }
 }
 

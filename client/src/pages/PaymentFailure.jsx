@@ -14,7 +14,7 @@ const PaymentFailure = () => {
           </svg>
         </div>
         <h2 className="text-3xl font-display font-bold mb-4 text-gray-900 dark:text-white">Payment Failed</h2>
-        <p className="text-gray-500 mb-8">We couldn't process your payment. Your order has been placed but is pending payment.</p>
+        <p className="text-gray-500 mb-8">We couldn&apos;t process your payment. Your order has been placed but is pending payment.</p>
         
         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mb-8 text-sm text-left">
           <p className="mb-2"><span className="text-gray-500">Order ID:</span> <span className="font-medium text-gray-900 dark:text-white">{orderId}</span></p>

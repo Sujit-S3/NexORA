@@ -8,7 +8,7 @@ class AIExperiments {
         variants: ['A', 'B'],
         // A: 40 brand / 20 cat / 15 price
         // B: 35 brand / 25 cat / 20 price
-      }
+      },
     };
   }
 
@@ -18,7 +18,7 @@ class AIExperiments {
    */
   getVariant(experimentId, sessionId = 'default') {
     const experiment = this.experiments[experimentId];
-    if (!experiment || !experiment.enabled) return 'A'; // Default to control
+    if (!experiment || !experiment.enabled) {return 'A';} // Default to control
 
     // Simple ASCII sum modulo length to assign variant
     let hash = 0;

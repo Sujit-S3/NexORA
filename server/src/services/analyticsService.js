@@ -33,7 +33,7 @@ exports.getAdminAnalyticsSummary = async () => {
     }
 
     (order.items || []).forEach(item => {
-      if (!item.product) return;
+      if (!item.product) {return;}
       const pid = item.product._id.toString();
       const brand = item.product.brand || 'Unknown';
       const cat = item.product.category?.toString() || 'Unknown';
@@ -68,7 +68,7 @@ exports.getAdminAnalyticsSummary = async () => {
     avgOrderValue: avgOrderValue.toFixed(2),
     totalOrders: orders.length,
     topBrands,
-    topProducts: topProducts.map(p => ({ name: p.name, brand: p.brand, price: p.price }))
+    topProducts: topProducts.map(p => ({ name: p.name, brand: p.brand, price: p.price })),
   };
 };
 
@@ -78,9 +78,9 @@ exports.getAdminAnalyticsSummary = async () => {
 exports.getCustomerTrendsSummary = async () => {
   const preferences = await UserPreference.find().lean();
   
-  let intents = {};
-  let budgets = {};
-  let recipients = {};
+  const intents = {};
+  const budgets = {};
+  const recipients = {};
 
   preferences.forEach(p => {
     (p.conciergeIntents || []).forEach(i => intents[i] = (intents[i] || 0) + 1);
@@ -95,6 +95,6 @@ exports.getCustomerTrendsSummary = async () => {
   return {
     topSearches: Object.entries(intents).sort((a, b) => b[1] - a[1]).slice(0, 5).map(x => x[0]),
     popularBudgets: Object.entries(budgets).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0]),
-    popularGiftRecipients: Object.entries(recipients).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0])
+    popularGiftRecipients: Object.entries(recipients).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0]),
   };
 };

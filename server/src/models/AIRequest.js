@@ -5,7 +5,7 @@ const aiRequestSchema = new mongoose.Schema(
     requestId: {
       type: String,
       required: true,
-      index: true
+      index: true,
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -51,12 +51,12 @@ const aiRequestSchema = new mongoose.Schema(
     finalOutcome: {
       type: String,
       enum: ['SUCCESS', 'FAILOVER_SUCCESS', 'ERROR_TIMEOUT', 'ERROR_RATE_LIMIT', 'ERROR_MODEL_NOT_FOUND', 'ERROR_NETWORK', 'ERROR_UNKNOWN', 'ERROR', 'FAILOVER_ERROR'],
-      default: 'SUCCESS'
-    }
+      default: 'SUCCESS',
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 module.exports = mongoose.model('AIRequest', aiRequestSchema);

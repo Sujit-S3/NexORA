@@ -6,7 +6,7 @@ class ResponseGuard {
       'SkyDweller': 'Sky-Dweller',
       'SeaDweller': 'Sea-Dweller',
       'Speed Master': 'Speedmaster',
-      'Seamaster Pro': 'Seamaster Professional'
+      'Seamaster Pro': 'Seamaster Professional',
     };
 
     for (const [wrong, right] of Object.entries(fixes)) {
@@ -39,7 +39,7 @@ class ResponseGuard {
       if (lowerResponse.includes(word)) {
         return { 
           isValid: false, 
-          safeResponse: "As a NexORA luxury concierge, I can only provide assistance regarding our exclusive catalog and services. How else may I assist you today?" 
+          safeResponse: 'As a NexORA luxury concierge, I can only provide assistance regarding our exclusive catalog and services. How else may I assist you today?', 
         };
       }
     }

@@ -8,7 +8,7 @@ class ContextBuilder {
    * Helper to roughly estimate tokens (1 token ≈ 4 chars)
    */
   estimateTokens(obj) {
-    if (!obj) return 0;
+    if (!obj) {return 0;}
     return Math.ceil(JSON.stringify(obj).length / 4);
   }
 
@@ -46,14 +46,14 @@ class ContextBuilder {
    * @returns {Object} Rich commerce context
    */
   async buildContext(user, detectedIntent) {
-    let context = {
+    const context = {
       user: null,
       cart: null,
       wishlist: null,
       orders: null,
       preferences: null,
       intent: detectedIntent.intent,
-      entities: detectedIntent.entities
+      entities: detectedIntent.entities,
     };
 
     if (user) {
@@ -65,7 +65,7 @@ class ContextBuilder {
 
       // Always pull preferences if available to respect budget/style
       promises.push(
-        preferenceContext.build(userId).then(res => { context.preferences = res; })
+        preferenceContext.build(userId).then(res => { context.preferences = res; }),
       );
 
       if (['checkout-assistance', 'gift-finder', 'comparison', 'luxury-advisor'].includes(detectedIntent.intent)) {

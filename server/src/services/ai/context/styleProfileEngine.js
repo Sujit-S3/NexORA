@@ -32,9 +32,9 @@ class StyleProfileEngine {
    * Adjusts the weighted preference for brands and categories based on interaction.
    */
   async adjustWeights(userId, sessionId, productData, weightDelta) {
-    if (!productData || !productData.brand) return;
+    if (!productData || !productData.brand) {return;}
 
-    let query = userId ? { userId } : { sessionId };
+    const query = userId ? { userId } : { sessionId };
     let prefs = await UserPreference.findOne(query);
 
     if (!prefs) {
@@ -67,9 +67,9 @@ class StyleProfileEngine {
    * Retrieves the top 3 preferred brands and categories based on current weights.
    */
   async getTopPreferences(userId, sessionId) {
-    let query = userId ? { userId } : { sessionId };
+    const query = userId ? { userId } : { sessionId };
     const prefs = await UserPreference.findOne(query).lean();
-    if (!prefs) return { topBrands: [], topCategories: [] };
+    if (!prefs) {return { topBrands: [], topCategories: [] };}
 
     // Sort Maps by weight descending
     const brands = Object.entries(prefs.preferredBrands || {})

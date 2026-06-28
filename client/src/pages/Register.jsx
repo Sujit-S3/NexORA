@@ -116,11 +116,11 @@ const Register = () => {
                 onChange={handleCountryChange}
                 className="w-full px-4 py-3.5 rounded-xl bg-[#FDFBF7] dark:bg-white/5 border border-[#EBE0CF] dark:border-white/10 text-[#2C241B] dark:text-white transition-all duration-300 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]"
               >
-                <option value="+91">India (+91)</option>
-                <option value="+1">US/Canada (+1)</option>
-                <option value="+44">UK (+44)</option>
-                <option value="+971">UAE (+971)</option>
-                <option value="+49">EU (+49)</option>
+                <option value="+91" className="bg-white dark:bg-[#1A1008]">India (+91)</option>
+                <option value="+1" className="bg-white dark:bg-[#1A1008]">US/Canada (+1)</option>
+                <option value="+44" className="bg-white dark:bg-[#1A1008]">UK (+44)</option>
+                <option value="+971" className="bg-white dark:bg-[#1A1008]">UAE (+971)</option>
+                <option value="+49" className="bg-white dark:bg-[#1A1008]">EU (+49)</option>
               </select>
             </div>
             <div className="w-2/3 mt-[18px]">
@@ -143,11 +143,11 @@ const Register = () => {
               onChange={handleChange}
               className="w-full px-5 py-3 rounded-xl bg-[#FDFBF7] dark:bg-white/5 border border-[#EBE0CF] dark:border-white/10 text-[#2C241B] dark:text-white transition-all duration-300 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]"
             >
-              <option value="INR">INR (₹)</option>
-              <option value="USD">USD ($)</option>
-              <option value="GBP">GBP (£)</option>
-              <option value="EUR">EUR (€)</option>
-              <option value="AED">AED (د.إ)</option>
+              <option value="INR" className="bg-white dark:bg-[#1A1008]">INR (₹)</option>
+              <option value="USD" className="bg-white dark:bg-[#1A1008]">USD ($)</option>
+              <option value="GBP" className="bg-white dark:bg-[#1A1008]">GBP (£)</option>
+              <option value="EUR" className="bg-white dark:bg-[#1A1008]">EUR (€)</option>
+              <option value="AED" className="bg-white dark:bg-[#1A1008]">AED (د.إ)</option>
             </select>
           </div>
 

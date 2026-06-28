@@ -41,24 +41,20 @@ export default defineConfig({
     chunkSizeWarningLimit: 800,
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Core React bundle
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          // HTTP client
-          axios: ['axios'],
-          // Heavy animation library \u2014 deferred chunk
-          framer: ['framer-motion'],
-          // Charts \u2014 admin only, deferred chunk
-          recharts: ['recharts'],
-          // 3D rendering \u2014 heavy, isolate
-          three: ['three'],
-          // Analytics
-          posthog: ['posthog-js'],
-          // Confetti
-          confetti: ['react-confetti'],
-          // Lucide icons \u2014 large icon set
-          icons: ['lucide-react'],
-        },
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'vendor';
+            }
+            if (id.includes('axios')) return 'axios';
+            if (id.includes('framer-motion')) return 'framer';
+            if (id.includes('recharts')) return 'recharts';
+            if (id.includes('three')) return 'three';
+            if (id.includes('posthog-js')) return 'posthog';
+            if (id.includes('react-confetti')) return 'confetti';
+            if (id.includes('lucide-react')) return 'icons';
+          }
+        }
       },
     },
   },

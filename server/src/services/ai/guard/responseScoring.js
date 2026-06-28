@@ -20,7 +20,7 @@ class ResponseScoring {
     if (rankedProducts.length > 0) {
       let mentioned = 0;
       for (const name of productNames) {
-        if (aiTextLower.includes(name)) mentioned++;
+        if (aiTextLower.includes(name)) {mentioned++;}
       }
       
       // If it mentioned products but none of them matched the ranked ones (hallucination)
@@ -70,7 +70,7 @@ class ResponseScoring {
       groundingScore: Math.max(groundingScore, 0),
       contextCoverage,
       policyViolations,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 }

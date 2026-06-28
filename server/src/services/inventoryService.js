@@ -32,6 +32,6 @@ exports.getInventorySummary = async () => {
     estimatedStockValue: totalStockValue,
     lowStockAlerts: lowStockItems.slice(0, 10), // Top 10 low stock
     outOfStockAlerts: outOfStockItems.slice(0, 5),
-    brandStockDistribution: stockByBrand
+    brandStockDistribution: stockByBrand,
   };
 };

@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { MongoMemoryServer } = require('mongodb-memory-server');
+const { MongoMemoryReplSet } = require('mongodb-memory-server');
 const mongoose = require('mongoose');
 
 process.env.JWT_SECRET = 'qa_test_secret';
@@ -21,7 +21,7 @@ let orderId, paymentId;
 
 const runQA = async () => {
   console.log('🛡️ Starting Full QA Audit...');
-  mongoServer = await MongoMemoryServer.create();
+  mongoServer = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
   await mongoose.connect(mongoServer.getUri());
 
   try {

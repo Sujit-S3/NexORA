@@ -24,7 +24,7 @@ class RecommendationMemory {
     eventBus.on(EVENTS.VIEW_RECOMMENDATION, (payload) => {
       const mem = this.getSessionMemory(payload.meta.sessionId);
       for (const recId of payload.productIds || []) {
-        if (!mem.has(recId)) mem.set(recId, { status: 'RECOMMENDED', count: 1 });
+        if (!mem.has(recId)) {mem.set(recId, { status: 'RECOMMENDED', count: 1 });}
         else {
           const item = mem.get(recId);
           item.count++;
@@ -60,7 +60,7 @@ class RecommendationMemory {
       const state = mem.get(id);
       
       // If it's been purchased in this session, don't recommend it again
-      if (state && state.status === 'PURCHASED') return false;
+      if (state && state.status === 'PURCHASED') {return false;}
 
       // If recommended >= 3 times and user never clicked/carted it, ignore it (Recommendation Fatigue)
       if (state && state.status === 'RECOMMENDED' && state.count >= 3) {

@@ -52,7 +52,7 @@ export default function ForgotPassword() {
             Reset Password
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm">
-            Enter your email and we'll send a reset link
+            Enter your email and we&apos;ll send a reset link
           </p>
         </div>
 
@@ -98,12 +98,11 @@ export default function ForgotPassword() {
 
             {/* Development mode: show link directly since email isn't configured */}
             {devLink && (
-              <div className="mb-6 p-4 bg-amber-50/50 dark:bg-amber-500/10 border border-amber-200/50 dark:border-amber-500/20 rounded-xl text-left">
-                <p className="text-[10px] uppercase tracking-widest text-[#D4AF37] font-bold mb-2">
-                  ⚡ Dev Mode — No Email Configured
+              <div className="mb-6 p-4 bg-amber-50/50 dark:bg-amber-500/10 border border-amber-200/50 dark:border-amber-500/20 rounded-xl text-center">
+                <p className="text-[10px] uppercase tracking-widest text-[#D4AF37] font-bold mb-3">
+                  TO CHANGE PASSWORD
                 </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3 break-all">{devLink}</p>
-                <div className="flex gap-2">
+                <div className="flex justify-center gap-2">
                   <button onClick={copyLink}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-[#D4AF37]/20 border border-[#D4AF37]/30 text-[#D4AF37] text-xs rounded-lg hover:bg-[#D4AF37]/30 transition-colors">
                     <Copy size={12} /> {copied ? 'Copied!' : 'Copy Link'}

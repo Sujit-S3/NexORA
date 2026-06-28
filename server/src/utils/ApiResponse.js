@@ -4,8 +4,8 @@ class ApiResponse {
   constructor(statusCode, message, data = null, pagination = null) {
     this.success = statusCode < 400;
     this.message = message;
-    if (data !== null) this.data = data;
-    if (pagination !== null) this.pagination = pagination;
+    if (data !== null) {this.data = data;}
+    if (pagination !== null) {this.pagination = pagination;}
   }
 }
 
@@ -17,8 +17,6 @@ class ApiResponse {
  * @param {*} data - Response payload
  * @param {object|null} pagination - Optional pagination meta
  */
-const sendResponse = (res, statusCode, message, data = null, pagination = null) => {
-  return res.status(statusCode).json(new ApiResponse(statusCode, message, data, pagination));
-};
+const sendResponse = (res, statusCode, message, data = null, pagination = null) => res.status(statusCode).json(new ApiResponse(statusCode, message, data, pagination));
 
 module.exports = { ApiResponse, sendResponse };

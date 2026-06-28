@@ -7,22 +7,18 @@ const jwt = require('jsonwebtoken');
  * @param {string} id - User _id from MongoDB
  * @returns {string} Signed JWT
  */
-const generateAccessToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+const generateAccessToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   });
-};
 
 /**
  * Generate a signed JWT refresh token.
  * @param {string} id - User _id from MongoDB
  * @returns {string} Signed refresh JWT
  */
-const generateRefreshToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, {
+const generateRefreshToken = (id) => jwt.sign({ id }, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
   });
-};
 
 /**
  * Send JWT as an HTTP-only cookie and return in response body.

@@ -47,7 +47,8 @@ const Settings = () => {
     finally { setSaving(false); }
   };
 
-  if (isLoading || !settings) return <div className="min-h-screen flex justify-center items-center"><Spinner size="lg" /></div>;
+  if (isLoading) return <div className="min-h-screen flex justify-center items-center"><Spinner size="lg" /></div>;
+  if (!settings) return <div className="min-h-screen pt-32 text-center text-red-500">Failed to load settings (or you are rate-limited). Please try again later.</div>;
 
   return (
     <div className="bg-transparent min-h-screen pt-32 pb-20">
@@ -55,7 +56,7 @@ const Settings = () => {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-display font-bold text-[#111827] dark:text-[#F5F5F5] tracking-tight">Store Settings</h1>
-            <p className="text-sm text-gray-500 mt-1">Configure your store's global configuration</p>
+            <p className="text-sm text-gray-500 mt-1">Configure your store&apos;s global configuration</p>
           </div>
           <button onClick={handleSave} disabled={saving}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium shadow-lg transition-all disabled:opacity-50 ${saved ? 'bg-green-500 text-white' : 'bg-gradient-to-r from-[#D4AF37] to-[#B38945] text-white hover:shadow-[0_4px_20px_rgba(212,175,55,0.4)]'}`}>

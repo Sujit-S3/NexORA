@@ -18,13 +18,13 @@ const getAllDiscounts = asyncHandler(async (req, res) => {
 const createDiscount = asyncHandler(async (req, res) => {
   // Sanitize: coerce numeric strings
   const body = { ...req.body };
-  if (body.discountValue) body.discountValue = Number(body.discountValue);
-  if (body.minOrderAmount) body.minOrderAmount = Number(body.minOrderAmount);
-  if (body.maxDiscountAmount) body.maxDiscountAmount = Number(body.maxDiscountAmount);
-  if (body.usageLimit) body.usageLimit = Number(body.usageLimit);
-  else delete body.usageLimit;
-  if (!body.expiryDate) delete body.expiryDate;
-  if (!body.maxDiscountAmount) delete body.maxDiscountAmount;
+  if (body.discountValue) {body.discountValue = Number(body.discountValue);}
+  if (body.minOrderAmount) {body.minOrderAmount = Number(body.minOrderAmount);}
+  if (body.maxDiscountAmount) {body.maxDiscountAmount = Number(body.maxDiscountAmount);}
+  if (body.usageLimit) {body.usageLimit = Number(body.usageLimit);}
+  else {delete body.usageLimit;}
+  if (!body.expiryDate) {delete body.expiryDate;}
+  if (!body.maxDiscountAmount) {delete body.maxDiscountAmount;}
 
   // Validate percentage cap
   if (body.discountType === 'percentage' && body.discountValue > 100) {
@@ -40,16 +40,16 @@ const createDiscount = asyncHandler(async (req, res) => {
 // @access Admin
 const updateDiscount = asyncHandler(async (req, res) => {
   const body = { ...req.body };
-  if (body.discountValue !== undefined) body.discountValue = Number(body.discountValue);
-  if (body.minOrderAmount !== undefined) body.minOrderAmount = Number(body.minOrderAmount);
-  if (body.maxDiscountAmount !== undefined && body.maxDiscountAmount !== '') body.maxDiscountAmount = Number(body.maxDiscountAmount);
-  if (body.usageLimit !== undefined && body.usageLimit !== '') body.usageLimit = Number(body.usageLimit);
+  if (body.discountValue !== undefined) {body.discountValue = Number(body.discountValue);}
+  if (body.minOrderAmount !== undefined) {body.minOrderAmount = Number(body.minOrderAmount);}
+  if (body.maxDiscountAmount !== undefined && body.maxDiscountAmount !== '') {body.maxDiscountAmount = Number(body.maxDiscountAmount);}
+  if (body.usageLimit !== undefined && body.usageLimit !== '') {body.usageLimit = Number(body.usageLimit);}
 
   const discount = await Discount.findByIdAndUpdate(req.params.id, body, {
     new: true,
     runValidators: true,
   });
-  if (!discount) throw ApiError.notFound('Discount not found');
+  if (!discount) {throw ApiError.notFound('Discount not found');}
   sendResponse(res, 200, 'Discount updated', discount);
 });
 
@@ -58,7 +58,7 @@ const updateDiscount = asyncHandler(async (req, res) => {
 // @access Admin
 const deleteDiscount = asyncHandler(async (req, res) => {
   const discount = await Discount.findByIdAndDelete(req.params.id);
-  if (!discount) throw ApiError.notFound('Discount not found');
+  if (!discount) {throw ApiError.notFound('Discount not found');}
   sendResponse(res, 200, 'Discount deleted');
 });
 
@@ -67,11 +67,11 @@ function computeDiscount(discount, orderAmount) {
   let amount = 0;
   if (discount.discountType === 'percentage') {
     amount = (orderAmount * discount.discountValue) / 100;
-    if (discount.maxDiscountAmount) amount = Math.min(amount, discount.maxDiscountAmount);
+    if (discount.maxDiscountAmount) {amount = Math.min(amount, discount.maxDiscountAmount);}
   } else {
     amount = discount.discountValue;
   }
-  if (amount > orderAmount) amount = orderAmount;
+  if (amount > orderAmount) {amount = orderAmount;}
   return Math.round(amount * 100) / 100;
 }
 
@@ -80,12 +80,12 @@ function computeDiscount(discount, orderAmount) {
 // @access Public
 const validateDiscount = asyncHandler(async (req, res) => {
   const { code, orderAmount } = req.body;
-  if (!code) throw ApiError.badRequest('Discount code is required');
-  if (!orderAmount || orderAmount <= 0) throw ApiError.badRequest('Invalid order amount');
+  if (!code) {throw ApiError.badRequest('Discount code is required');}
+  if (!orderAmount || orderAmount <= 0) {throw ApiError.badRequest('Invalid order amount');}
 
   const discount = await Discount.findOne({ code: code.trim().toUpperCase() });
-  if (!discount) throw ApiError.notFound('Invalid discount code');
-  if (!discount.isActive) throw ApiError.badRequest('This discount code is disabled');
+  if (!discount) {throw ApiError.notFound('Invalid discount code');}
+  if (!discount.isActive) {throw ApiError.badRequest('This discount code is disabled');}
 
   // Inline expiry check (virtuals not reliable on lean docs)
   if (discount.expiryDate && new Date() > new Date(discount.expiryDate)) {
@@ -100,7 +100,7 @@ const validateDiscount = asyncHandler(async (req, res) => {
   // Minimum order check
   if (orderAmount < discount.minOrderAmount) {
     throw ApiError.badRequest(
-      `Minimum order amount of ₹${discount.minOrderAmount.toLocaleString('en-IN')} required for this code`
+      `Minimum order amount of ₹${discount.minOrderAmount.toLocaleString('en-IN')} required for this code`,
     );
   }
 

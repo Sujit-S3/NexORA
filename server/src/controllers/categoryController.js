@@ -52,7 +52,7 @@ const createCategory = asyncHandler(async (req, res) => {
     description,
     parent: parent || null,
     isActive: isActive !== undefined ? isActive : true,
-    image: imageData
+    image: imageData,
   });
 
   sendResponse(res, 201, 'Category created successfully', category);
@@ -64,7 +64,7 @@ const createCategory = asyncHandler(async (req, res) => {
 const updateCategory = asyncHandler(async (req, res) => {
   const { name, description, parent, isActive } = req.body;
 
-  let category = await Category.findById(req.params.id);
+  const category = await Category.findById(req.params.id);
   if (!category) {
     throw ApiError.notFound('Category not found');
   }
@@ -79,9 +79,9 @@ const updateCategory = asyncHandler(async (req, res) => {
     category.slug = slugify(name, { lower: true, strict: true });
   }
 
-  if (description !== undefined) category.description = description;
-  if (parent !== undefined) category.parent = parent || null;
-  if (isActive !== undefined) category.isActive = isActive;
+  if (description !== undefined) {category.description = description;}
+  if (parent !== undefined) {category.parent = parent || null;}
+  if (isActive !== undefined) {category.isActive = isActive;}
 
   if (req.file) {
     // Delete old image if exists

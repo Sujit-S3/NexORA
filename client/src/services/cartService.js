@@ -3,7 +3,7 @@ import api from './api';
 
 export const cartService = {
   getCart: () => api.get('/cart'),
-  addItem: (productId, quantity, size = '') => api.post('/cart/add', { productId, quantity, size }),
+  addItem: (productId, quantity, size = '', color = '') => api.post('/cart/add', { productId, quantity, size, color }),
   updateItem: (productId, quantity, size = '') => api.put('/cart/update', { productId, quantity, size }),
   removeItem: (productId) => api.delete(`/cart/remove/${productId}`),
   clearCart: () => api.delete('/cart/clear'),

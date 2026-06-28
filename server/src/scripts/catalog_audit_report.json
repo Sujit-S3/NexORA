@@ -1,0 +1,47 @@
+{
+  "totalProducts": 64,
+  "validProducts": 64,
+  "invalidProducts": 0,
+  "errors": {
+    "missingImages": [],
+    "duplicateImages": [
+      {
+        "id": "6a3ea420e65ee6b6c581f337",
+        "url": "/assets/luxury/watches/rolex_submariner.png"
+      },
+      {
+        "id": "6a3ea420e65ee6b6c581f349",
+        "url": "/assets/luxury/bags/lv_keepall.png"
+      },
+      {
+        "id": "6a3ea420e65ee6b6c581f355",
+        "url": "/assets/luxury/lifestyle/moleskine_smart_set.png"
+      },
+      {
+        "id": "6a3ea420e65ee6b6c581f365",
+        "url": "/assets/luxury/watches/omega_seamaster_blue.png"
+      },
+      {
+        "id": "6a3ea420e65ee6b6c581f367",
+        "url": "/assets/luxury/gifts/executive_gift_box.png"
+      },
+      {
+        "id": "6a3ea420e65ee6b6c581f369",
+        "url": "/assets/luxury/electronics/apple_watch_ultra.png"
+      },
+      {
+        "id": "6a3ea420e65ee6b6c581f36b",
+        "url": "/assets/luxury/bags/hermes_birkin_orange.png"
+      }
+    ],
+    "missingSKU": [],
+    "duplicateSKU": [],
+    "missingVariants": [],
+    "invalidStock": [],
+    "invalidCategory": [],
+    "missingSlug": [],
+    "brokenURLs": [],
+    "invalidPrices": [],
+    "emptyGallery": []
+  }
+}

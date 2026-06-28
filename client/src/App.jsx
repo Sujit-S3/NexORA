@@ -2,6 +2,7 @@
 
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 
 // Context providers
 import { ThemeProvider } from '@context/ThemeContext';
@@ -68,6 +69,7 @@ const Shipping = lazy(() => import('@pages/admin/Shipping'));
 const EditProduct = lazy(() => import('@pages/admin/EditProduct'));
 const AIStudio = lazy(() => import('@pages/admin/AIStudio'));
 const AITest = lazy(() => import('@pages/admin/AITest'));
+const ManageSizeCharts = lazy(() => import('@pages/admin/ManageSizeCharts'));
 
 // ── Page loading fallback ─────────────────────────────────────────────────
 const PageLoader = () => (
@@ -91,15 +93,34 @@ const AppLayout = ({ children }) => (
 );
 
 // ── App ───────────────────────────────────────────────────────────────────
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const GlobalShortcuts = () => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.altKey && e.key.toLowerCase() === 'h') {
+        navigate('/');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
+  return null;
+};
+
 const App = () => {
   return (
-    <BrowserRouter>
-      <ThemeProvider>
+    <HelmetProvider>
+      <BrowserRouter>
+        <ThemeProvider>
         <AuthProvider>
           <WishlistProvider>
             <CartProvider>
               <AIProvider>
                 <Suspense fallback={<PageLoader />}>
+                  <GlobalShortcuts />
                   <Routes>
                 {/* ── Public routes (with layout) ── */}
                 <Route
@@ -363,6 +384,18 @@ const App = () => {
                   }
                 />
                 <Route
+                  path="/admin/sizes"
+                  element={
+                    <AdminLayout>
+                      <PrivateRoute>
+                        <AdminRoute>
+                          <ManageSizeCharts />
+                        </AdminRoute>
+                      </PrivateRoute>
+                    </AdminLayout>
+                  }
+                />
+                <Route
                   path="/admin/customers"
                   element={
                     <AdminLayout>
@@ -479,6 +512,7 @@ const App = () => {
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
+  </HelmetProvider>
   );
 };
 

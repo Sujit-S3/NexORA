@@ -1,9 +1,9 @@
-// NexORA V7 — Luxury Cart Experience
+// NexORA V13 — Luxury Cart Experience
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, ArrowRight, Plus, Minus, Heart, Sparkles, ShoppingBag, ShieldCheck, Tag, ShoppingCart } from 'lucide-react';
+import { Trash2, ArrowRight, Plus, Minus, Heart, Sparkles, ShoppingBag, ShieldCheck, Tag, ShoppingCart, MessageSquare, Zap } from 'lucide-react';
 import { useCart } from '@context/CartContext';
 import { useWishlist } from '@context/WishlistContext';
 import { productService } from '@services/productService';
@@ -22,10 +22,20 @@ export default function Cart() {
     clearCart 
   } = useCart();
   const { addToWishlist } = useWishlist();
+
   const navigate = useNavigate();
 
+  // V13: Open concierge with cart context pre-loaded
+  const openConciergeWithCart = useCallback(() => {
+    const cartSummary = cartItems.map(i => `${i.name} (x${i.quantity})`).join(', ');
+    sessionStorage.setItem('nexora_concierge_prompt',
+      `I have ${cartItems.length} item(s) in my cart: ${cartSummary}. Total: ${formatPrice(cartTotal)}. Can you help me complete my purchase, find a discount, or suggest complementary pieces?`
+    );
+    navigate('/concierge');
+  }, [cartItems, cartTotal, navigate]);
+
   const handleMoveToWishlist = async (item) => {
-    await addToWishlist(item.product);
+    await addToWishlist(item);
     await removeFromCart(item._id);
   };
 
@@ -122,7 +132,8 @@ export default function Cart() {
 
                     {/* Image */}
                     <Link to={`/product/${item.slug || item._id}`} className="w-full sm:w-40 h-40 rounded-xl flex items-center justify-center shrink-0 overflow-hidden" style={{ background: isDark ? '#111' : '#F2EDE4' }}>
-                      <img loading="lazy" src={item.image} alt={item.name} className="w-full h-full object-contain p-4 mix-blend-multiply dark:mix-blend-normal group-hover:scale-110 transition-transform duration-700"  onError={(e) => {
+                      <img loading="lazy" src={item.image || getLuxuryFallback(item.category?.name || item.category || 'default')} alt={item.name} className="w-full h-full object-contain p-4 mix-blend-multiply dark:mix-blend-normal group-hover:scale-110 transition-transform duration-700"  onError={(e) => {
+    e.currentTarget.onerror = null;
     let cat = 'default';
     try { if (typeof product !== 'undefined') cat = product?.category?.name || product?.category; } catch(err){}
     try { if (typeof item !== 'undefined' && cat === 'default') cat = item?.category?.name || item?.category; } catch(err){}
@@ -140,8 +151,30 @@ export default function Cart() {
                           <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-1.5" style={{ color: SUB }}>
                             {item.brand || 'Luxury'}
                             {item.size && ` • Size: ${item.size}`}
+                            {item.color && ` • ${item.color}`}
                           </p>
                           <Link to={`/product/${item.slug || item._id}`} className="font-playfair text-xl hover:text-[#D4AF37] transition-colors">{item.name}</Link>
+                          
+                          {/* Fit Intelligence Tags */}
+                          {(item.fitType || item.fitWarning) && (
+                            <div className="flex flex-wrap gap-2 mt-2 mb-1">
+                              {item.fitType && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold tracking-widest uppercase border border-[#D4AF37]/30 text-[#D4AF37] bg-black/20">
+                                  Fit: {item.fitType}
+                                </span>
+                              )}
+                              {item.confidence && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold tracking-widest uppercase border border-gray-500/30 text-gray-400 bg-black/20">
+                                  {item.confidence}% Confidence
+                                </span>
+                              )}
+                              {item.fitWarning && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold tracking-widest uppercase border border-red-500/30 text-red-400 bg-red-500/10">
+                                  {item.fitWarning}
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <span className="text-xl font-medium tracking-tight">{formatPrice(item.price)}</span>
                       </div>
@@ -229,6 +262,50 @@ export default function Cart() {
                   </button>
                 </div>
 
+                {/* V13: Ask Concierge CTA */}
+                <div className="mb-6 p-5 rounded-xl relative overflow-hidden" style={{ background: '#050505', border: '1px solid #1A1A1A' }}>
+                  <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at 100% 50%, rgba(212,175,55,0.08) 0%, transparent 60%)' }} />
+                  <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(212,175,55,0.35), transparent)' }} />
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-7 h-7 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/25 flex items-center justify-center">
+                        <Sparkles size={10} className="text-[#D4AF37]" />
+                      </div>
+                      <p className="text-[9px] text-[#D4AF37] uppercase tracking-widest font-bold">Private Concierge</p>
+                    </div>
+                    <p className="text-[12px] text-gray-400 leading-relaxed mb-4">
+                      Ask our AI advisor to find a discount code, suggest complementary pieces, or help you decide.
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      {[
+                        { label: 'Find a discount code',      prompt: `I have ${cartItems.length} items in my cart. Do you have any discount codes or offers for me?` },
+                        { label: 'Suggest complementary pieces', prompt: `I have these items in my cart: ${cartItems.map(i => i.name).join(', ')}. What luxury pieces would complement them?` },
+                        { label: 'Help me decide',             prompt: `I have ${cartItems.length} items in my cart totalling ${formatPrice(cartTotal)}. Is this a good buy? Should I reconsider anything?` },
+                      ].map((item, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            sessionStorage.setItem('nexora_concierge_prompt', item.prompt);
+                            navigate('/concierge');
+                          }}
+                          className="w-full text-left px-3.5 py-2.5 rounded-lg text-[11px] text-gray-400 hover:text-[#D4AF37] transition-colors group flex items-center justify-between"
+                          style={{ background: '#0B0B0B', border: '1px solid #1A1A1A' }}
+                        >
+                          {item.label}
+                          <ArrowRight size={10} className="opacity-0 group-hover:opacity-100 text-[#D4AF37] transition-all" />
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={openConciergeWithCart}
+                      className="mt-3 w-full py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:bg-[#D4AF37] hover:text-black"
+                      style={{ border: '1px solid rgba(212,175,55,0.3)', color: '#D4AF37', background: 'transparent' }}
+                    >
+                      <MessageSquare size={10} /> Open Full Concierge
+                    </button>
+                  </div>
+                </div>
+
                 <button 
                   onClick={() => navigate('/checkout')} 
                   className={`w-full py-4 text-[12px] font-bold tracking-widest uppercase transition-opacity flex items-center justify-center gap-3 mb-4 ${cartItems.some(i => i.stock === 0 || i.isActive === false || i.quantity > i.stock) ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'hover:opacity-90'}`}
@@ -263,7 +340,8 @@ export default function Cart() {
                         recommendations.map(r => (
                           <Link key={r._id} to={`/product/${r.slug}`} className="flex items-center gap-4 group">
                             <div className="w-16 h-16 rounded flex items-center justify-center bg-[#111] shrink-0 border border-white/5 group-hover:border-[#D4AF37]/50 transition-colors">
-                              <img loading="lazy" src={r.images?.[0]?.url} alt="" className="w-10 h-10 object-contain"  onError={(e) => {
+                              <img loading="lazy" src={r.primaryImage?.url || r.images?.[0]?.url || getLuxuryFallback(r.category?.name || r.category || 'default')} alt="" className="w-10 h-10 object-contain"  onError={(e) => {
+    e.currentTarget.onerror = null;
     let cat = 'default';
     try { if (typeof product !== 'undefined') cat = product?.category?.name || product?.category; } catch(err){}
     try { if (typeof item !== 'undefined' && cat === 'default') cat = item?.category?.name || item?.category; } catch(err){}

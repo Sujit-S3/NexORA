@@ -5,6 +5,9 @@ import pluginReactRefresh from 'eslint-plugin-react-refresh';
 
 export default [
   {
+    ignores: ['dist/**', 'node_modules/**'],
+  },
+  {
     files: ['**/*.{js,jsx}'],
     languageOptions: {
       globals: { ...globals.browser },
