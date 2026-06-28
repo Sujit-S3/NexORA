@@ -173,6 +173,13 @@ export default function Home() {
   });
 
   useEffect(() => {
+    const isPreview = new URLSearchParams(window.location.search).get('preview') === '1';
+    if (!isPreview && localStorage.getItem('nexora_intro_seen') !== 'true') {
+      navigate('/get-started', { replace: true });
+    }
+  }, [navigate]);
+
+  useEffect(() => {
     const sync = () => setIsDark(document.documentElement.classList.contains('dark'));
     sync();
     const ob = new MutationObserver(sync);
