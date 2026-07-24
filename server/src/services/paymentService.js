@@ -1,24 +1,94 @@
-// NexORA — Simulated Payment Service (stub)
-// Full implementation in Phase 5.
+// NexORA — Payment Service
+// Real Razorpay integration: order creation, HMAC signature verification
+// (checkout callback + webhook). No payment status is ever trusted from the
+// client directly — everything here is verified against RAZORPAY_KEY_SECRET.
+
+const crypto = require('crypto');
+const { getRazorpayClient } = require('./razorpayClient');
 
 /**
- * Simulates a payment gateway response.
- * In Phase 5, this will process card, UPI, wallet, and COD payments.
- *
- * @param {object} paymentData - { amount, method, orderId, userId }
- * @returns {Promise<object>} Simulated gateway response
+ * Creates a Razorpay Order, required before opening the Checkout widget.
+ * @param {object} params - { amount (major units, e.g. rupees), currency, receipt }
+ * @returns {Promise<object>} Razorpay order object (contains order.id)
  */
-const processPayment = async (paymentData) => {
-  throw new Error('paymentService.processPayment — not yet implemented (Phase 5)');
+const createRazorpayOrder = async ({ amount, currency = 'INR', receipt }) => {
+  const razorpay = getRazorpayClient();
+  if (!razorpay) {
+    throw new Error('Razorpay is not configured');
+  }
+
+  // Razorpay expects the smallest currency unit (paise for INR).
+  const amountInPaise = Math.round(amount * 100);
+
+  return razorpay.orders.create({
+    amount: amountInPaise,
+    currency,
+    receipt,
+  });
+};
+
+/** Constant-time hex string comparison (avoids leaking match length via timing). */
+const timingSafeEqualHex = (a, b) => {
+  const bufA = Buffer.from(String(a), 'hex');
+  const bufB = Buffer.from(String(b), 'hex');
+  if (bufA.length !== bufB.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
 };
 
 /**
- * Simulates a refund.
- * @param {string} transactionId - Transaction to refund
- * @returns {Promise<object>} Simulated refund response
+ * Verifies the signature Razorpay Checkout returns to the browser after a
+ * successful payment. This is the standard Razorpay integration check:
+ * HMAC-SHA256(order_id + "|" + payment_id, key_secret) === signature.
  */
-const processRefund = async (transactionId) => {
-  throw new Error('paymentService.processRefund — not yet implemented (Phase 5)');
+const verifyPaymentSignature = ({ orderId, paymentId, signature }) => {
+  if (!orderId || !paymentId || !signature) {
+    return false;
+  }
+  if (!process.env.RAZORPAY_KEY_SECRET) {
+    return false;
+  }
+
+  const expected = crypto
+    .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+    .update(`${orderId}|${paymentId}`)
+    .digest('hex');
+
+  return timingSafeEqualHex(expected, signature);
 };
 
-module.exports = { processPayment, processRefund };
+/**
+ * Verifies the `X-Razorpay-Signature` header on incoming webhook events
+ * against the raw request body, using the separate webhook secret.
+ */
+const verifyWebhookSignature = ({ rawBody, signature }) => {
+  if (!rawBody || !signature) {
+    return false;
+  }
+  if (!process.env.RAZORPAY_WEBHOOK_SECRET) {
+    return false;
+  }
+
+  const expected = crypto
+    .createHmac('sha256', process.env.RAZORPAY_WEBHOOK_SECRET)
+    .update(rawBody)
+    .digest('hex');
+
+  return timingSafeEqualHex(expected, signature);
+};
+
+/**
+ * Refunds are not yet implemented. Left as an explicit stub rather than a
+ * fake success response — callers must handle this failing.
+ */
+const processRefund = async () => {
+  throw new Error('paymentService.processRefund — not yet implemented');
+};
+
+module.exports = {
+  createRazorpayOrder,
+  verifyPaymentSignature,
+  verifyWebhookSignature,
+  processRefund,
+};

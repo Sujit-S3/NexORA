@@ -40,7 +40,20 @@ const paymentSchema = new mongoose.Schema(
       type: String,
       unique: true,
     },
-    // Stores the simulated gateway response payload
+    // Razorpay identifiers — set once initiatePayment/verifyPayment run
+    razorpayOrderId: {
+      type: String,
+      default: null,
+    },
+    razorpayPaymentId: {
+      type: String,
+      default: null,
+    },
+    razorpaySignature: {
+      type: String,
+      default: null,
+    },
+    // Raw Razorpay API / webhook payload, for auditing and support
     gatewayResponse: {
       type: mongoose.Schema.Types.Mixed,
       default: {},
@@ -65,6 +78,7 @@ const paymentSchema = new mongoose.Schema(
 paymentSchema.index({ order: 1 });
 paymentSchema.index({ user: 1, createdAt: -1 });
 paymentSchema.index({ status: 1 });
+paymentSchema.index({ razorpayOrderId: 1 });
 
 // ── Auto-generate transaction ID ─────────────────────────────────────────
 paymentSchema.pre('save', function (next) {

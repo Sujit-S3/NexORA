@@ -29,7 +29,17 @@ app.use(
 );
 
 // ── Request parsing ──────────────────────────────────────────────────────
-app.use(express.json({ limit: '10mb' }));
+// The verify callback stashes the raw body bytes on req.rawBody — needed by
+// the Razorpay webhook handler to compute its HMAC signature, since the
+// signature is over the exact raw payload, not the re-serialized JSON.
+app.use(
+  express.json({
+    limit: '10mb',
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  }),
+);
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 

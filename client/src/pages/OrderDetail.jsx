@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { orderService } from '@services/orderService';
 import { paymentService } from '@services/paymentService';
+import { useAuth } from '@context/AuthContext';
+import { openRazorpayCheckout } from '../utils/razorpay';
 import Spinner from '@components/common/Spinner';
 
 const OrderDetail = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const [order, setOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,18 +32,39 @@ const OrderDetail = () => {
     setIsProcessingPayment(true);
     try {
       const paymentRes = await paymentService.initiate({ orderId: id });
-      const paymentId = paymentRes.data.data._id;
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      const isSuccess = Math.random() > 0.2;
-      
-      await paymentService.verify({ paymentId, simulateStatus: isSuccess ? 'success' : 'failed' });
-      
-      if (isSuccess) {
-        window.location.href = `/payment-success?orderId=${id}&paymentId=${paymentId}`;
-      } else {
-        window.location.href = `/payment-failure?orderId=${id}&paymentId=${paymentId}`;
+      const { _id: paymentId, razorpayOrderId, razorpayKeyId, amount, currency } = paymentRes.data.data;
+
+      if (order?.paymentInfo?.method === 'cod' || !razorpayOrderId) {
+        // COD orders have nothing to verify with a gateway.
+        setIsProcessingPayment(false);
+        return;
       }
+
+      setIsProcessingPayment(false);
+
+      openRazorpayCheckout({
+        razorpayKeyId,
+        razorpayOrderId,
+        amount,
+        currency,
+        prefill: { name: user?.name, email: user?.email },
+        onSuccess: async (response) => {
+          try {
+            await paymentService.verify({
+              paymentId,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            window.location.href = `/payment-success?orderId=${id}&paymentId=${paymentId}`;
+          } catch {
+            window.location.href = `/payment-failure?orderId=${id}&paymentId=${paymentId}`;
+          }
+        },
+        onFailure: () => {
+          window.location.href = `/payment-failure?orderId=${id}&paymentId=${paymentId}`;
+        },
+      });
     } catch (err) {
       alert(err.response?.data?.message || 'Payment initiation failed');
       setIsProcessingPayment(false);

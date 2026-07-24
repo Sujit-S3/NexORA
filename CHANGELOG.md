@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed — Payment Verification Security Hole
+
+The v1.0.0 "Razorpay payment integration scaffold" was actually a client-side
+simulation: the browser computed `Math.random()` and told the server whether
+to mark the order paid, with no gateway involved. This has been replaced with
+a real Razorpay integration:
+
+- Real Razorpay order creation (`initiatePayment`) and HMAC-SHA256 signature
+  verification of the checkout callback (`verifyPayment`) — no payment status
+  is ever trusted from the client.
+- `POST /api/payments/webhook` — signature-verified server-to-server
+  reconciliation for `payment.captured`/`payment.failed` events (the
+  "Razorpay webhook verification" previously listed under Planned for v1.1.0).
+- Idempotent, transaction-guarded payment/order updates — a replayed or
+  concurrent verify request can no longer double-process a payment.
+- Removed the fake `stripe`/`paypal` checkout options that didn't correspond
+  to any real integration.
+- First automated test suite in the repo (Jest + Supertest +
+  mongodb-memory-server): signature verification unit tests and
+  duplicate/replay-prevention integration tests for `POST /api/payments/verify`.
+- Online payments now fail closed: if `RAZORPAY_KEY_ID`/`RAZORPAY_KEY_SECRET`
+  are not configured, only Cash on Delivery is accepted at checkout.
+
+---
+
 ## [1.0.0] — 2026-06-26 — Release Candidate 1 (RC1)
 
 ### Added
@@ -95,7 +122,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Visual Search (image-to-product)
 - Redis AI cache (replace in-memory Map)
 - PostHog funnel dashboards
-- Razorpay webhook verification
+- Razorpay refunds (`paymentService.processRefund` is still an explicit stub)
 
 ---
 

@@ -5,14 +5,17 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, ArrowRight, Truck, CreditCard, CheckCircle2, Package, Sparkles, Star, ShoppingBag } from 'lucide-react';
 import { useCart } from '@context/CartContext';
+import { useAuth } from '@context/AuthContext';
 import { orderService } from '@services/orderService';
 import { paymentService } from '@services/paymentService';
 import { discountService } from '@services/discountService';
 import { getLuxuryFallback } from '../utils/getLuxuryFallback';
 import { formatPrice } from '../utils/formatPrice';
+import { openRazorpayCheckout } from '../utils/razorpay';
 
 export default function Checkout() {
   const { items: cartItems, totalPrice: cartTotal, clearCart, addToCart } = useCart();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
@@ -85,11 +88,10 @@ export default function Checkout() {
     { id: 'priority', name: 'Priority Courier', desc: 'Same Day Delivery', price: 50, icon: ShieldCheck },
   ];
 
-  // Payment Options
+  // Payment Options — 'card' opens the Razorpay widget (card/UPI/netbanking/wallet)
   const paymentOptions = [
-    { id: 'card', name: 'Credit Card', icon: CreditCard },
-    { id: 'stripe', name: 'Stripe', icon: CheckCircle2 },
-    { id: 'paypal', name: 'PayPal', icon: CheckCircle2 },
+    { id: 'card', name: 'Card / UPI / Netbanking', icon: CreditCard },
+    { id: 'cod', name: 'Cash on Delivery', icon: CheckCircle2 },
   ];
 
   const shippingPrice = deliveryOptions.find(d => d.id === delivery)?.price || 0;
@@ -157,23 +159,44 @@ export default function Checkout() {
 
       const { data: orderData } = await orderService.placeOrder(orderPayload);
       const orderId = orderData.data._id;
-      const { data: initData } = await paymentService.initiate({ orderId, paymentMethod: payment });
-      const paymentId = initData.data._id;
+      const { data: initData } = await paymentService.initiate({ orderId });
 
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      const isSuccess = Math.random() > 0.1;
-
-      await paymentService.verify({ paymentId, simulateStatus: isSuccess ? 'success' : 'failed' });
-
-      if (isSuccess) {
+      if (payment === 'cod') {
         clearCart();
+        setLoading(false);
         navigate(`/order-success?orderId=${orderId}`);
-      } else {
-        navigate(`/payment-failure?orderId=${orderId}&paymentId=${paymentId}`);
+        return;
       }
+
+      const { _id: paymentId, razorpayOrderId, razorpayKeyId, amount, currency } = initData.data;
+      setLoading(false);
+
+      openRazorpayCheckout({
+        razorpayKeyId,
+        razorpayOrderId,
+        amount,
+        currency,
+        prefill: { name: user?.name, email: user?.email },
+        onSuccess: async (response) => {
+          try {
+            await paymentService.verify({
+              paymentId,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            clearCart();
+            navigate(`/order-success?orderId=${orderId}`);
+          } catch {
+            navigate(`/payment-failure?orderId=${orderId}&paymentId=${paymentId}`);
+          }
+        },
+        onFailure: () => {
+          navigate(`/payment-failure?orderId=${orderId}&paymentId=${paymentId}`);
+        },
+      });
     } catch (err) {
       setError(err.response?.data?.message || 'Checkout failed. Please try again.');
-    } finally {
       setLoading(false);
     }
   };
