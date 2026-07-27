@@ -20,6 +20,13 @@ export default defineConfig({
     },
   },
 
+  // Vitest — reuses the same aliases/plugins as the real build
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test/setup.js'],
+  },
+
   // Development server
   server: {
     port: 5173,

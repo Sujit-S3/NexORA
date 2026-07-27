@@ -7,18 +7,18 @@ const intentDetector = require('../../src/services/ai/pipeline/intentDetector');
 
 const BENCHMARKS = [
   {
-    prompt: "Show Rolex under 5 lakh",
-    expectedIntent: "luxury-advisor",
+    prompt: 'Show Rolex under 5 lakh',
+    expectedIntent: 'luxury-advisor',
     expectedEntities: {
       brands: ['Rolex'],
-      budget: 500000
-    }
+      budget: 500000,
+    },
   },
   {
-    prompt: "I need a wedding gift for my husband",
-    expectedIntent: "gift-finder",
-    expectedEntities: {}
-  }
+    prompt: 'I need a wedding gift for my husband',
+    expectedIntent: 'gift-finder',
+    expectedEntities: {},
+  },
   // In a real scenario, this contains 200+ prompts.
 ];
 

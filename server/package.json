@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "lint": "eslint src/**/*.js",
+    "lint": "eslint src/**/*.js tests/**/*.js",
     "test": "jest --runInBand"
   },
   "keywords": [

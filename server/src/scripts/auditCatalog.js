@@ -75,7 +75,7 @@ const auditCatalog = async () => {
       }
 
       // Check prices
-      if (p.price == null || p.price < 0 || (p.discountPrice != null && p.discountPrice >= p.price)) {
+      if (p.price === null || p.price === undefined || p.price < 0 || (p.discountPrice !== null && p.discountPrice !== undefined && p.discountPrice >= p.price)) {
         report.errors.invalidPrices.push(p._id);
         productValid = false;
       }
@@ -114,7 +114,7 @@ const auditCatalog = async () => {
           productValid = false;
         } else {
           for (const v of p.variants) {
-            if (v.stock == null || v.stock < 0) {
+            if (v.stock === null || v.stock === undefined || v.stock < 0) {
               report.errors.invalidStock.push({ id: p._id, variantSku: v.sku });
               productValid = false;
             }

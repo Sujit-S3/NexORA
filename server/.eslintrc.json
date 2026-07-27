@@ -21,5 +21,11 @@
     "comma-dangle": ["error", "always-multiline"],
     "arrow-body-style": ["error", "as-needed"],
     "object-shorthand": "error"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["tests/**/*.js"],
+      "env": { "jest": true }
+    }
+  ]
 }
