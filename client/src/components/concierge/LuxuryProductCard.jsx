@@ -199,4 +199,22 @@ function LuxuryProductCard({
   );
 }
 
-export default memo(LuxuryProductCard);
+// buildRecommendationSessions() rebuilds session/product objects from scratch
+// on every streamed token, so reference equality alone would re-render every
+// card on every chunk. Compare by product identity instead of object identity.
+function arePropsEqual(prevProps, nextProps) {
+  const productKey = (p) => p?._id || p?.slug || p?.name;
+  return (
+    productKey(prevProps.product) === productKey(nextProps.product) &&
+    prevProps.index === nextProps.index &&
+    prevProps.inCompare === nextProps.inCompare &&
+    prevProps.isWishlisted === nextProps.isWishlisted &&
+    prevProps.onAddCart === nextProps.onAddCart &&
+    prevProps.onCompare === nextProps.onCompare &&
+    prevProps.onFindSimilar === nextProps.onFindSimilar &&
+    prevProps.onQuickView === nextProps.onQuickView &&
+    prevProps.onToggleWishlist === nextProps.onToggleWishlist
+  );
+}
+
+export default memo(LuxuryProductCard, arePropsEqual);

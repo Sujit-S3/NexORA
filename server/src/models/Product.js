@@ -169,6 +169,9 @@ productSchema.index({ category: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ 'ratings.average': -1 });
 productSchema.index({ isFeatured: 1, isActive: 1 });
+productSchema.index({ isActive: 1, createdAt: -1 }); // default listing sort (newest first)
+productSchema.index({ isNewArrival: 1, isActive: 1 });
+productSchema.index({ isBestSeller: 1, isActive: 1 });
 productSchema.index({ name: 'text', description: 'text', tags: 'text' }); // Full-text search
 
 // ── Virtuals ─────────────────────────────────────────────────────────────

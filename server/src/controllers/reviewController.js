@@ -10,11 +10,23 @@ const ApiError = require('../utils/ApiError');
 // @route   GET /api/reviews
 // @access  Admin
 const getAllReviews = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 50 } = req.query;
+  const pageNum = Number(page);
+  const limitNum = Number(limit);
+  const skip = (pageNum - 1) * limitNum;
+
+  const total = await Review.countDocuments();
   const reviews = await Review.find()
     .populate('user', 'name avatar')
     .populate('product', 'name images')
-    .sort({ createdAt: -1 });
-  sendResponse(res, 200, 'All reviews retrieved', reviews);
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limitNum);
+
+  sendResponse(res, 200, 'All reviews retrieved', {
+    reviews,
+    pagination: { page: pageNum, limit: limitNum, total, pages: Math.ceil(total / limitNum) },
+  });
 });
 
 // @desc    Get all reviews for a product
@@ -23,8 +35,9 @@ const getAllReviews = asyncHandler(async (req, res) => {
 const getProductReviews = asyncHandler(async (req, res) => {
   const reviews = await Review.find({ product: req.params.productId })
     .populate('user', 'name avatar')
-    .sort({ createdAt: -1 });
-  
+    .sort({ createdAt: -1 })
+    .limit(50); // bounded — a dedicated "see all reviews" pagination UI is future work
+
   sendResponse(res, 200, 'Reviews retrieved successfully', reviews);
 });
 

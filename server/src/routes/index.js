@@ -2,6 +2,7 @@
 // Mounts all API routers under /api
 
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 
 const authRoutes = require('./authRoutes');
@@ -20,14 +21,18 @@ const aiRoutes = require('./aiRoutes');
 const preferenceRoutes = require('./preferenceRoutes');
 const wishlistRoutes = require('./wishlistRoutes');
 
-// Health check
+// Health check — reports DB connectivity so an outage doesn't read as healthy
 router.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    message: 'NexORA API is running',
+  const dbState = mongoose.connection.readyState; // 1 = connected
+  const dbConnected = dbState === 1;
+
+  res.status(dbConnected ? 200 : 503).json({
+    success: dbConnected,
+    message: dbConnected ? 'NexORA API is running' : 'NexORA API is running but the database is unreachable',
     timestamp: new Date().toISOString(),
     version: '1.0.0',
     environment: process.env.NODE_ENV,
+    db: dbConnected ? 'connected' : 'disconnected',
   });
 });
 

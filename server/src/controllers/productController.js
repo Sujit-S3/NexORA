@@ -6,6 +6,8 @@ const { sendResponse } = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
 const { uploadToCloudinary, deleteFromCloudinary } = require('../middleware/upload');
 const slugify = require('slugify');
+const RecommendationService = require('../services/recommendationService');
+const FitIntelligenceService = require('../services/fitIntelligenceService');
 
 // @desc    Get all products (with filter, sort, pagination)
 // @route   GET /api/products
@@ -62,8 +64,12 @@ const getProducts = asyncHandler(async (req, res) => {
   const skip = (pageNum - 1) * limitNum;
 
   // 4. Execute Query
+  // Trimmed to what list/grid views actually render — full detail (description,
+  // specifications, gallery, variants' full shape) is fetched per-product via
+  // getProductBySlug instead of duplicated across every list row.
   const total = await Product.countDocuments(query);
   const products = await Product.find(query)
+    .select('name slug brand price discountPrice primaryImage hoverImage images stock isActive isNewArrival isBestSeller ratings variants category')
     .populate('category', 'name slug')
     .sort(sortOption)
     .skip(skip)
@@ -96,10 +102,18 @@ const { eventBus, EVENTS } = require('../services/ai/utils/eventBus');
 // @route   GET /api/products/:slug
 // @access  Public
 const getProductBySlug = asyncHandler(async (req, res) => {
-  const product = await Product.findOne({ slug: req.params.slug, isActive: true })
+  // Accepts either a slug or a raw ObjectId in the same param, so guest-cart
+  // lookups (which only have a product id on hand) can reuse this endpoint.
+  const { slug } = req.params;
+  const isObjectId = /^[0-9a-fA-F]{24}$/.test(slug);
+
+  const product = await Product.findOne({
+    isActive: true,
+    ...(isObjectId ? { _id: slug } : { slug }),
+  })
     .populate('category', 'name slug')
     .populate('sizeChart');
-  
+
   if (!product) {
     throw ApiError.notFound('Product not found');
   }
@@ -109,7 +123,25 @@ const getProductBySlug = asyncHandler(async (req, res) => {
   const sessionId = req.headers['x-session-id'];
   eventBus.emit(EVENTS.VIEW_PRODUCT, { userId, sessionId, product });
 
-  sendResponse(res, 200, 'Product retrieved successfully', product);
+  // Plain object (not the live Mongoose doc) so we can safely attach the
+  // ad-hoc fitRecommendation field below — Mongoose's own toJSON only
+  // serializes schema-declared paths, so mutating the document directly
+  // would silently drop it from the response.
+  const productPayload = product.toObject({ virtuals: true });
+
+  // Fit Intelligence: attach a personalized "Recommended Size" when we have
+  // a preference profile (by account, or by anonymous session) to draw from.
+  if (product.variants && product.variants.length > 0) {
+    const pref = await RecommendationService.getPreferences(userId, sessionId);
+    if (pref) {
+      const fitRecommendation = await FitIntelligenceService.getFitRecommendation(product, pref);
+      if (fitRecommendation) {
+        productPayload.fitRecommendation = fitRecommendation;
+      }
+    }
+  }
+
+  sendResponse(res, 200, 'Product retrieved successfully', productPayload);
 });
 
 // @desc    Create product

@@ -10,8 +10,8 @@ const ManageUsers = () => {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const res = await userService.getAllUsers();
-      setUsers(res.data.data);
+      const res = await userService.getAllUsers({ limit: 500 });
+      setUsers(res.data.data.users);
     } catch (err) {
       alert('Failed to load users');
     } finally {

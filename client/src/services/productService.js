@@ -5,6 +5,7 @@ export const productService = {
   getAll: (params) => api.get('/products', { params }),
   getFeatured: () => api.get('/products/featured'),
   getBySlug: (slug) => api.get(`/products/${slug}`),
+  getById: (id) => api.get(`/products/${id}`),
   create: (data) => api.post('/products', data),
   update: (id, data) => api.put(`/products/${id}`, data),
   delete: (id) => api.delete(`/products/${id}`),

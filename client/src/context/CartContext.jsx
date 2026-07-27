@@ -4,6 +4,7 @@
 
 import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import { cartService } from '@services/cartService';
+import { productService } from '@services/productService';
 import { useAuth } from './AuthContext';
 
 // ── Initial state ─────────────────────────────────────────────────────────
@@ -137,9 +138,8 @@ export const CartProvider = ({ children }) => {
         let productData = typeof productOrId === 'object' ? productOrId : null;
         if (!productData) {
           // Fallback fetch if only ID provided
-          const response = await fetch(`http://localhost:5000/api/products?_id=${productId}`);
-          const resData = await response.json();
-          productData = resData.data.find(p => p._id === productId);
+          const { data: resData } = await productService.getById(productId);
+          productData = resData.data;
         }
         
         if (!productData) throw new Error('Product not found');

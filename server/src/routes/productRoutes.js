@@ -12,14 +12,16 @@ const {
   uploadProductImages,
   deleteProductImage,
 } = require('../controllers/productController');
-const { protect } = require('../middleware/auth');
+const { protect, optionalAuth } = require('../middleware/auth');
 const { adminOnly } = require('../middleware/admin');
 const { upload } = require('../middleware/upload');
 
 // ── Public routes ────────────────────────────────────────────────────────
 router.get('/', getProducts);
 router.get('/featured', getFeaturedProducts);
-router.get('/:slug', getProductBySlug);
+// optionalAuth: populates req.user when a valid token is present, without
+// requiring one — needed so getProductBySlug can personalize fit recommendations.
+router.get('/:slug', optionalAuth, getProductBySlug);
 
 // ── Admin-only routes ────────────────────────────────────────────────────
 router.post('/', protect, adminOnly, createProduct);

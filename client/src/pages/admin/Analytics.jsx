@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { adminService } from '@services/adminService';
 import Spinner from '@components/common/Spinner';
 
@@ -17,7 +16,7 @@ const Analytics = () => {
     try {
       const [dashRes, prefRes] = await Promise.all([
         adminService.getDashboardStats(),
-        axios.get(`${import.meta.env.VITE_API_URL}/preferences/analytics`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+        adminService.getPreferenceAnalytics(),
       ]);
       setStats(dashRes.data.data);
       setPrefStats(prefRes.data.data);
@@ -35,12 +34,7 @@ const Analytics = () => {
 
     setIsInitializing(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/admin/seed`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await adminService.seedDatabase();
       alert(res.data.message || 'Database Initialized Successfully');
       fetchStats(); // Refresh stats
     } catch (err) {

@@ -135,4 +135,45 @@ function RecommendationSession({
   );
 }
 
-export default memo(RecommendationSession);
+// buildRecommendationSessions() rebuilds every session object from scratch on
+// every streamed token, so reference equality would re-render the entire
+// conversation history on each chunk. Bail out when the session's actual
+// rendered content hasn't changed, even though its object reference has.
+function sessionsContentEqual(a, b) {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (
+    a.id !== b.id ||
+    a.explanation !== b.explanation ||
+    a.productsFound !== b.productsFound ||
+    a.skill !== b.skill ||
+    a.actionConfirmed !== b.actionConfirmed ||
+    a.actionProduct !== b.actionProduct ||
+    a.products.length !== b.products.length ||
+    a.suggestedActions.length !== b.suggestedActions.length
+  ) {
+    return false;
+  }
+  const productKey = (p) => p?._id || p?.slug || p?.name;
+  return a.products.every((p, i) => productKey(p) === productKey(b.products[i]));
+}
+
+function arePropsEqual(prevProps, nextProps) {
+  return (
+    prevProps.isLatest === nextProps.isLatest &&
+    prevProps.loading === nextProps.loading &&
+    prevProps.index === nextProps.index &&
+    prevProps.isInWishlist === nextProps.isInWishlist &&
+    prevProps.compareProducts === nextProps.compareProducts &&
+    prevProps.onAction === nextProps.onAction &&
+    prevProps.onAddCart === nextProps.onAddCart &&
+    prevProps.onCompare === nextProps.onCompare &&
+    prevProps.onFindSimilar === nextProps.onFindSimilar &&
+    prevProps.onQuickView === nextProps.onQuickView &&
+    prevProps.onRetry === nextProps.onRetry &&
+    prevProps.onToggleWishlist === nextProps.onToggleWishlist &&
+    sessionsContentEqual(prevProps.session, nextProps.session)
+  );
+}
+
+export default memo(RecommendationSession, arePropsEqual);

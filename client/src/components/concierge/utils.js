@@ -1,6 +1,9 @@
+import { getOptimizedImageUrl } from '../../utils/cloudinary';
+
 export function getProductImage(product, fallback) {
   const categoryName = typeof product?.category === 'object' ? product?.category?.name : product?.category;
-  return product?.images?.[0]?.url || product?.image || (fallback ? fallback(categoryName) : '');
+  const raw = product?.images?.[0]?.url || product?.image || (fallback ? fallback(categoryName) : '');
+  return getOptimizedImageUrl(raw, { width: 400 });
 }
 
 export function formatStageLabel(stage) {

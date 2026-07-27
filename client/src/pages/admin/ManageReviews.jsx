@@ -11,8 +11,8 @@ const ManageReviews = () => {
   const fetchReviews = async () => {
     setIsLoading(true);
     try {
-      const res = await api.get('/reviews');
-      setReviews(res.data.data || []);
+      const res = await api.get('/reviews', { params: { limit: 500 } });
+      setReviews(res.data.data.reviews || []);
     } catch {
       alert('Failed to load reviews');
     } finally {

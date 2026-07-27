@@ -16,11 +16,19 @@ const getDashboardStats = asyncHandler(async (req, res) => {
   const totalProducts = await Product.countDocuments();
   const totalOrders = await Order.countDocuments();
   
-  // 2. Revenue & Order Statuses
-  const orders = await Order.find();
-  const totalRevenue = orders.reduce((acc, order) => acc + (order.totalPrice || 0), 0);
-  const pendingOrders = orders.filter(o => o.status === 'pending').length;
-  const deliveredOrders = orders.filter(o => o.status === 'delivered').length;
+  // 2. Revenue & Order Statuses (aggregated in the DB — avoids loading every order into memory)
+  const [revenueAndStatus] = await Order.aggregate([
+    {
+      $facet: {
+        revenue: [{ $group: { _id: null, total: { $sum: '$totalPrice' } } }],
+        byStatus: [{ $group: { _id: '$status', count: { $sum: 1 } } }],
+      },
+    },
+  ]);
+  const totalRevenue = revenueAndStatus.revenue[0]?.total || 0;
+  const ordersByStatus = revenueAndStatus.byStatus.reduce((acc, s) => { acc[s._id] = s.count; return acc; }, {});
+  const pendingOrders = ordersByStatus.pending || 0;
+  const deliveredOrders = ordersByStatus.delivered || 0;
 
   // 3. Low Stock Products
   const lowStockProducts = await Product.find({ stock: { $lt: 10 } })
@@ -74,12 +82,6 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     name: `${monthNames[item._id.month - 1]}`,
     users: item.users,
   }));
-
-  // 7. Orders by Status
-  const orderStatusAgg = await Order.aggregate([
-    { $group: { _id: '$status', count: { $sum: 1 } } },
-  ]);
-  const ordersByStatus = orderStatusAgg.reduce((acc, s) => { acc[s._id] = s.count; return acc; }, {});
 
   // 8. Recent Orders
   const recentOrders = await Order.find()

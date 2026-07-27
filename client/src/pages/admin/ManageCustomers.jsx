@@ -11,8 +11,8 @@ const ManageCustomers = () => {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const res = await userService.getAllUsers();
-        const all = res.data.data || [];
+        const res = await userService.getAllUsers({ limit: 500 });
+        const all = res.data.data.users || [];
         setCustomers(all.filter(u => u.role === 'user'));
       } catch {
         alert('Failed to load customers');

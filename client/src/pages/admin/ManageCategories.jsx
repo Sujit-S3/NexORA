@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Folder, X, Check } from 'lucide-react';
 import Spinner from '@components/common/Spinner';
-import axios from 'axios';
-
-const API = import.meta.env.VITE_API_URL;
-const authHeader = () => ({ Authorization: `Bearer ${localStorage.getItem('token')}` });
+import api from '@services/api';
 
 const ManageCategories = () => {
   const [categories, setCategories] = useState([]);
@@ -17,7 +14,7 @@ const ManageCategories = () => {
   const fetchCategories = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.get(`${API}/categories`, { headers: authHeader() });
+      const res = await api.get('/categories');
       setCategories(res.data.data || res.data);
     } catch {
       alert('Failed to load categories');
@@ -45,9 +42,9 @@ const ManageCategories = () => {
     setSaving(true);
     try {
       if (editingId) {
-        await axios.put(`${API}/categories/${editingId}`, form, { headers: authHeader() });
+        await api.put(`/categories/${editingId}`, form);
       } else {
-        await axios.post(`${API}/categories`, form, { headers: authHeader() });
+        await api.post('/categories', form);
       }
       setShowForm(false);
       fetchCategories();
@@ -61,7 +58,7 @@ const ManageCategories = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this category? Products in this category may be affected.')) return;
     try {
-      await axios.delete(`${API}/categories/${id}`, { headers: authHeader() });
+      await api.delete(`/categories/${id}`);
       fetchCategories();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to delete category');
