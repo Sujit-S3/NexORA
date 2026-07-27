@@ -1,3 +1,10 @@
+// COMPLETED one-time migration (already run against production — see
+// git history / CHANGELOG). Populates primaryImage/thumbnail/hoverImage/
+// galleryImages/sku/variants from legacy fields for any product missing
+// them. Idempotent by design (every step is guarded by an `if (!field)`
+// check), so re-running is safe, but there should be nothing left for it
+// to do — if it reports non-zero repairs, that's worth investigating
+// before assuming it's fine.
 const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');

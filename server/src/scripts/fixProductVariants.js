@@ -1,3 +1,6 @@
+// COMPLETED one-time migration (already run) — rewrites a product's
+// variants to match its linked SizeChart's rows. Only needed again if a
+// product is reassigned to a different size chart after variants exist.
 require('dotenv').config();
 const mongoose = require('mongoose');
 const Product = require('../models/Product');

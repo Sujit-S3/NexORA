@@ -53,3 +53,6 @@ test_*.js
 *.cjs
 out.txt
 eslint-report.json
+
+# Generated audit/migration report snapshots (regenerate via server/src/scripts/*.js)
+server/src/scripts/*_report.json

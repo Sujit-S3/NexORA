@@ -1,3 +1,7 @@
+// Read-only report: image URL categories (external/placeholder/local/missing).
+// Superseded by the product-image fix — every product now has a unique
+// local generated image, so this will report 0 external/placeholder/missing.
+// Safe to re-run any time; it never writes to the database.
 const mongoose = require('mongoose');
 require('dotenv').config({ path: '../../.env' });
 

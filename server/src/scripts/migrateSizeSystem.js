@@ -1,3 +1,7 @@
+// COMPLETED one-time migration (already run) — seeds SizeChart documents
+// and links them to matching categories/products. Re-running re-seeds the
+// same charts (upsert-style); only do so deliberately, e.g. after editing
+// the sizeChartsToSeed data below.
 require('dotenv').config();
 const mongoose = require('mongoose');
 const Category = require('../models/Category');

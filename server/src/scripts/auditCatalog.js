@@ -1,3 +1,10 @@
+// Read-only report: catalog data-quality checks (SKUs, images, variants,
+// prices). Never writes to the database — only to catalog_audit_report.json
+// (gitignored; regenerate by running this script, don't hand-edit it).
+// Note: the emptyGallery/galleryImages check will always fail — that field
+// is populated by migrateProducts.js but never actually read by the client
+// (see productController.js/Products.jsx, which use images/primaryImage) —
+// treat that specific finding as noise, not a real defect.
 const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
