@@ -5,7 +5,11 @@ require('dotenv').config();
 const validateEnv = require('./src/config/env');
 const connectDB = require('./src/config/db');
 const { connectCloudinary } = require('./src/config/cloudinary');
+const { initSentry, Sentry } = require('./src/config/sentry');
 const app = require('./src/app');
+
+// Initialize before anything else can throw, so startup failures are captured too.
+initSentry();
 
 // ── 1. Validate all environment variables ────────────────────────────────
 validateEnv();
@@ -27,11 +31,13 @@ const server = app.listen(PORT, () => {
 // ── Unhandled rejections ─────────────────────────────────────────────────
 process.on('unhandledRejection', (err) => {
   console.error(`❌  Unhandled Rejection: ${err.message}`);
+  Sentry.captureException(err);
   server.close(() => process.exit(1));
 });
 
 // ── Uncaught exceptions ──────────────────────────────────────────────────
 process.on('uncaughtException', (err) => {
   console.error(`❌  Uncaught Exception: ${err.message}`);
+  Sentry.captureException(err);
   process.exit(1);
 });

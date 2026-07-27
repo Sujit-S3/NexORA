@@ -6,6 +6,8 @@ import './index.css';
 import App from './App.jsx';
 
 import posthog from 'posthog-js';
+import * as Sentry from '@sentry/react';
+import ErrorFallback from './components/common/ErrorFallback.jsx';
 
 const container = document.getElementById('root');
 
@@ -22,8 +24,20 @@ if (import.meta.env.VITE_POSTHOG_KEY) {
   });
 }
 
+// Initialize Sentry if configured — silently disabled otherwise (no crash,
+// no console noise), same pattern as PostHog above.
+if (import.meta.env.VITE_SENTRY_DSN) {
+  Sentry.init({
+    dsn: import.meta.env.VITE_SENTRY_DSN,
+    environment: import.meta.env.MODE,
+    tracesSampleRate: import.meta.env.PROD ? 0.1 : 0,
+  });
+}
+
 createRoot(container).render(
   <StrictMode>
-    <App />
+    <Sentry.ErrorBoundary fallback={ErrorFallback}>
+      <App />
+    </Sentry.ErrorBoundary>
   </StrictMode>
 );

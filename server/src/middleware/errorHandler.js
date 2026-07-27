@@ -1,6 +1,7 @@
 // NexORA — Global Error Handler Middleware
 
 const ApiError = require('../utils/ApiError');
+const { captureIfUnexpected } = require('../config/sentry');
 
 /**
  * Global error-handling middleware.
@@ -41,6 +42,10 @@ const errorHandler = (err, req, res, next) => {
   // ── Final response ───────────────────────────────────────────────────
   const statusCode = error.statusCode || 500;
   const message = error.message || 'Internal Server Error';
+
+  // Only unexpected (5xx) failures are worth an alert — a validation 400 or
+  // an auth 401 is routine, not an incident.
+  captureIfUnexpected(err, statusCode);
 
   const response = {
     success: false,
