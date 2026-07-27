@@ -63,6 +63,13 @@ Verify the backup file is created in `server/backups/` before proceeding.
 ## Step 3 — Rollback Database (if schema was changed)
 
 > ⚠️ Only required if a database migration was applied. For v1.0.0 release, no destructive schema changes were made.
+>
+> **Update:** a later change narrowed `Order.paymentInfo.method`'s enum from
+> `['card','upi','wallet','cod','stripe','paypal']` to `['card','upi','wallet','cod']`
+> (removing the unused, fake `stripe`/`paypal` options). Any pre-existing order
+> document with `method: 'stripe'` or `'paypal'` will fail Mongoose validation on
+> its next save. The `Payment` model's added fields (`razorpayOrderId`,
+> `razorpayPaymentId`, `razorpaySignature`) are additive/non-destructive.
 
 1. Stop the backend server on Render (to prevent writes during restore)
 2. Log in to [MongoDB Atlas](https://cloud.mongodb.com)
