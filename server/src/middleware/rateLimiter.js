@@ -2,6 +2,11 @@
 
 const rateLimit = require('express-rate-limit');
 
+// Jest runs every test file's requests through the same in-memory limiter
+// state within one process (--runInBand), so real production limits would
+// otherwise start rejecting unrelated test files' legitimate requests.
+const skipInTest = () => process.env.NODE_ENV === 'test';
+
 /**
  * General API rate limiter:
  * 100 requests per IP per 15 minutes.
@@ -11,6 +16,7 @@ const apiLimiter = rateLimit({
   max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipInTest,
   message: {
     success: false,
     message: 'Too many requests — please try again in 15 minutes',
@@ -26,6 +32,7 @@ const authLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipInTest,
   message: {
     success: false,
     message: 'Too many auth attempts — please try again in 15 minutes',

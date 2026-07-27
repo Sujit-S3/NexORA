@@ -17,16 +17,41 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// ── Response interceptor — normalise errors ────────────────────────────
+// ── Silent refresh-on-401 ────────────────────────────────────────────────
+// A single in-flight refresh is shared across simultaneously-failing
+// requests, so a page that fires several parallel calls only triggers one
+// POST /auth/refresh rather than one per call.
+let refreshPromise = null;
+const NO_REFRESH_PATHS = ['/auth/refresh', '/auth/login', '/auth/register'];
+
+// ── Response interceptor — normalise errors, transparently refresh on 401 ──
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const message =
       error.response?.data?.message ||
       error.message ||
       'An unexpected error occurred';
 
-    // Auto-redirect on 401 (session expired / not logged in)
+    const originalRequest = error.config;
+    const isAuthEndpoint = originalRequest && NO_REFRESH_PATHS.some((p) => originalRequest.url?.includes(p));
+
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry && !isAuthEndpoint) {
+      originalRequest._retry = true;
+      try {
+        if (!refreshPromise) {
+          refreshPromise = api.post('/auth/refresh').finally(() => {
+            refreshPromise = null;
+          });
+        }
+        await refreshPromise;
+        return api(originalRequest);
+      } catch {
+        // Refresh failed too — fall through to the redirect below.
+      }
+    }
+
+    // Auto-redirect on 401 (session expired / not logged in / refresh failed)
     if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
       window.location.href = '/login';
     }

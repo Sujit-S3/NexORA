@@ -2,12 +2,14 @@
 // Full implementation of Authentication endpoints.
 
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const UserPreference = require('../models/UserPreference');
+const RefreshToken = require('../models/RefreshToken');
 const asyncHandler = require('../utils/asyncHandler');
 const { sendResponse } = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
-const { sendTokenResponse } = require('../utils/generateToken');
+const { sendTokenResponse, issueRefreshToken, revokeAllRefreshTokens, baseCookieOptions } = require('../utils/generateToken');
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -30,6 +32,7 @@ const register = asyncHandler(async (req, res) => {
   });
 
   sendTokenResponse(res, user);
+  await issueRefreshToken(res, user);
 
   const sessionId = req.headers['x-session-id'] || req.body.sessionId;
   if (sessionId) {
@@ -123,6 +126,7 @@ const login = asyncHandler(async (req, res) => {
   }
 
   sendTokenResponse(res, user);
+  await issueRefreshToken(res, user);
 
   const sessionId = req.headers['x-session-id'] || req.body.sessionId;
   if (sessionId) {
@@ -189,19 +193,75 @@ const login = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/logout
 // @access  Auth
 const logout = asyncHandler(async (req, res) => {
-  const isProduction = process.env.NODE_ENV === 'production';
+  // Revoke the current refresh token so it can't be used after logout —
+  // without this, a copied cookie would still mint new access tokens.
+  const presentedRefreshToken = req.cookies?.nexora_refresh;
+  if (presentedRefreshToken) {
+    const tokenHash = crypto.createHash('sha256').update(presentedRefreshToken).digest('hex');
+    await RefreshToken.updateOne({ tokenHash, revokedAt: null }, { revokedAt: new Date() });
+  }
 
-  // Must mirror the attributes the cookie was originally set with
-  // (generateToken.js#sendTokenResponse) — secure/sameSite affect whether the
-  // browser matches this to the existing cookie to actually clear it.
-  res.cookie('nexora_token', 'loggedout', {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? 'none' : 'lax',
-    expires: new Date(Date.now() + 10 * 1000), // expires in 10 seconds
-  });
+  // Must mirror the attributes the cookies were originally set with
+  // (generateToken.js) — secure/sameSite affect whether the browser matches
+  // this to the existing cookie to actually clear it.
+  const clearOptions = { ...baseCookieOptions(), expires: new Date(Date.now() + 10 * 1000) };
+  res.cookie('nexora_token', 'loggedout', clearOptions);
+  res.cookie('nexora_refresh', 'loggedout', clearOptions);
 
   sendResponse(res, 200, 'Logout successful');
+});
+
+// @desc    Rotate the refresh token and issue a new access token
+// @route   POST /api/auth/refresh
+// @access  Public (authenticated via the nexora_refresh cookie itself)
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const presentedRefreshToken = req.cookies?.nexora_refresh;
+  if (!presentedRefreshToken) {
+    throw ApiError.unauthorized('No refresh token provided');
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(presentedRefreshToken, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, { algorithms: ['HS256'] });
+  } catch {
+    throw ApiError.unauthorized('Invalid or expired refresh token');
+  }
+
+  const tokenHash = crypto.createHash('sha256').update(presentedRefreshToken).digest('hex');
+  const stored = await RefreshToken.findOne({ tokenHash });
+
+  if (!stored) {
+    // Never issued (or already pruned by the TTL index) — treat as invalid.
+    throw ApiError.unauthorized('Invalid or expired refresh token');
+  }
+
+  if (stored.revokedAt) {
+    // This exact token was already rotated out (or logged out) and is being
+    // presented again — that's a replay/theft signal, not a normal retry.
+    // Burn every token for this user so a stolen cookie can't keep working.
+    await revokeAllRefreshTokens(stored.user);
+    throw ApiError.unauthorized('Refresh token already used — please log in again');
+  }
+
+  const user = await User.findById(decoded.id);
+  if (!user || !user.isActive) {
+    throw ApiError.unauthorized('Account is no longer available');
+  }
+  if (user.changedPasswordAfter(decoded.iat)) {
+    throw ApiError.unauthorized('Password was changed recently — please log in again');
+  }
+
+  // Rotate: mark this token used, issue a brand new access+refresh pair.
+  sendTokenResponse(res, user);
+  const newRefreshToken = await issueRefreshToken(res, user);
+  const newTokenHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
+  stored.revokedAt = new Date();
+  stored.replacedByTokenHash = newTokenHash;
+  await stored.save();
+
+  sendResponse(res, 200, 'Session refreshed', {
+    user: { _id: user._id, name: user.name, email: user.email, role: user.role, avatar: user.avatar },
+  });
 });
 
 // @desc    Get current user
@@ -233,8 +293,11 @@ const changePassword = asyncHandler(async (req, res) => {
   user.password = newPassword;
   await user.save();
 
-  // Re-issue the session cookie under the new password
+  // A password change is a strong "log out everywhere" signal — revoke every
+  // other session's refresh token, then issue a fresh pair for this one.
+  await revokeAllRefreshTokens(user._id);
   sendTokenResponse(res, user);
+  await issueRefreshToken(res, user);
 
   sendResponse(res, 200, 'Password changed successfully');
 });
@@ -341,12 +404,17 @@ const resetPassword = asyncHandler(async (req, res) => {
   user.passwordResetExpires = undefined;
   await user.save();
 
+  // Same "log out everywhere" reasoning as changePassword — a reset implies
+  // the old session(s) may not be trusted.
+  await revokeAllRefreshTokens(user._id);
+
   // Log user in immediately
   sendTokenResponse(res, user);
+  await issueRefreshToken(res, user);
 
   sendResponse(res, 200, 'Password reset successful. You are now logged in.', {
     user: { _id: user._id, name: user.name, email: user.email, role: user.role },
   });
 });
 
-module.exports = { register, login, logout, getMe, changePassword, forgotPassword, resetPassword };
+module.exports = { register, login, logout, refreshAccessToken, getMe, changePassword, forgotPassword, resetPassword };

@@ -11,6 +11,7 @@ export const authService = {
     guestWishlist: credentials.guestWishlist 
   }),
   logout: () => api.post('/auth/logout'),
+  refresh: () => api.post('/auth/refresh'),
   getMe: () => api.get('/auth/me'),
   changePassword: (data) => api.put('/auth/change-password', data),
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),

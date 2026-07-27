@@ -3,7 +3,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
-const { register, login, logout, getMe, changePassword, forgotPassword, resetPassword } = require('../controllers/authController');
+const { register, login, logout, refreshAccessToken, getMe, changePassword, forgotPassword, resetPassword } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const { authLimiter } = require('../middleware/rateLimiter');
 const ApiError = require('../utils/ApiError');
@@ -49,6 +49,9 @@ router.post('/reset-password/:token', authLimiter, [
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   validate,
 ], resetPassword);
+
+// Refresh — authenticated via the nexora_refresh cookie itself, not a Bearer token.
+router.post('/refresh', authLimiter, refreshAccessToken);
 
 // Protected routes
 router.post('/logout', protect, logout);
