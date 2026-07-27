@@ -68,6 +68,9 @@ graph TD
 - **Enterprise-Grade Admin Dashboard:** Recharts-powered analytics for inventory tracking, order management, and revenue KPIs.
 - **Seamless Wishlist & Cart Persistence:** Synchronized cross-session cart states with robust API guardrails.
 - **Guest Checkout Support:** Frictionless conversion pathways without mandatory registration walls.
+- **Real Razorpay Payments:** Signature-verified order creation, checkout, and webhook reconciliation — no payment status is ever trusted from the client. Cash on Delivery remains available if Razorpay isn't configured.
+- **Refresh Token Rotation:** Silent session renewal with reuse detection — a replayed refresh token revokes the entire token family.
+- **Sentry Error Tracking:** Client and server errors are captured (5xx only on the server) when a Sentry DSN is configured; otherwise a no-op.
 
 ---
 
@@ -79,13 +82,34 @@ graph TD
 - **State Management:** React Context API (Auth, Cart, Wishlist, AI)
 - **Routing:** React Router v6
 - **Animations & Icons:** Framer Motion, Lucide React
+- **Testing:** Vitest + React Testing Library
+- **Error Tracking:** Sentry (`@sentry/react`, optional)
 
 ### Backend
 - **Server:** Node.js, Express.js
 - **Database:** MongoDB, Mongoose
 - **AI Integration:** `@google/genai` (Gemini Flash)
-- **Security:** Helmet, express-rate-limit, express-mongo-sanitize, CORS, JWT
+- **Payments:** Razorpay (order creation, signature verification, webhooks)
+- **Security:** Helmet, express-rate-limit, express-mongo-sanitize, CORS, JWT (httpOnly cookies, refresh rotation)
 - **Media:** Cloudinary SDK
+- **Email:** Resend
+- **Testing:** Jest + Supertest + mongodb-memory-server
+- **Error Tracking:** Sentry (`@sentry/node`, optional)
+
+---
+
+## ✅ Testing & CI
+
+```bash
+# Server tests (Jest + Supertest + mongodb-memory-server)
+cd server && npm test
+
+# Client tests (Vitest + React Testing Library)
+cd client && npm test
+```
+
+Every push and pull request runs lint + test for both client and server via
+GitHub Actions (`.github/workflows/ci.yml`).
 
 ---
 
@@ -137,13 +161,9 @@ npm run dev
 
 ---
 
-## 📜 Release Notes (v1.0.0)
+## 📜 Release Notes
 
-- Implemented comprehensive AI Concierge architecture (Streaming, Tone Guard, Memory).
-- Re-architected Size System and Product Validation frameworks.
-- Eradicated 244 critical ESLint bugs across client and server.
-- Fortified backend guardrails against prompt injection and budget bypass.
-- Complete Live Functional Verification across all critical user pathways.
+See [CHANGELOG.md](./CHANGELOG.md) for the full, up-to-date list of releases and changes.
 
 ---
 

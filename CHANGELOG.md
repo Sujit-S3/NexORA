@@ -32,6 +32,96 @@ a real Razorpay integration:
 - Online payments now fail closed: if `RAZORPAY_KEY_ID`/`RAZORPAY_KEY_SECRET`
   are not configured, only Cash on Delivery is accepted at checkout.
 
+### Added — Refresh Token Rotation
+
+- `POST /api/auth/refresh` issues a new access + refresh token pair from the
+  `nexora_refresh` httpOnly cookie and rotates the stored token record.
+- Reuse detection: presenting an already-rotated (revoked) refresh token
+  revokes the entire token family for that user and forces re-authentication
+  — the standard mitigation for a stolen-refresh-token replay.
+- Client silently retries a 401 once via the refresh endpoint before falling
+  back to redirecting to login, so an expired access token no longer logs
+  the user out mid-session.
+- Login/register/logout/password-change/password-reset all issue, rotate, or
+  revoke refresh tokens as appropriate.
+
+### Added — Sentry Error Tracking
+
+- Server: `@sentry/node` initialized at boot, capturing unhandled
+  rejections/exceptions and 5xx API errors (4xx client errors are not sent).
+- Client: `@sentry/react` wraps the app in an `ErrorBoundary` with a
+  dedicated fallback UI; both are no-ops unless `SENTRY_DSN` /
+  `VITE_SENTRY_DSN` are configured.
+- Removed the placeholder Sentry `<script>` tag in `client/index.html` that
+  pointed at a fake project ID and 404'd on every page load.
+
+### Added — Contact Form Backend
+
+- `POST /api/contact` — validated, rate-limited endpoint that emails the
+  submission to `CONTACT_EMAIL` (via Resend) with the sender set as
+  reply-to.
+- `client/src/pages/Contact.jsx` now submits real form state instead of
+  rendering a non-functional form.
+
+### Added — Coupon Carryover (Cart → Checkout)
+
+- A discount code applied on the Cart page is now carried into Checkout via
+  `sessionStorage` and auto-validated/applied there, instead of requiring
+  the shopper to re-enter it.
+
+### Fixed — Security Hardening
+
+- Closed an IDOR allowing a guest to cancel another guest's order by
+  guessing its ID.
+- `dangerouslySetInnerHTML` output is now sanitized with DOMPurify.
+- Auth now relies solely on httpOnly cookies (JWT is no longer also
+  readable from `localStorage`/response body).
+- Several admin-page and coupon-application auth/authorization gaps closed.
+
+### Fixed — Admin Dashboard & Data Integrity
+
+- Category Management and Analytics pages were reading the wrong
+  `localStorage` key and silently rendering empty/broken state — fixed.
+- Added missing database indexes and pagination to admin list endpoints
+  that were doing full unpaginated collection scans.
+- Fixed the promotional fit banner, coupon auth check, guest cart URL
+  handling, and admin order-status transitions.
+
+### Changed — Performance
+
+- AI Concierge no longer re-renders the entire message list on every
+  streamed token.
+- Product images now request Cloudinary's responsive transforms
+  (`w_`, `q_auto`, `f_auto`) instead of full-resolution originals.
+- Product list API responses trimmed to only the fields the UI uses.
+- Batched several N+1 query patterns in admin/order endpoints.
+
+### Changed — Accessibility
+
+- Focus management, ARIA labels/roles, dialog semantics, and `aria-live`
+  regions added across the client for screen-reader and keyboard-only use.
+
+### Added — Test Coverage
+
+- First Vitest + React Testing Library suite on the client.
+- Expanded server Jest coverage: auth (including refresh-token rotation
+  and reuse detection), orders, and cart.
+
+### Added — CI/CD & Deployment
+
+- GitHub Actions CI pipeline (lint + test on push/PR for both client and
+  server).
+- Fixed a conflicting deployment manifest and added a documented
+  environment-variable/health-check contract for the Render deploy.
+
+### Removed — Debug/Development Scripts
+
+- Deleted 47 one-off scratch scripts (ad-hoc DB inspection/migration
+  scripts, pre-Vitest manual test harnesses, local asset-processing
+  helpers) that were never referenced by any npm script, CI step, or ops
+  document. `server/backup_db.js` — the one script that *is* a documented,
+  actively-used ops tool (see `rollback_plan.md`) — was kept.
+
 ---
 
 ## [1.0.0] — 2026-06-26 — Release Candidate 1 (RC1)
@@ -118,7 +208,6 @@ a real Razorpay integration:
 
 ## Planned for v1.1.0
 
-- SendGrid transactional emails
 - Visual Search (image-to-product)
 - Redis AI cache (replace in-memory Map)
 - PostHog funnel dashboards
