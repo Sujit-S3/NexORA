@@ -12,6 +12,7 @@ import MainLogo from '@components/common/MainLogo';
 import GoldCartIcon from '@components/common/GoldCartIcon';
 import { productService } from '@services/productService';
 import { categoryService } from '@services/categoryService';
+import useModalA11y from '@hooks/useModalA11y';
 
 /* ── THEME TOGGLE ── */
 const ThemeToggle = ({ isDark, toggleTheme }) => (
@@ -39,6 +40,8 @@ export default function Navbar() {
   const [trending, setTrending] = useState([]);
   const [categories, setCategories] = useState([]);
   const searchInputRef = useRef(null);
+  const searchDialogRef = useModalA11y(searchOpen, () => setSearchOpen(false));
+  const mobileDrawerRef = useModalA11y(mobileOpen, () => setMobileOpen(false));
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -130,7 +133,7 @@ export default function Navbar() {
 
             {/* ── RIGHT: Actions ── */}
             <div className="flex items-center gap-2">
-              <button onClick={() => setSearchOpen(true)} className="p-2 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ color: SUB }}>
+              <button onClick={() => setSearchOpen(true)} aria-label="Search" className="p-2 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ color: SUB }}>
                 <Search size={18} />
               </button>
 
@@ -166,7 +169,7 @@ export default function Navbar() {
               {/* Auth Profile */}
               {isAuthenticated ? (
                 <div className="relative ml-2">
-                  <button onClick={() => setProfileOpen(!profileOpen)} className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-transform hover:scale-105" style={{ background: isDark ? '#222' : '#EEE', color: TEXT, border: `1px solid ${BORD}` }}>
+                  <button onClick={() => setProfileOpen(!profileOpen)} aria-label="Account menu" aria-haspopup="menu" aria-expanded={profileOpen} className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-transform hover:scale-105" style={{ background: isDark ? '#222' : '#EEE', color: TEXT, border: `1px solid ${BORD}` }}>
                     {user?.name?.[0]?.toUpperCase()}
                   </button>
                   <AnimatePresence>
@@ -201,7 +204,7 @@ export default function Navbar() {
               )}
 
               {/* Mobile Toggle */}
-              <button onClick={() => setMobileOpen(true)} className="lg:hidden p-2 ml-2" style={{ color: SUB }}>
+              <button onClick={() => setMobileOpen(true)} aria-label="Open menu" className="lg:hidden p-2 ml-2" style={{ color: SUB }}>
                 <Menu size={20} />
               </button>
             </div>
@@ -217,19 +220,29 @@ export default function Navbar() {
           <div className="fixed inset-0 z-[100] flex items-start justify-center pt-20 px-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setSearchOpen(false)} />
             
-            <motion.div initial={{ opacity: 0, y: -20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.95 }} transition={{ duration: 0.4 }} className="relative w-full max-w-4xl rounded-[24px] overflow-hidden shadow-2xl flex flex-col max-h-[80vh]" style={{ background: isDark ? '#0B0B0B' : '#FFFFFF', border: `1px solid ${BORD}` }}>
-              
+            <motion.div
+              ref={searchDialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Search"
+              tabIndex={-1}
+              initial={{ opacity: 0, y: -20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.95 }} transition={{ duration: 0.4 }}
+              className="relative w-full max-w-4xl rounded-[24px] overflow-hidden shadow-2xl flex flex-col max-h-[80vh] outline-none"
+              style={{ background: isDark ? '#0B0B0B' : '#FFFFFF', border: `1px solid ${BORD}` }}
+            >
+
               {/* Search Header */}
               <div className="p-6 md:p-8 border-b relative" style={{ borderColor: BORD }}>
                 <form onSubmit={handleSearchSubmit} className="relative flex items-center">
                   <Search size={24} style={{ color: ACC }} className="absolute left-0" />
-                  <input 
+                  <input
                     ref={searchInputRef} type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search collections, products, or brands..." 
+                    placeholder="Search collections, products, or brands..."
+                    aria-label="Search collections, products, or brands"
                     className="w-full bg-transparent text-xl md:text-2xl font-playfair outline-none pl-12 pr-12"
                     style={{ color: TEXT }}
                   />
-                  <button type="button" onClick={() => setSearchOpen(false)} className="absolute right-0 p-2 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ color: SUB }}>
+                  <button type="button" onClick={() => setSearchOpen(false)} aria-label="Close search" className="absolute right-0 p-2 rounded-full transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ color: SUB }}>
                     <X size={20} />
                   </button>
                 </form>
@@ -310,10 +323,19 @@ export default function Navbar() {
         {mobileOpen && (
           <div className="fixed inset-0 z-[110] lg:hidden">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'tween', duration: 0.4 }} className="absolute top-0 right-0 bottom-0 w-4/5 max-w-sm flex flex-col shadow-2xl" style={{ background: SURF, borderLeft: `1px solid ${BORD}` }}>
+            <motion.div
+              ref={mobileDrawerRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Menu"
+              tabIndex={-1}
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'tween', duration: 0.4 }}
+              className="absolute top-0 right-0 bottom-0 w-4/5 max-w-sm flex flex-col shadow-2xl outline-none"
+              style={{ background: SURF, borderLeft: `1px solid ${BORD}` }}
+            >
               <div className="p-6 flex justify-between items-center border-b" style={{ borderColor: BORD }}>
                 <MainLogo className="w-8 h-8" showText={true} layout="horizontal" />
-                <button onClick={() => setMobileOpen(false)}><X size={24} style={{ color: TEXT }} /></button>
+                <button onClick={() => setMobileOpen(false)} aria-label="Close menu"><X size={24} style={{ color: TEXT }} /></button>
               </div>
               <div className="flex-1 flex flex-col p-8 gap-6">
                 <Link to="/" onClick={() => setMobileOpen(false)} className="font-playfair text-2xl">Discover</Link>

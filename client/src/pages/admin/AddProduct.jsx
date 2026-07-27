@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, cloneElement } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, UploadCloud, X, Check, Plus, Sparkles,
@@ -100,14 +100,17 @@ const AddProduct = () => {
     }
   };
 
-  const InputField = ({ label, required, children }) => (
-    <div>
-      <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">
-        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
-      {children}
-    </div>
-  );
+  const InputField = ({ label, required, children }) => {
+    const fieldId = `product-field-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+    return (
+      <div>
+        <label htmlFor={fieldId} className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">
+          {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+        </label>
+        {cloneElement(children, { id: fieldId })}
+      </div>
+    );
+  };
 
   const inputCls = "w-full px-4 py-2.5 bg-white/60 dark:bg-[#0B1220]/60 border border-gray-200/70 dark:border-[rgba(212,175,55,0.15)] text-[#111827] dark:text-[#F5F5F5] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40 transition-all text-sm placeholder-gray-400";
 
@@ -333,7 +336,11 @@ const AddProduct = () => {
 
               {/* Drop Zone */}
               <div
+                role="button"
+                tabIndex={0}
+                aria-label="Upload product images"
                 onClick={() => fileRef.current?.click()}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileRef.current?.click(); } }}
                 onDrop={e => { e.preventDefault(); handleFiles(e.dataTransfer.files); }}
                 onDragOver={e => e.preventDefault()}
                 className="border-2 border-dashed border-[rgba(212,175,55,0.3)] rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-[#D4AF37]/5 transition-colors mb-4"
@@ -341,7 +348,7 @@ const AddProduct = () => {
                 <UploadCloud className="w-7 h-7 text-[#D4AF37]/60 mb-2" />
                 <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">Drag & drop or click to upload</p>
                 <p className="text-xs text-gray-400 mt-1">PNG, JPG, WEBP — Max 10 images</p>
-                <input ref={fileRef} type="file" multiple accept="image/*" className="hidden" onChange={e => handleFiles(e.target.files)} />
+                <input ref={fileRef} type="file" multiple accept="image/*" className="hidden" onChange={e => handleFiles(e.target.files)} aria-hidden="true" tabIndex={-1} />
               </div>
 
               {/* Previews */}

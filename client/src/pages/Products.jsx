@@ -10,7 +10,9 @@ import { useCart } from '@context/CartContext';
 import { useWishlist } from '@context/WishlistContext';
 import { getLuxuryFallback } from '../utils/getLuxuryFallback';
 import { formatPrice } from '../utils/formatPrice';
+import { getOptimizedImageUrl } from '../utils/cloudinary';
 import SEO from '../components/common/SEO';
+import useModalA11y from '@hooks/useModalA11y';
 
 /* ─── HELPER COMPONENTS ────────────────────────────────────── */
 
@@ -67,6 +69,7 @@ export default function Products() {
 
   const [showFiltersMobile, setShowFiltersMobile] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
+  const quickViewDialogRef = useModalA11y(Boolean(quickViewProduct), () => setQuickViewProduct(null));
 
   // Colors
   const BG   = isDark ? '#050505' : 'transparent';
@@ -187,7 +190,7 @@ export default function Products() {
           >
             <div className="flex items-center justify-between lg:hidden mb-6">
               <h3 className="font-playfair text-xl">Filters</h3>
-              <button onClick={() => setShowFiltersMobile(false)}><X size={20} /></button>
+              <button onClick={() => setShowFiltersMobile(false)} aria-label="Close filters"><X size={20} /></button>
             </div>
 
             {/* Keyword Search */}
@@ -224,11 +227,11 @@ export default function Products() {
             <div className="mb-8">
               <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: SUB }}>Price Range</h4>
               <div className="flex items-center gap-3">
-                <input type="number" placeholder="Min" value={minPrice} onChange={e => setMinPrice(e.target.value)}
-                  className="w-full text-[13px] px-3 py-2 outline-none" style={{ background: 'transparent', border: `1px solid ${BORD}`, borderRadius: 4, color: TEXT }} />
+                <input type="number" aria-label="Minimum price" placeholder="Min" value={minPrice} onChange={e => setMinPrice(e.target.value)}
+                  className="w-full text-[13px] px-3 py-2 outline-none focus:ring-2" style={{ background: 'transparent', border: `1px solid ${BORD}`, borderRadius: 4, color: TEXT }} />
                 <span style={{ color: SUB }}>-</span>
-                <input type="number" placeholder="Max" value={maxPrice} onChange={e => setMaxPrice(e.target.value)}
-                  className="w-full text-[13px] px-3 py-2 outline-none" style={{ background: 'transparent', border: `1px solid ${BORD}`, borderRadius: 4, color: TEXT }} />
+                <input type="number" aria-label="Maximum price" placeholder="Max" value={maxPrice} onChange={e => setMaxPrice(e.target.value)}
+                  className="w-full text-[13px] px-3 py-2 outline-none focus:ring-2" style={{ background: 'transparent', border: `1px solid ${BORD}`, borderRadius: 4, color: TEXT }} />
               </div>
             </div>
 
@@ -237,18 +240,18 @@ export default function Products() {
               <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: SUB }}>Availability</h4>
               <div className="flex flex-col gap-3">
                 <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className="w-4 h-4 flex items-center justify-center transition-colors" style={{ border: `1px solid ${isFeatured ? ACC : BORD}`, background: isFeatured ? ACC : 'transparent', borderRadius: 2 }}>
+                  <input type="checkbox" className="peer sr-only" checked={isFeatured} onChange={e => setIsFeatured(e.target.checked)} />
+                  <div className="w-4 h-4 flex items-center justify-center transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-[#D4AF37]" style={{ border: `1px solid ${isFeatured ? ACC : BORD}`, background: isFeatured ? ACC : 'transparent', borderRadius: 2 }}>
                     {isFeatured && <div className="w-2 h-2 bg-black" />}
                   </div>
                   <span className="text-[13px]" style={{ color: isFeatured ? TEXT : SUB }}>Featured</span>
-                  <input type="checkbox" className="hidden" checked={isFeatured} onChange={e => setIsFeatured(e.target.checked)} />
                 </label>
                 <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className="w-4 h-4 flex items-center justify-center transition-colors" style={{ border: `1px solid ${isNewArrival ? ACC : BORD}`, background: isNewArrival ? ACC : 'transparent', borderRadius: 2 }}>
+                  <input type="checkbox" className="peer sr-only" checked={isNewArrival} onChange={e => setIsNewArrival(e.target.checked)} />
+                  <div className="w-4 h-4 flex items-center justify-center transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-[#D4AF37]" style={{ border: `1px solid ${isNewArrival ? ACC : BORD}`, background: isNewArrival ? ACC : 'transparent', borderRadius: 2 }}>
                     {isNewArrival && <div className="w-2 h-2 bg-black" />}
                   </div>
                   <span className="text-[13px]" style={{ color: isNewArrival ? TEXT : SUB }}>New Arrivals</span>
-                  <input type="checkbox" className="hidden" checked={isNewArrival} onChange={e => setIsNewArrival(e.target.checked)} />
                 </label>
               </div>
             </div>
@@ -256,7 +259,7 @@ export default function Products() {
             {/* Sort */}
             <div className="mb-8">
               <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: SUB }}>Sort By</h4>
-              <select value={sort} onChange={e => setSort(e.target.value)} className="w-full text-[13px] px-3 py-2 outline-none appearance-none cursor-pointer" style={{ background: 'transparent', border: `1px solid ${BORD}`, borderRadius: 4, color: TEXT }}>
+              <select aria-label="Sort by" value={sort} onChange={e => setSort(e.target.value)} className="w-full text-[13px] px-3 py-2 outline-none focus:ring-2 appearance-none cursor-pointer" style={{ background: 'transparent', border: `1px solid ${BORD}`, borderRadius: 4, color: TEXT }}>
                 <option value="createdAt:desc" className="bg-[#050505] text-white">Newest Arrivals</option>
                 <option value="price_asc" className="bg-[#050505] text-white">Price: Low to High</option>
                 <option value="price_desc" className="bg-[#050505] text-white">Price: High to Low</option>
@@ -329,19 +332,19 @@ export default function Products() {
 
                         {/* Images */}
                         <div className="relative w-full h-full flex items-center justify-center">
-                          <img loading="lazy" 
-                            src={product.primaryImage?.url || product.images?.[0]?.url} 
+                          <img loading="lazy"
+                            src={getOptimizedImageUrl(product.primaryImage?.url || product.images?.[0]?.url, { width: 400 })}
                             alt={product.name}
                             className="absolute inset-0 w-full h-full object-contain transition-all duration-300 ease-out group-hover:opacity-0 group-hover:scale-105"
                             style={{ mixBlendMode: isDark ? 'normal' : 'multiply' }}
                             onError={(e) => {
                               const cat = product?.category?.name || product?.category || 'default';
                               e.currentTarget.src = getLuxuryFallback(cat);
-                            }} 
+                            }}
                           />
                           {(product.hoverImage?.url || product.images?.[1]?.url) && (
-                            <img loading="lazy" 
-                              src={product.hoverImage?.url || product.images?.[1]?.url} 
+                            <img loading="lazy"
+                              src={getOptimizedImageUrl(product.hoverImage?.url || product.images?.[1]?.url, { width: 400 })}
                               alt={`${product.name} alternate view`}
                               className="absolute inset-0 w-full h-full object-contain transition-all duration-300 ease-out opacity-0 group-hover:opacity-100 group-hover:scale-105"
                               style={{ mixBlendMode: isDark ? 'normal' : 'multiply' }}
@@ -370,14 +373,16 @@ export default function Products() {
                           )}
 
                           <div className="flex items-center gap-4">
-                            <button 
+                            <button
                               onClick={(e) => { e.preventDefault(); toggleWishlist(product); }}
+                              aria-label={isInWishlist(product._id) ? 'Remove from wishlist' : 'Add to wishlist'}
                               className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-all ${isInWishlist(product._id) ? 'bg-white text-[#D4AF37]' : 'bg-white/10 hover:bg-white/20 text-white hover:text-[#D4AF37]'}`}
                             >
                               <Heart size={16} fill={isInWishlist(product._id) ? '#D4AF37' : 'none'} />
                             </button>
-                            <button 
+                            <button
                               onClick={(e) => { e.preventDefault(); setQuickViewProduct(product); }}
+                              aria-label="Quick view"
                               className="w-10 h-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all text-white hover:text-[#D4AF37]"
                             >
                               <Eye size={16} />
@@ -395,6 +400,7 @@ export default function Products() {
                               className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${(product.stock === 0 || !product.isActive) ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-[#D4AF37] hover:bg-[#B38945] text-black'}`}
                               disabled={product.stock === 0 || !product.isActive}
                               title={product.stock === 0 ? "Out of Stock" : !product.isActive ? "Currently Unavailable" : product.variants?.length > 0 ? "Select Size" : "Add to Cart"}
+                              aria-label={product.stock === 0 ? "Out of stock" : !product.isActive ? "Currently unavailable" : product.variants?.length > 0 ? "Select size" : "Add to cart"}
                             >
                               <ShoppingBag size={16} />
                             </button>
@@ -496,18 +502,23 @@ export default function Products() {
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 lg:p-10">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setQuickViewProduct(null)} />
             
-            <motion.div 
+            <motion.div
+              ref={quickViewDialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Quick view: ${quickViewProduct.name}`}
+              tabIndex={-1}
               initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-4xl max-h-full overflow-y-auto lux-scroll flex flex-col md:flex-row shadow-2xl"
+              className="relative w-full max-w-4xl max-h-full overflow-y-auto lux-scroll flex flex-col md:flex-row shadow-2xl outline-none"
               style={{ background: SURF, border: `1px solid ${BORD}`, borderRadius: 24 }}
             >
-              <button onClick={() => setQuickViewProduct(null)} className="absolute top-5 right-5 z-20 p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+              <button onClick={() => setQuickViewProduct(null)} aria-label="Close quick view" className="absolute top-5 right-5 z-20 p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                 <X size={20} />
               </button>
 
               {/* Image */}
               <div className="w-full md:w-1/2 p-8 lg:p-12 flex items-center justify-center" style={{ background: isDark ? '#111' : '#F2EDE4' }}>
-                <img loading="lazy" src={quickViewProduct.primaryImage?.url || quickViewProduct.images?.[0]?.url} alt={quickViewProduct.name} className="w-full h-auto object-contain max-h-[400px]" style={{ mixBlendMode: isDark ? 'normal' : 'multiply' }}  onError={(e) => {
+                <img loading="lazy" src={getOptimizedImageUrl(quickViewProduct.primaryImage?.url || quickViewProduct.images?.[0]?.url, { width: 800 })} alt={quickViewProduct.name} className="w-full h-auto object-contain max-h-[400px]" style={{ mixBlendMode: isDark ? 'normal' : 'multiply' }}  onError={(e) => {
                   const cat = quickViewProduct?.category?.name || quickViewProduct?.category || 'default';
                   e.currentTarget.src = getLuxuryFallback(cat);
                 }} />

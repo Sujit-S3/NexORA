@@ -256,27 +256,27 @@ export default function Checkout() {
                       <h2 className="font-playfair text-2xl mb-8">Shipping Information</h2>
                       <div className="grid gap-6">
                         <div>
-                          <label className="block text-[11px] font-bold tracking-widest uppercase mb-2" style={{ color: SUB }}>Street Address</label>
-                          <input required type="text" name="street" value={address.street} onChange={(e) => setAddress({...address, street: e.target.value})} className="w-full text-[13px] px-4 py-3.5 outline-none rounded" style={{ background: 'transparent', border: `1px solid ${BORD}`, color: TEXT }} placeholder="123 Luxury Ave" />
+                          <label htmlFor="checkout-street" className="block text-[11px] font-bold tracking-widest uppercase mb-2" style={{ color: SUB }}>Street Address</label>
+                          <input id="checkout-street" required type="text" name="street" value={address.street} onChange={(e) => setAddress({...address, street: e.target.value})} className="w-full text-[13px] px-4 py-3.5 outline-none rounded focus:ring-2" style={{ background: 'transparent', border: `1px solid ${BORD}`, color: TEXT }} placeholder="123 Luxury Ave" />
                         </div>
                         <div className="grid grid-cols-2 gap-6">
                           <div>
-                            <label className="block text-[11px] font-bold tracking-widest uppercase mb-2" style={{ color: SUB }}>City</label>
-                            <input required type="text" name="city" value={address.city} onChange={(e) => setAddress({...address, city: e.target.value})} className="w-full text-[13px] px-4 py-3.5 outline-none rounded" style={{ background: 'transparent', border: `1px solid ${BORD}`, color: TEXT }} />
+                            <label htmlFor="checkout-city" className="block text-[11px] font-bold tracking-widest uppercase mb-2" style={{ color: SUB }}>City</label>
+                            <input id="checkout-city" required type="text" name="city" value={address.city} onChange={(e) => setAddress({...address, city: e.target.value})} className="w-full text-[13px] px-4 py-3.5 outline-none rounded focus:ring-2" style={{ background: 'transparent', border: `1px solid ${BORD}`, color: TEXT }} />
                           </div>
                           <div>
-                            <label className="block text-[11px] font-bold tracking-widest uppercase mb-2" style={{ color: SUB }}>State / Province</label>
-                            <input required type="text" name="state" value={address.state} onChange={(e) => setAddress({...address, state: e.target.value})} className="w-full text-[13px] px-4 py-3.5 outline-none rounded" style={{ background: 'transparent', border: `1px solid ${BORD}`, color: TEXT }} />
+                            <label htmlFor="checkout-state" className="block text-[11px] font-bold tracking-widest uppercase mb-2" style={{ color: SUB }}>State / Province</label>
+                            <input id="checkout-state" required type="text" name="state" value={address.state} onChange={(e) => setAddress({...address, state: e.target.value})} className="w-full text-[13px] px-4 py-3.5 outline-none rounded focus:ring-2" style={{ background: 'transparent', border: `1px solid ${BORD}`, color: TEXT }} />
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-6">
                           <div>
-                            <label className="block text-[11px] font-bold tracking-widest uppercase mb-2" style={{ color: SUB }}>Zip Code</label>
-                            <input required type="text" name="zip" value={address.zip} onChange={(e) => setAddress({...address, zip: e.target.value})} className="w-full text-[13px] px-4 py-3.5 outline-none rounded" style={{ background: 'transparent', border: `1px solid ${BORD}`, color: TEXT }} />
+                            <label htmlFor="checkout-zip" className="block text-[11px] font-bold tracking-widest uppercase mb-2" style={{ color: SUB }}>Zip Code</label>
+                            <input id="checkout-zip" required type="text" name="zip" value={address.zip} onChange={(e) => setAddress({...address, zip: e.target.value})} className="w-full text-[13px] px-4 py-3.5 outline-none rounded focus:ring-2" style={{ background: 'transparent', border: `1px solid ${BORD}`, color: TEXT }} />
                           </div>
                           <div>
-                            <label className="block text-[11px] font-bold tracking-widest uppercase mb-2" style={{ color: SUB }}>Country</label>
-                            <input required type="text" name="country" value={address.country} onChange={(e) => setAddress({...address, country: e.target.value})} className="w-full text-[13px] px-4 py-3.5 outline-none rounded" style={{ background: 'transparent', border: `1px solid ${BORD}`, color: TEXT }} />
+                            <label htmlFor="checkout-country" className="block text-[11px] font-bold tracking-widest uppercase mb-2" style={{ color: SUB }}>Country</label>
+                            <input id="checkout-country" required type="text" name="country" value={address.country} onChange={(e) => setAddress({...address, country: e.target.value})} className="w-full text-[13px] px-4 py-3.5 outline-none rounded focus:ring-2" style={{ background: 'transparent', border: `1px solid ${BORD}`, color: TEXT }} />
                           </div>
                         </div>
                       </div>
@@ -287,15 +287,19 @@ export default function Checkout() {
                   {step === 2 && (
                     <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                       <h2 className="font-playfair text-2xl mb-8">Delivery Method</h2>
-                      <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-4" role="radiogroup" aria-label="Delivery method">
                         {deliveryOptions.map(opt => (
-                          <div 
-                            key={opt.id} 
+                          <div
+                            key={opt.id}
+                            role="radio"
+                            aria-checked={delivery === opt.id}
+                            tabIndex={0}
                             onClick={() => setDelivery(opt.id)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDelivery(opt.id); } }}
                             className="p-6 rounded-xl flex items-center cursor-pointer transition-all"
-                            style={{ 
-                              border: `1px solid ${delivery === opt.id ? ACC : BORD}`, 
-                              background: delivery === opt.id ? 'rgba(212,175,55,0.05)' : 'transparent' 
+                            style={{
+                              border: `1px solid ${delivery === opt.id ? ACC : BORD}`,
+                              background: delivery === opt.id ? 'rgba(212,175,55,0.05)' : 'transparent'
                             }}
                           >
                             <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 mr-4" style={{ background: delivery === opt.id ? ACC : BORD }}>
@@ -384,15 +388,19 @@ export default function Checkout() {
                   {step === 3 && (
                     <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                       <h2 className="font-playfair text-2xl mb-8">Payment Method</h2>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8" role="radiogroup" aria-label="Payment method">
                         {paymentOptions.map(opt => (
-                          <div 
-                            key={opt.id} 
+                          <div
+                            key={opt.id}
+                            role="radio"
+                            aria-checked={payment === opt.id}
+                            tabIndex={0}
                             onClick={() => setPayment(opt.id)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPayment(opt.id); } }}
                             className="p-6 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all gap-4"
-                            style={{ 
-                              border: `1px solid ${payment === opt.id ? ACC : BORD}`, 
-                              background: payment === opt.id ? 'rgba(212,175,55,0.05)' : 'transparent' 
+                            style={{
+                              border: `1px solid ${payment === opt.id ? ACC : BORD}`,
+                              background: payment === opt.id ? 'rgba(212,175,55,0.05)' : 'transparent'
                             }}
                           >
                             <opt.icon size={24} style={{ color: payment === opt.id ? ACC : SUB }} />
@@ -530,14 +538,15 @@ export default function Checkout() {
                   </div>
                 ) : (
                   <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      value={discountCodeInput} 
+                    <input
+                      type="text"
+                      aria-label="Gift card or discount code"
+                      value={discountCodeInput}
                       onChange={(e) => setDiscountCodeInput(e.target.value.toUpperCase())}
                       onKeyDown={(e) => e.key === 'Enter' && handleApplyDiscount()}
-                      placeholder="Gift card or discount code" 
-                      className="flex-1 text-[13px] px-4 py-3 outline-none rounded" 
-                      style={{ background: 'transparent', border: `1px solid ${BORD}`, color: TEXT }} 
+                      placeholder="Gift card or discount code"
+                      className="flex-1 text-[13px] px-4 py-3 outline-none rounded focus:ring-2"
+                      style={{ background: 'transparent', border: `1px solid ${BORD}`, color: TEXT }}
                     />
                     <button 
                       type="button" 

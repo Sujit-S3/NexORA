@@ -186,9 +186,11 @@ export default function ProductDetail() {
             {/* Thumbnails */}
             <div className="hidden md:flex flex-col gap-4 w-20 shrink-0">
               {displayImages.map((img, i) => (
-                <button 
-                  key={i} 
+                <button
+                  key={i}
                   onClick={() => setActiveImage(i)}
+                  aria-label={`View image ${i + 1} of ${displayImages.length}`}
+                  aria-current={activeImage === i}
                   className="w-20 h-24 rounded-lg overflow-hidden transition-all duration-300"
                   style={{ border: `2px solid ${activeImage === i ? ACC : 'transparent'}`, opacity: activeImage === i ? 1 : 0.5 }}
                 >

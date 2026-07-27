@@ -43,21 +43,21 @@ const Contact = () => {
           <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Name</label>
-                <input type="text" className="w-full bg-[#F8F6F1] dark:bg-[#111111] border border-gray-200 dark:border-gray-800 rounded px-4 py-3 focus:outline-none focus:border-[#D4AF37]" placeholder="Your name" />
+                <label htmlFor="contact-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Name</label>
+                <input id="contact-name" type="text" className="w-full bg-[#F8F6F1] dark:bg-[#111111] border border-gray-200 dark:border-gray-800 rounded px-4 py-3 focus:outline-none focus:border-[#D4AF37]" placeholder="Your name" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
-                <input type="email" className="w-full bg-[#F8F6F1] dark:bg-[#111111] border border-gray-200 dark:border-gray-800 rounded px-4 py-3 focus:outline-none focus:border-[#D4AF37]" placeholder="Your email" />
+                <label htmlFor="contact-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                <input id="contact-email" type="email" className="w-full bg-[#F8F6F1] dark:bg-[#111111] border border-gray-200 dark:border-gray-800 rounded px-4 py-3 focus:outline-none focus:border-[#D4AF37]" placeholder="Your email" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subject</label>
-              <input type="text" className="w-full bg-[#F8F6F1] dark:bg-[#111111] border border-gray-200 dark:border-gray-800 rounded px-4 py-3 focus:outline-none focus:border-[#D4AF37]" placeholder="How can we help?" />
+              <label htmlFor="contact-subject" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subject</label>
+              <input id="contact-subject" type="text" className="w-full bg-[#F8F6F1] dark:bg-[#111111] border border-gray-200 dark:border-gray-800 rounded px-4 py-3 focus:outline-none focus:border-[#D4AF37]" placeholder="How can we help?" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message</label>
-              <textarea rows="5" className="w-full bg-[#F8F6F1] dark:bg-[#111111] border border-gray-200 dark:border-gray-800 rounded px-4 py-3 focus:outline-none focus:border-[#D4AF37]" placeholder="Your message..."></textarea>
+              <label htmlFor="contact-message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message</label>
+              <textarea id="contact-message" rows="5" className="w-full bg-[#F8F6F1] dark:bg-[#111111] border border-gray-200 dark:border-gray-800 rounded px-4 py-3 focus:outline-none focus:border-[#D4AF37]" placeholder="Your message..."></textarea>
             </div>
             <button type="submit" className="w-full bg-[#D4AF37] hover:bg-[#C9A96E] text-white font-medium py-4 rounded transition-colors uppercase tracking-wider">
               Send Message

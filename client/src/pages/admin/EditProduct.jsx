@@ -351,13 +351,18 @@ const EditProduct = () => {
             {/* Upload New Images */}
             <section className="bg-white/60 dark:bg-[#111827]/80 border border-gray-200 dark:border-[rgba(255,255,255,0.05)] rounded-2xl p-6">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Add More Images</h2>
-              <div onClick={() => fileRef.current?.click()}
+              <div
+                role="button"
+                tabIndex={0}
+                aria-label="Upload more product images"
+                onClick={() => fileRef.current?.click()}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileRef.current?.click(); } }}
                 onDrop={e => { e.preventDefault(); handleFiles(e.dataTransfer.files); }}
                 onDragOver={e => e.preventDefault()}
                 className="border-2 border-dashed border-[rgba(212,175,55,0.3)] rounded-xl p-5 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-[#D4AF37]/5 transition-colors mb-3">
                 <UploadCloud className="w-6 h-6 text-[#D4AF37]/60 mb-2" />
                 <p className="text-xs text-gray-500">Click or drag images here</p>
-                <input ref={fileRef} type="file" multiple accept="image/*" className="hidden" onChange={e => handleFiles(e.target.files)} />
+                <input ref={fileRef} type="file" multiple accept="image/*" className="hidden" onChange={e => handleFiles(e.target.files)} aria-hidden="true" tabIndex={-1} />
               </div>
               {newPreviews.length > 0 && (
                 <div className="grid grid-cols-4 gap-2">

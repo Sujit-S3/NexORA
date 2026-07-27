@@ -196,9 +196,9 @@ export default function Cart() {
                       <div className="mt-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         {/* Qty */}
                         <div className="flex items-center rounded overflow-hidden w-fit" style={{ border: `1px solid ${BORD}`, opacity: item.stock === 0 || item.isActive === false ? 0.5 : 1 }}>
-                          <button disabled={item.stock === 0 || item.isActive === false} onClick={() => updateQuantity(item._id, item.quantity - 1, item.size)} className="w-8 h-8 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors disabled:cursor-not-allowed"><Minus size={12} /></button>
+                          <button aria-label="Decrease quantity" disabled={item.stock === 0 || item.isActive === false} onClick={() => updateQuantity(item._id, item.quantity - 1, item.size)} className="w-8 h-8 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors disabled:cursor-not-allowed"><Minus size={12} /></button>
                           <span className="w-10 text-center text-[12px] font-medium">{item.quantity}</span>
-                          <button disabled={item.stock === 0 || item.isActive === false || item.quantity >= item.stock} onClick={() => updateQuantity(item._id, item.quantity + 1, item.size)} className="w-8 h-8 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors disabled:cursor-not-allowed"><Plus size={12} /></button>
+                          <button aria-label="Increase quantity" disabled={item.stock === 0 || item.isActive === false || item.quantity >= item.stock} onClick={() => updateQuantity(item._id, item.quantity + 1, item.size)} className="w-8 h-8 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors disabled:cursor-not-allowed"><Plus size={12} /></button>
                         </div>
 
                         {/* Actions */}
@@ -251,10 +251,11 @@ export default function Cart() {
 
                 {/* Discount */}
                 <div className="relative mb-8">
-                  <input 
-                    type="text" 
-                    placeholder="Gift card or discount code" 
-                    className="w-full text-[12px] px-4 py-3.5 outline-none transition-colors"
+                  <input
+                    type="text"
+                    aria-label="Gift card or discount code"
+                    placeholder="Gift card or discount code"
+                    className="w-full text-[12px] px-4 py-3.5 outline-none focus:ring-2 transition-colors"
                     style={{ background: 'transparent', border: `1px solid ${BORD}`, borderRadius: 4, color: TEXT }}
                   />
                   <button className="absolute right-3 top-2.5 text-[10px] font-bold tracking-widest uppercase px-3 py-1.5 rounded" style={{ background: isDark ? '#222' : '#EEE', color: TEXT }}>

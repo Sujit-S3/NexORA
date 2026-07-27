@@ -17,8 +17,11 @@ import StreamingStatus from './StreamingStatus';
 import SuggestionBar from './SuggestionBar';
 import TypingIndicator from './TypingIndicator';
 import { formatStageLabel } from './utils';
+import useModalA11y from '@hooks/useModalA11y';
 
 function QuickViewPanel({ onClose, product }) {
+  const dialogRef = useModalA11y(Boolean(product), onClose);
+
   if (!product) return null;
 
   return (
@@ -31,11 +34,16 @@ function QuickViewPanel({ onClose, product }) {
         onClick={onClose}
       >
         <motion.div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Quick view: ${product.name}`}
+          tabIndex={-1}
           initial={{ opacity: 0, y: 24, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 24, scale: 0.98 }}
           onClick={event => event.stopPropagation()}
-          className="w-full max-w-xl overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-2xl dark:border-[#1A1A1A] dark:bg-[#090909]"
+          className="w-full max-w-xl overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-2xl outline-none dark:border-[#1A1A1A] dark:bg-[#090909]"
         >
           <div className="flex items-start justify-between border-b border-gray-200 px-5 py-4 dark:border-[#1A1A1A]">
             <div>
@@ -45,6 +53,7 @@ function QuickViewPanel({ onClose, product }) {
             <button
               type="button"
               onClick={onClose}
+              aria-label="Close quick view"
               className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition-colors hover:border-[#D4AF37]/50 hover:text-[#D4AF37] dark:border-[#1A1A1A]"
               title="Close quick view"
             >

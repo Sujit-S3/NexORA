@@ -36,6 +36,14 @@
     background-color: #050505;
   }
 
+  /* Baseline keyboard-focus visibility — many components set their own
+     focus:ring styles, but anything that doesn't (or a future addition
+     that forgets to) still gets a visible indicator instead of none at all. */
+  :focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
   ::-webkit-scrollbar {
     width: 0px;
     background: transparent;
