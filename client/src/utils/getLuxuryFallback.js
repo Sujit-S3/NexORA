@@ -3,6 +3,7 @@ export function getLuxuryFallback(category) {
     case 'watches':
       return '/assets/luxury/fallbacks/watch-fallback.webp'
     case 'bags':
+    case 'accessories':
       return '/assets/luxury/fallbacks/bag-fallback.webp'
     case 'electronics':
       return '/assets/luxury/fallbacks/electronics-fallback.webp'

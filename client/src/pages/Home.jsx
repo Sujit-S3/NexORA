@@ -17,7 +17,7 @@ const CATEGORIES = [
   { id: 'fashion',      name: 'Fashion',      img: '/assets/luxury/fashion/gucci_jacket.png' },
   { id: 'watches',      name: 'Watches',      img: '/assets/luxury/watches/rolex_daytona.png' },
   { id: 'electronics',  name: 'Electronics',  img: '/assets/luxury/electronics/macbook_pro.png' },
-  { id: 'accessories',  name: 'Accessories',  img: '/assets/luxury/bags/hermes_kelly.png' },
+  { id: 'accessories',  name: 'Accessories',  img: '/assets/luxury/bags/light_bag_1.png' },
   { id: 'lifestyle',    name: 'Lifestyle',    img: '/assets/luxury/lifestyle/luxury_interior.png' },
   { id: 'luxury-gifts', name: 'Luxury Gifts', img: '/assets/luxury/lifestyle/executive_office.png' },
 ];

@@ -1,0 +1,22 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="hsl(321, 42%, 20%)"/>
+      <stop offset="100%" stop-color="hsl(321, 46%, 10%)"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F2D888"/>
+      <stop offset="100%" stop-color="#B8892E"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#bg)"/>
+  <rect x="14" y="14" width="372" height="372" fill="none" stroke="url(#gold)" stroke-width="1.5" opacity="0.6"/>
+  <g transform="translate(200,168)"><circle cx="0" cy="0" r="46" fill="none" stroke="url(#gold)" stroke-width="3"/>
+      <circle cx="0" cy="0" r="3" fill="url(#gold)"/>
+      <line x1="0" y1="0" x2="0" y2="-30" stroke="url(#gold)" stroke-width="3" stroke-linecap="round"/>
+      <line x1="0" y1="0" x2="20" y2="10" stroke="url(#gold)" stroke-width="3" stroke-linecap="round"/>
+      <line x1="0" y1="-46" x2="0" y2="-56" stroke="url(#gold)" stroke-width="4" stroke-linecap="round"/>
+      <line x1="0" y1="46" x2="0" y2="56" stroke="url(#gold)" stroke-width="4" stroke-linecap="round"/></g>
+  <text x="200" y="290" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="20" letter-spacing="2" fill="url(#gold)">PATEK PHILIPPE</text>
+  <text x="200" y="316" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="13" letter-spacing="0.5" fill="#EDEDED" opacity="0.85">Patek Philippe Calatrava</text>
+</svg>

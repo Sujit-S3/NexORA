@@ -88,9 +88,9 @@ const Wishlist = () => {
               </button>
 
               <Link to={`/product/${product.slug || product._id}`} className="relative h-64 mb-4 rounded-[1.5rem] overflow-hidden bg-white dark:bg-[#05070A]">
-                <img loading="lazy" 
-                  src={product.images?.[0]?.url || product.image || '/assets/luxury/bags/hermes_kelly.png'} 
-                  alt={product.name} 
+                <img loading="lazy"
+                  src={product.images?.[0]?.url || product.image || getLuxuryFallback(product.category?.name || product.category)}
+                  alt={product.name}
                   className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-700 mix-blend-multiply dark:mix-blend-normal" 
                  onError={(e) => {
     let cat = 'default';
