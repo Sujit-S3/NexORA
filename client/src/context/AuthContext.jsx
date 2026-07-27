@@ -1,6 +1,7 @@
 // NexORA — Auth Context
 // Provides authentication state and actions to the entire app.
-// Full implementation in Phase 2 — this is the scaffold.
+// Auth is tracked purely via the server's httpOnly session cookie — the
+// client never stores the JWT itself, only the resulting user object.
 
 import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import { authService } from '@services/authService';
@@ -9,7 +10,6 @@ import { identifyUser, resetUser } from '@services/analyticsService';
 // ── Initial state ─────────────────────────────────────────────────────────
 const initialState = {
   user: null,
-  token: localStorage.getItem('nexora_token') || null,
   isAuthenticated: false,
   isLoading: true, // true during initial /me check
   error: null,
@@ -24,7 +24,6 @@ const authReducer = (state, action) => {
       return {
         ...state,
         user: action.payload.user,
-        token: action.payload.token,
         isAuthenticated: true,
         isLoading: false,
         error: null,
@@ -33,7 +32,6 @@ const authReducer = (state, action) => {
       return {
         ...state,
         user: null,
-        token: null,
         isAuthenticated: false,
         isLoading: false,
         error: action.payload,
@@ -41,7 +39,6 @@ const authReducer = (state, action) => {
     case 'AUTH_LOGOUT':
       return {
         ...initialState,
-        token: null,
         isLoading: false,
       };
     case 'CLEAR_ERROR':
@@ -60,47 +57,42 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Verify token and fetch current user on mount
+  // Ask the server whether the session cookie is still valid on mount —
+  // there is nothing meaningful to check client-side beforehand.
   useEffect(() => {
     const verifyAuth = async () => {
-      const token = localStorage.getItem('nexora_token');
-      if (!token) {
-        dispatch({ type: 'AUTH_FAILURE', payload: null });
-        return;
-      }
       try {
         const { data } = await authService.getMe();
-        dispatch({
-          type: 'AUTH_SUCCESS',
-          payload: { user: data.data, token },
-        });
+        dispatch({ type: 'AUTH_SUCCESS', payload: { user: data.data } });
       } catch {
-        localStorage.removeItem('nexora_token');
         dispatch({ type: 'AUTH_FAILURE', payload: null });
       }
     };
     verifyAuth();
   }, []);
 
+  const readGuestData = () => {
+    let guestCart = [];
+    let guestWishlist = [];
+    try {
+      const storedCart = localStorage.getItem('nexora_cart');
+      if (storedCart) guestCart = JSON.parse(storedCart);
+
+      const storedWishlist = localStorage.getItem('nexora_wishlist');
+      if (storedWishlist) guestWishlist = JSON.parse(storedWishlist);
+    } catch {
+      // corrupt localStorage — ignore, treat as no guest data
+    }
+    return { guestCart, guestWishlist };
+  };
+
   const login = useCallback(async (credentials) => {
     dispatch({ type: 'AUTH_LOADING' });
     try {
-      // Append guest cart if exists
-      let guestCart = [];
-      let guestWishlist = [];
-      try {
-        const storedCart = localStorage.getItem('nexora_cart');
-        if (storedCart) guestCart = JSON.parse(storedCart);
-        
-        const storedWishlist = localStorage.getItem('nexora_wishlist');
-        if (storedWishlist) guestWishlist = JSON.parse(storedWishlist);
-      } catch (e) {}
-
+      const { guestCart, guestWishlist } = readGuestData();
       const { data } = await authService.login({ ...credentials, guestCart, guestWishlist });
-      const { token, user } = data.data;
-      
-      localStorage.setItem('nexora_token', token);
-      
+      const { user } = data.data;
+
       // Successfully merged, clear guest data to prevent ghost reappearance
       localStorage.removeItem('nexora_cart');
       localStorage.removeItem('nexora_wishlist');
@@ -108,7 +100,7 @@ export const AuthProvider = ({ children }) => {
       // Identify this user in PostHog for product analytics
       identifyUser(user);
 
-      dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
+      dispatch({ type: 'AUTH_SUCCESS', payload: { user } });
       return { success: true, user };
     } catch (error) {
       dispatch({ type: 'AUTH_FAILURE', payload: error.message });
@@ -119,22 +111,10 @@ export const AuthProvider = ({ children }) => {
   const register = useCallback(async (userData) => {
     dispatch({ type: 'AUTH_LOADING' });
     try {
-      // Append guest cart if exists
-      let guestCart = [];
-      let guestWishlist = [];
-      try {
-        const storedCart = localStorage.getItem('nexora_cart');
-        if (storedCart) guestCart = JSON.parse(storedCart);
-        
-        const storedWishlist = localStorage.getItem('nexora_wishlist');
-        if (storedWishlist) guestWishlist = JSON.parse(storedWishlist);
-      } catch (e) {}
-
+      const { guestCart, guestWishlist } = readGuestData();
       const { data } = await authService.register({ ...userData, guestCart, guestWishlist });
-      const { token, user } = data.data;
-      
-      localStorage.setItem('nexora_token', token);
-      
+      const { user } = data.data;
+
       // Clear guest data
       localStorage.removeItem('nexora_cart');
       localStorage.removeItem('nexora_wishlist');
@@ -142,7 +122,7 @@ export const AuthProvider = ({ children }) => {
       // Identify this user in PostHog for product analytics
       identifyUser(user);
 
-      dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
+      dispatch({ type: 'AUTH_SUCCESS', payload: { user } });
       return { success: true };
     } catch (error) {
       dispatch({ type: 'AUTH_FAILURE', payload: error.message });
@@ -154,7 +134,6 @@ export const AuthProvider = ({ children }) => {
     try {
       await authService.logout();
     } finally {
-      localStorage.removeItem('nexora_token');
       // Reset PostHog identity so the next session starts fresh
       resetUser();
       dispatch({ type: 'AUTH_LOGOUT' });
@@ -169,10 +148,10 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'CLEAR_ERROR' });
   }, []);
 
-  // Direct auth injection (used after password reset — no extra API call needed)
-  const loginWithData = useCallback((token, user) => {
-    localStorage.setItem('nexora_token', token);
-    dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
+  // Direct auth injection (used after password reset — the server has
+  // already set the session cookie, so there's nothing to store here).
+  const loginWithData = useCallback((user) => {
+    dispatch({ type: 'AUTH_SUCCESS', payload: { user } });
   }, []);
 
   const value = {
@@ -185,7 +164,6 @@ export const AuthProvider = ({ children }) => {
     loginWithData,
     isAdmin: state.user?.role === 'admin',
   };
-
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -5,9 +5,7 @@ import { Mail, ArrowLeft, CheckCircle, Copy, ExternalLink } from 'lucide-react';
 import AuthLayout from '@components/layout/AuthLayout';
 import MainLogo from '@components/common/MainLogo';
 import FloatingInput from '@components/common/FloatingInput';
-import axios from 'axios';
-
-const API = import.meta.env.VITE_API_URL || '/api';
+import { authService } from '@services/authService';
 
 export default function ForgotPassword() {
   const [email, setEmail]         = useState('');
@@ -22,7 +20,7 @@ export default function ForgotPassword() {
     if (!email) { setError('Please enter your email address'); return; }
     setLoading(true); setError('');
     try {
-      const { data } = await axios.post(`${API}/auth/forgot-password`, { email });
+      const { data } = await authService.forgotPassword(email);
       setSent(true);
       // Development: server returns the reset link directly (no email configured)
       if (data?.data?.resetUrl) setDevLink(data.data.resetUrl);

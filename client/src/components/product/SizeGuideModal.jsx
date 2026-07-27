@@ -1,21 +1,33 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { X, Ruler, RefreshCcw } from 'lucide-react';
+import DOMPurify from 'dompurify';
+import useModalA11y from '@hooks/useModalA11y';
 
 export default function SizeGuideModal({ isOpen, onClose, sizeChart }) {
+  const dialogRef = useModalA11y(isOpen, onClose);
+
   if (!isOpen) return null;
 
   // Fallback if no sizeChart object provided (e.g. legacy HTML)
   if (!sizeChart || typeof sizeChart !== 'object') {
+    const sanitizedHtml = DOMPurify.sanitize(sizeChart || 'Size chart unavailable.');
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-2xl rounded-2xl overflow-hidden p-8 max-h-[90vh] overflow-y-auto shadow-2xl bg-white dark:bg-[#0B0B0B] border border-gray-200 dark:border-[#1A1A1A]">
-          <button onClick={onClose} className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 transition-colors z-10">
+        <motion.div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="size-guide-title-legacy"
+          tabIndex={-1}
+          initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+          className="relative w-full max-w-2xl rounded-2xl overflow-hidden p-8 max-h-[90vh] overflow-y-auto shadow-2xl bg-white dark:bg-[#0B0B0B] border border-gray-200 dark:border-[#1A1A1A] outline-none"
+        >
+          <button onClick={onClose} aria-label="Close size guide" className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 transition-colors z-10">
             <X size={16} />
           </button>
-          <h2 className="font-playfair text-3xl mb-8 text-center text-black dark:text-white">Size Guide</h2>
-          <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: sizeChart || 'Size chart unavailable.' }} />
+          <h2 id="size-guide-title-legacy" className="font-playfair text-3xl mb-8 text-center text-black dark:text-white">Size Guide</h2>
+          <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />
         </motion.div>
       </div>
     );
@@ -23,32 +35,37 @@ export default function SizeGuideModal({ isOpen, onClose, sizeChart }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
-      <motion.div 
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
-        onClick={onClose} 
-        className="absolute inset-0 bg-black/60 backdrop-blur-md" 
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-black/60 backdrop-blur-md"
       />
-      <motion.div 
-        initial={{ opacity: 0, y: 50, scale: 0.95 }} 
-        animate={{ opacity: 1, y: 0, scale: 1 }} 
-        exit={{ opacity: 0, y: 50, scale: 0.95 }} 
+      <motion.div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="size-guide-title"
+        tabIndex={-1}
+        initial={{ opacity: 0, y: 50, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 50, scale: 0.95 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="relative w-full max-w-3xl rounded-[24px] overflow-hidden shadow-2xl bg-white/80 dark:bg-[#0B0B0B]/80 backdrop-blur-2xl border border-white/20 dark:border-white/10 flex flex-col max-h-full"
+        className="relative w-full max-w-3xl rounded-[24px] overflow-hidden shadow-2xl bg-white/80 dark:bg-[#0B0B0B]/80 backdrop-blur-2xl border border-white/20 dark:border-white/10 flex flex-col max-h-full outline-none"
       >
         {/* Header */}
         <div className="px-8 py-6 border-b border-gray-200/30 dark:border-[#1A1A1A] flex items-center justify-between sticky top-0 bg-white/50 dark:bg-[#0B0B0B]/50 backdrop-blur-xl z-20">
           <div>
-            <h2 className="font-playfair text-2xl text-black dark:text-white">Size Guide</h2>
+            <h2 id="size-guide-title" className="font-playfair text-2xl text-black dark:text-white">Size Guide</h2>
             {sizeChart.brand && <p className="text-[10px] uppercase tracking-widest text-gray-500 mt-1">{sizeChart.brand} • {sizeChart.name}</p>}
           </div>
-          <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 transition-colors text-black dark:text-white">
+          <button onClick={onClose} aria-label="Close size guide" className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 transition-colors text-black dark:text-white">
             <X size={20} />
           </button>
         </div>
 
         {/* Content */}
         <div className="p-8 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-          
+
           {/* Measurement Table */}
           {sizeChart.columns && sizeChart.rows && (
             <div className="mb-12">

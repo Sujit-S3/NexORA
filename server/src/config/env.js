@@ -22,6 +22,17 @@ const validateEnv = () => {
     process.exit(1);
   }
 
+  // A short/weak secret makes JWT forgery via brute force feasible.
+  const MIN_SECRET_LENGTH = 32;
+  if (process.env.JWT_SECRET.length < MIN_SECRET_LENGTH) {
+    console.error(`❌  JWT_SECRET must be at least ${MIN_SECRET_LENGTH} characters (got ${process.env.JWT_SECRET.length}).`);
+    process.exit(1);
+  }
+  if (process.env.JWT_REFRESH_SECRET && process.env.JWT_REFRESH_SECRET.length < MIN_SECRET_LENGTH) {
+    console.error(`❌  JWT_REFRESH_SECRET must be at least ${MIN_SECRET_LENGTH} characters (got ${process.env.JWT_REFRESH_SECRET.length}).`);
+    process.exit(1);
+  }
+
   // Razorpay is optional (COD always works without it), but if configured it
   // must be configured fully — a half-set pair would silently break signature checks.
   const hasKeyId = Boolean(process.env.RAZORPAY_KEY_ID);

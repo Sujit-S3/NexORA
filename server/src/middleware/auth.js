@@ -25,8 +25,9 @@ const protect = asyncHandler(async (req, res, next) => {
     throw ApiError.unauthorized('Access denied — no token provided');
   }
 
-  // Verify token
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  // Verify token — algorithms pinned so a future switch to an asymmetric
+  // key elsewhere in the app can't be abused to forge tokens against this secret.
+  const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
 
   // Fetch fresh user (excludes password via model select)
   const user = await User.findById(decoded.id).select('-password');
@@ -36,6 +37,11 @@ const protect = asyncHandler(async (req, res, next) => {
 
   if (!user.isActive) {
     throw ApiError.forbidden('Your account has been deactivated');
+  }
+
+  // A password change/reset invalidates any token issued before it.
+  if (user.changedPasswordAfter(decoded.iat)) {
+    throw ApiError.unauthorized('Password was changed recently — please log in again');
   }
 
   req.user = user;
@@ -53,9 +59,9 @@ const optionalAuth = asyncHandler(async (req, res, next) => {
 
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
       const user = await User.findById(decoded.id).select('-password');
-      if (user && user.isActive) {
+      if (user && user.isActive && !user.changedPasswordAfter(decoded.iat)) {
         req.user = user;
       }
     } catch (err) {

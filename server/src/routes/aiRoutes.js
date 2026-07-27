@@ -2,7 +2,7 @@
 const express = require('express');
 const router  = express.Router();
 const ctrl    = require('../controllers/aiController');
-const { protect }   = require('../middleware/auth');
+const { protect, optionalAuth }   = require('../middleware/auth');
 const { adminOnly } = require('../middleware/admin');
 const rateLimit     = require('express-rate-limit');
 
@@ -24,17 +24,19 @@ const intentLimiter = rateLimit({
 router.use(aiLimiter);
 
 // ── Public / User Endpoints ───────────────────────────────────────────────
+// optionalAuth: resolves req.user for logged-in shoppers without requiring
+// a session — anonymous visitors still get x-session-id-based personalization.
 router.get('/health',             ctrl.getHealth);
-router.post('/chat',              ctrl.chat);
-router.post('/intent',            intentLimiter, ctrl.extractIntent);
-router.post('/compare',           ctrl.compareProducts);
-router.post('/checkout-suggest',  ctrl.getCheckoutSuggestions);
-router.post('/post-purchase',     ctrl.getPostPurchase);
-router.post('/cart/recommend',    ctrl.getCartRecommendations);
+router.post('/chat',              optionalAuth, ctrl.chat);
+router.post('/intent',            intentLimiter, optionalAuth, ctrl.extractIntent);
+router.post('/compare',           optionalAuth, ctrl.compareProducts);
+router.post('/checkout-suggest',  optionalAuth, ctrl.getCheckoutSuggestions);
+router.post('/post-purchase',     optionalAuth, ctrl.getPostPurchase);
+router.post('/cart/recommend',    optionalAuth, ctrl.getCartRecommendations);
 
 // ── Memory (V10) ─────────────────────────────────────────────────────────────
-router.post('/memory/export',     ctrl.exportMemory);
-router.post('/memory/forget',     ctrl.forgetMe);
+router.post('/memory/export',     optionalAuth, ctrl.exportMemory);
+router.post('/memory/forget',     optionalAuth, ctrl.forgetMe);
 
 
 // ── Admin Protected ───────────────────────────────────────────────────────

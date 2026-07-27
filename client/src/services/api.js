@@ -10,20 +10,12 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Send HTTP-only cookies automatically
+  // Auth is entirely via the httpOnly `nexora_token` cookie — the browser
+  // attaches it automatically, and JS never has access to read it (which is
+  // the point: an XSS bug elsewhere can't exfiltrate a token that isn't
+  // reachable from localStorage/JS in the first place).
+  withCredentials: true,
 });
-
-// ── Request interceptor — attach JWT from localStorage ─────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('nexora_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
 
 // ── Response interceptor — normalise errors ────────────────────────────
 api.interceptors.response.use(
@@ -34,13 +26,9 @@ api.interceptors.response.use(
       error.message ||
       'An unexpected error occurred';
 
-    // Auto-logout on 401 (token expired / invalid)
-    if (error.response?.status === 401) {
-      localStorage.removeItem('nexora_token');
-      // Only redirect if not already on auth pages
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
-      }
+    // Auto-redirect on 401 (session expired / not logged in)
+    if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
+      window.location.href = '/login';
     }
 
     return Promise.reject({ ...error, message });

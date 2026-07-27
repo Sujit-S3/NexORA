@@ -30,8 +30,22 @@ const uploadAvatar = asyncHandler(async (req, res) => {
 // @route   GET /api/users
 // @access  Admin
 const getAllUsers = asyncHandler(async (req, res) => {
-  const users = await User.find().select('-password').sort({ createdAt: -1 });
-  sendResponse(res, 200, 'All users retrieved', users);
+  const { page = 1, limit = 50 } = req.query;
+  const pageNum = Number(page);
+  const limitNum = Number(limit);
+  const skip = (pageNum - 1) * limitNum;
+
+  const total = await User.countDocuments();
+  const users = await User.find()
+    .select('-password')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limitNum);
+
+  sendResponse(res, 200, 'All users retrieved', {
+    users,
+    pagination: { page: pageNum, limit: limitNum, total, pages: Math.ceil(total / limitNum) },
+  });
 });
 
 // @desc    Get user by ID (admin)
@@ -46,12 +60,29 @@ const getUserById = asyncHandler(async (req, res) => {
 // @desc    Update user role (admin)
 // @route   PUT /api/users/:id/role
 // @access  Admin
+const VALID_ROLES = ['user', 'admin'];
+
 const updateUserRole = asyncHandler(async (req, res) => {
+  const { role } = req.body;
+  if (!VALID_ROLES.includes(role)) {
+    throw ApiError.badRequest(`Role must be one of: ${VALID_ROLES.join(', ')}`);
+  }
+
   const user = await User.findById(req.params.id);
   if (!user) {throw ApiError.notFound('User not found');}
 
-  user.role = req.body.role || user.role;
-  await user.save({ validateBeforeSave: false });
+  if (role !== 'admin' && user.role === 'admin') {
+    if (user._id.toString() === req.user._id.toString()) {
+      throw ApiError.badRequest('You cannot demote your own account');
+    }
+    const otherAdmins = await User.countDocuments({ role: 'admin', _id: { $ne: user._id } });
+    if (otherAdmins === 0) {
+      throw ApiError.badRequest('Cannot demote the last remaining admin');
+    }
+  }
+
+  user.role = role;
+  await user.save();
 
   sendResponse(res, 200, 'User role updated', {
     _id: user._id,

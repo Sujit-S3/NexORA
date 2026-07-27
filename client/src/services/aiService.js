@@ -1,36 +1,37 @@
 // NexORA V13 — Client AI Service
-import axios from 'axios';
+import api from './api';
 import { getSessionId } from '../hooks/usePreferenceTracking';
 
-const API_URL = '/api/ai';
+// Same base URL the shared `api` instance uses — chatStream needs an absolute
+// URL because it streams via fetch()/SSE rather than axios.
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
-const getAuthHeaders = () => {
-  const token         = localStorage.getItem('nexora_token');
-  const sessionId     = getSessionId();
-  const conversationId= localStorage.getItem('nexora_conversation_id') || sessionId;
+const getSessionHeaders = () => {
+  const sessionId = getSessionId();
+  const conversationId = localStorage.getItem('nexora_conversation_id') || sessionId;
   return {
-    'Content-Type':       'application/json',
-    'x-session-id':       sessionId,
-    'x-conversation-id':  conversationId,
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    'Content-Type': 'application/json',
+    'x-session-id': sessionId,
+    'x-conversation-id': conversationId,
   };
 };
 
 const aiService = {
   // ── Health ──────────────────────────────────────────────────────────────
-  checkHealth: async () => axios.get(`${API_URL}/health`),
+  checkHealth: async () => api.get('/ai/health'),
 
   // ── Intent Extraction ───────────────────────────────────────────────────
   extractIntent: async (message, memory = {}) =>
-    axios.post(`${API_URL}/intent`, { message, memory }, { headers: getAuthHeaders() }),
+    api.post('/ai/intent', { message, memory }, { headers: getSessionHeaders() }),
 
   // ── Chat Stream (SSE) ────────────────────────────────────────────────────
   // V13: passes memory so pipeline accumulates filters; supports AbortController signal
   chatStream: async (message, history, memory, cartItems = [], wishlistIds = [], signal = null) => {
-    const headers = getAuthHeaders();
-    return fetch(`${API_URL}/chat`, {
-      method:  'POST',
+    const headers = getSessionHeaders();
+    return fetch(`${API_BASE}/ai/chat`, {
+      method: 'POST',
       headers,
+      credentials: 'include', // send the httpOnly auth cookie cross-origin
       body: JSON.stringify({ message, history, memory, cartItems, wishlistIds }),
       signal,
     });
@@ -38,37 +39,37 @@ const aiService = {
 
   // ── Compare Products ─────────────────────────────────────────────────────
   compareProducts: async (productIds) =>
-    axios.post(`${API_URL}/compare`, { productIds }, { headers: getAuthHeaders() }),
+    api.post('/ai/compare', { productIds }, { headers: getSessionHeaders() }),
 
   // ── Checkout Suggestions ─────────────────────────────────────────────────
   getCheckoutSuggestions: async (cartProductIds) =>
-    axios.post(`${API_URL}/checkout-suggest`, { cartProductIds }, { headers: getAuthHeaders() }),
+    api.post('/ai/checkout-suggest', { cartProductIds }, { headers: getSessionHeaders() }),
 
   // ── Post-Purchase Package ────────────────────────────────────────────────
   getPostPurchase: async (orderId) =>
-    axios.post(`${API_URL}/post-purchase`, { orderId }, { headers: getAuthHeaders() }),
+    api.post('/ai/post-purchase', { orderId }, { headers: getSessionHeaders() }),
 
   // ── Cart Recommendations ─────────────────────────────────────────────────
   getCartRecommendations: async (cartItems) =>
-    axios.post(`${API_URL}/cart/recommend`, { cartItems }, { headers: getAuthHeaders() }),
+    api.post('/ai/cart/recommend', { cartItems }, { headers: getSessionHeaders() }),
 
   // ── Admin Tools ──────────────────────────────────────────────────────────
   generateProductMetadata: async (productId) =>
-    axios.post(`${API_URL}/product/generate`, { productId }),
+    api.post('/ai/product/generate', { productId }),
   analyzeReviews: async (productId) =>
-    axios.post(`${API_URL}/reviews/analyze`, { productId }),
+    api.post('/ai/reviews/analyze', { productId }),
   analyzeSales: async (salesData, query) =>
-    axios.post(`${API_URL}/sales/analyze`, { salesData, query }),
+    api.post('/ai/sales/analyze', { salesData, query }),
   getAnalytics: async () =>
-    axios.get(`${API_URL}/analytics`),
+    api.get('/ai/analytics'),
   runAdminStudioTool: async (tool, payload = {}) =>
-    axios.post(`${API_URL}/admin/studio`, { tool, payload }),
+    api.post('/ai/admin/studio', { tool, payload }),
 
   // ── Memory Export / Forget Me ─────────────────────────────────────────────
   exportMemory: async (format = 'json') =>
-    axios.post(`${API_URL}/memory/export`, { format }, { headers: getAuthHeaders(), responseType: 'blob' }),
+    api.post('/ai/memory/export', { format }, { headers: getSessionHeaders(), responseType: 'blob' }),
   forgetMe: async () =>
-    axios.post(`${API_URL}/memory/forget`, {}, { headers: getAuthHeaders() }),
+    api.post('/ai/memory/forget', {}, { headers: getSessionHeaders() }),
 };
 
 export default aiService;

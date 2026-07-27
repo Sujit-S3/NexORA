@@ -56,6 +56,7 @@ router.get('/me', protect, getMe);
 router.put(
   '/change-password',
   protect,
+  authLimiter,
   [
     body('currentPassword').notEmpty().withMessage('Current password is required'),
     body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters'),

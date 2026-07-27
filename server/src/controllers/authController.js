@@ -29,7 +29,7 @@ const register = asyncHandler(async (req, res) => {
     currency,
   });
 
-  const token = sendTokenResponse(res, user);
+  sendTokenResponse(res, user);
 
   const sessionId = req.headers['x-session-id'] || req.body.sessionId;
   if (sessionId) {
@@ -50,12 +50,18 @@ const register = asyncHandler(async (req, res) => {
     if (!cart) {
       cart = await Cart.create({ user: user._id, items: [] });
     }
+
+    // Batch-fetch every referenced product once instead of one findById per item.
+    const productIds = [...new Set(req.body.guestCart.map(i => i.product.toString()))];
+    const products = await Product.find({ _id: { $in: productIds } });
+    const productsById = new Map(products.map(p => [p._id.toString(), p]));
+
     for (const guestItem of req.body.guestCart) {
       const existing = cart.items.find(i => i.product.toString() === guestItem.product.toString() && (i.size || '') === (guestItem.size || ''));
       if (existing) {
         existing.quantity += guestItem.quantity;
       } else {
-        const product = await Product.findById(guestItem.product);
+        const product = productsById.get(guestItem.product.toString());
         if (product && product.isActive) {
           cart.items.push({
             product: guestItem.product,
@@ -83,7 +89,6 @@ const register = asyncHandler(async (req, res) => {
   }
 
   sendResponse(res, 201, 'User registered successfully', {
-    token,
     user: {
       _id: user._id,
       name: user.name,
@@ -117,7 +122,7 @@ const login = asyncHandler(async (req, res) => {
     throw ApiError.forbidden('Your account has been deactivated');
   }
 
-  const token = sendTokenResponse(res, user);
+  sendTokenResponse(res, user);
 
   const sessionId = req.headers['x-session-id'] || req.body.sessionId;
   if (sessionId) {
@@ -132,12 +137,18 @@ const login = asyncHandler(async (req, res) => {
     if (!cart) {
       cart = await Cart.create({ user: user._id, items: [] });
     }
+
+    // Batch-fetch every referenced product once instead of one findById per item.
+    const productIds = [...new Set(req.body.guestCart.map(i => i.product.toString()))];
+    const products = await Product.find({ _id: { $in: productIds } });
+    const productsById = new Map(products.map(p => [p._id.toString(), p]));
+
     for (const guestItem of req.body.guestCart) {
       const existing = cart.items.find(i => i.product.toString() === guestItem.product.toString() && (i.size || '') === (guestItem.size || ''));
       if (existing) {
         existing.quantity += guestItem.quantity;
       } else {
-        const product = await Product.findById(guestItem.product);
+        const product = productsById.get(guestItem.product.toString());
         if (product && product.isActive) {
           cart.items.push({
             product: guestItem.product,
@@ -164,7 +175,6 @@ const login = asyncHandler(async (req, res) => {
   }
 
   sendResponse(res, 200, 'Login successful', {
-    token,
     user: {
       _id: user._id,
       name: user.name,
@@ -179,11 +189,18 @@ const login = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/logout
 // @access  Auth
 const logout = asyncHandler(async (req, res) => {
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // Must mirror the attributes the cookie was originally set with
+  // (generateToken.js#sendTokenResponse) — secure/sameSite affect whether the
+  // browser matches this to the existing cookie to actually clear it.
   res.cookie('nexora_token', 'loggedout', {
     httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
     expires: new Date(Date.now() + 10 * 1000), // expires in 10 seconds
   });
-  
+
   sendResponse(res, 200, 'Logout successful');
 });
 
@@ -216,10 +233,10 @@ const changePassword = asyncHandler(async (req, res) => {
   user.password = newPassword;
   await user.save();
 
-  // Send new token
-  const token = sendTokenResponse(res, user);
+  // Re-issue the session cookie under the new password
+  sendTokenResponse(res, user);
 
-  sendResponse(res, 200, 'Password changed successfully', { token });
+  sendResponse(res, 200, 'Password changed successfully');
 });
 
 // Helper for session merging
@@ -325,10 +342,9 @@ const resetPassword = asyncHandler(async (req, res) => {
   await user.save();
 
   // Log user in immediately
-  const authToken = sendTokenResponse(res, user);
+  sendTokenResponse(res, user);
 
   sendResponse(res, 200, 'Password reset successful. You are now logged in.', {
-    token: authToken,
     user: { _id: user._id, name: user.name, email: user.email, role: user.role },
   });
 });

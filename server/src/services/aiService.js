@@ -520,6 +520,13 @@ exports.getPostPurchasePackage = async (orderId, userId) => {
 
     if (!order) {throw new AIError('Order not found', 404, 'NOT_FOUND');}
 
+    // Guest orders (order.user === null) stay reachable by anyone who has the
+    // id, matching the anonymous post-checkout flow — but an order that DOES
+    // belong to an account is only viewable by that account.
+    if (order.user && (!userId || order.user.toString() !== userId.toString())) {
+      throw new AIError('Not authorized to view this order', 403, 'FORBIDDEN');
+    }
+
     const products   = order.items.map(i => i.product).filter(Boolean);
     const categories = products.map(p => p.category?.name || '').filter(Boolean);
     const careText   = getCareGuide(categories[0] || '');

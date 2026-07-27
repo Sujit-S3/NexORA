@@ -257,12 +257,12 @@ const cancelOrder = asyncHandler(async (req, res) => {
       throw ApiError.notFound('Order not found');
     }
 
-    if (order.user && order.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    // Guest orders (order.user === null) belong to no authenticated account,
+    // so only an admin can cancel them via this API — never a guessed/matched isOwner.
+    const isOwner = order.user && order.user.toString() === req.user._id.toString();
+    if (!isOwner && req.user.role !== 'admin') {
       throw ApiError.forbidden('Not authorized to cancel this order');
     }
-    
-    // Guest orders can't be cancelled via API by default unless they have an admin token or secret token, 
-    // but the role check above protects admin access.
 
     if (order.status !== 'pending' && order.status !== 'processing') {
       throw ApiError.badRequest('Order cannot be cancelled at this stage');
@@ -309,9 +309,32 @@ const cancelOrder = asyncHandler(async (req, res) => {
 // @route   GET /api/orders
 // @access  Admin
 const getAllOrders = asyncHandler(async (req, res) => {
-  const orders = await Order.find().populate('user', 'name email').sort({ createdAt: -1 });
-  sendResponse(res, 200, 'All orders retrieved', orders);
+  const { page = 1, limit = 50 } = req.query;
+  const pageNum = Number(page);
+  const limitNum = Number(limit);
+  const skip = (pageNum - 1) * limitNum;
+
+  const total = await Order.countDocuments();
+  const orders = await Order.find()
+    .populate('user', 'name email')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limitNum);
+
+  sendResponse(res, 200, 'All orders retrieved', {
+    orders,
+    pagination: { page: pageNum, limit: limitNum, total, pages: Math.ceil(total / limitNum) },
+  });
 });
+
+// Allowed forward transitions — 'delivered' and 'cancelled' are terminal.
+const ALLOWED_STATUS_TRANSITIONS = {
+  pending: ['processing', 'cancelled'],
+  processing: ['shipped', 'cancelled'],
+  shipped: ['delivered', 'cancelled'],
+  delivered: [],
+  cancelled: [],
+};
 
 // @desc    Update order status (admin)
 // @route   PUT /api/orders/:id/status
@@ -324,12 +347,22 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     throw ApiError.notFound('Order not found');
   }
 
-  order.status = status;
-  if (status === 'delivered') {
-    order.deliveredAt = Date.now();
-    order.paymentInfo.status = 'paid';
+  if (status !== order.status && !ALLOWED_STATUS_TRANSITIONS[order.status]?.includes(status)) {
+    throw ApiError.badRequest(`Cannot transition order from '${order.status}' to '${status}'`);
   }
 
+  if (status === 'delivered') {
+    // COD is genuinely paid on delivery. Any other method must already have
+    // been verified paid (via Razorpay) — delivery never manufactures that.
+    if (order.paymentInfo.method === 'cod') {
+      order.paymentInfo.status = 'paid';
+    } else if (order.paymentInfo.status !== 'paid') {
+      throw ApiError.badRequest('Cannot mark an unpaid online-payment order as delivered');
+    }
+    order.deliveredAt = Date.now();
+  }
+
+  order.status = status;
   await order.save();
   sendResponse(res, 200, 'Order status updated', order);
 });

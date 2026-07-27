@@ -4,10 +4,8 @@ import { motion } from 'framer-motion';
 import { Lock, CheckCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import AuthLayout from '@components/layout/AuthLayout';
 import MainLogo from '@components/common/MainLogo';
-import axios from 'axios';
+import { authService } from '@services/authService';
 import { useAuth } from '@hooks/useAuth';
-
-const API = import.meta.env.VITE_API_URL || '/api';
 
 export default function ResetPassword() {
   const { token }         = useParams();
@@ -28,12 +26,13 @@ export default function ResetPassword() {
     setLoading(true); setError('');
 
     try {
-      const { data } = await axios.post(`${API}/auth/reset-password/${token}`, { password });
+      const { data } = await authService.resetPassword(token, password);
       if (data?.success) {
         setSuccess(true);
-        // Auto-login with returned user data
-        if (data.data?.token && data.data?.user) {
-          loginWithData?.(data.data.token, data.data.user);
+        // Auto-login with returned user data — the server already set the
+        // session cookie, so there's nothing else to persist client-side.
+        if (data.data?.user) {
+          loginWithData?.(data.data.user);
         }
         setTimeout(() => navigate('/'), 2000);
       }
