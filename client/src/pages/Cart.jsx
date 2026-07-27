@@ -7,6 +7,7 @@ import { Trash2, ArrowRight, Plus, Minus, Heart, Sparkles, ShoppingBag, ShieldCh
 import { useCart } from '@context/CartContext';
 import { useWishlist } from '@context/WishlistContext';
 import { productService } from '@services/productService';
+import { discountService } from '@services/discountService';
 import axios from 'axios';
 import { getSessionId } from '../hooks/usePreferenceTracking';
 import { Activity } from 'lucide-react';
@@ -37,6 +38,41 @@ export default function Cart() {
   const handleMoveToWishlist = async (item) => {
     await addToWishlist(item);
     await removeFromCart(item._id);
+  };
+
+  // Discount code
+  const [discountCodeInput, setDiscountCodeInput] = useState('');
+  const [appliedDiscountCode, setAppliedDiscountCode] = useState('');
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [discountError, setDiscountError] = useState('');
+  const [discountLoading, setDiscountLoading] = useState(false);
+
+  const handleApplyDiscount = async () => {
+    if (!discountCodeInput.trim()) return;
+    setDiscountLoading(true);
+    setDiscountError('');
+    try {
+      const { data } = await discountService.validate(discountCodeInput.trim(), cartTotal);
+      setDiscountAmount(data.data.discountAmount);
+      setAppliedDiscountCode(discountCodeInput.trim().toUpperCase());
+      // Carried forward so Checkout doesn't make the user re-enter it.
+      sessionStorage.setItem('nexora_discount_code', discountCodeInput.trim().toUpperCase());
+      setDiscountCodeInput('');
+    } catch (err) {
+      setDiscountError(err.response?.data?.message || 'Invalid discount code');
+      setDiscountAmount(0);
+      setAppliedDiscountCode('');
+    } finally {
+      setDiscountLoading(false);
+    }
+  };
+
+  const handleRemoveDiscount = () => {
+    setDiscountAmount(0);
+    setAppliedDiscountCode('');
+    setDiscountCodeInput('');
+    setDiscountError('');
+    sessionStorage.removeItem('nexora_discount_code');
   };
 
   const [isDark, setIsDark] = useState(false);
@@ -105,7 +141,7 @@ export default function Cart() {
 
   const shipping = cartTotal > 0 ? 0 : 0;
   const tax = cartTotal * 0.08; // Example tax
-  const finalTotal = cartTotal + shipping + tax;
+  const finalTotal = cartTotal + shipping + tax - discountAmount;
 
   return (
     <div className="min-h-screen font-jakarta pb-32 pt-32" style={{ background: BG, color: TEXT }}>
@@ -242,6 +278,12 @@ export default function Cart() {
                     <span>Estimated Tax</span>
                     <span style={{ color: TEXT }}>{formatPrice(tax)}</span>
                   </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between" style={{ color: '#22C55E' }}>
+                      <span>Discount ({appliedDiscountCode})</span>
+                      <span>-{formatPrice(discountAmount)}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-between items-end pt-6 mb-8" style={{ borderTop: `1px solid ${BORD}` }}>
@@ -250,18 +292,41 @@ export default function Cart() {
                 </div>
 
                 {/* Discount */}
-                <div className="relative mb-8">
-                  <input
-                    type="text"
-                    aria-label="Gift card or discount code"
-                    placeholder="Gift card or discount code"
-                    className="w-full text-[12px] px-4 py-3.5 outline-none focus:ring-2 transition-colors"
-                    style={{ background: 'transparent', border: `1px solid ${BORD}`, borderRadius: 4, color: TEXT }}
-                  />
-                  <button className="absolute right-3 top-2.5 text-[10px] font-bold tracking-widest uppercase px-3 py-1.5 rounded" style={{ background: isDark ? '#222' : '#EEE', color: TEXT }}>
-                    Apply
-                  </button>
-                </div>
+                {appliedDiscountCode ? (
+                  <div className="flex items-center justify-between px-4 py-3 rounded mb-8" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)' }}>
+                    <div className="flex items-center gap-2">
+                      <Sparkles size={14} className="text-green-500" />
+                      <span className="text-[12px] font-bold tracking-widest text-green-500 uppercase">{appliedDiscountCode}</span>
+                      <span className="text-[11px] text-green-400">saving {formatPrice(discountAmount)}</span>
+                    </div>
+                    <button type="button" onClick={handleRemoveDiscount} className="text-[11px] text-gray-400 hover:text-red-400 transition-colors font-medium">Remove</button>
+                  </div>
+                ) : (
+                  <div className="mb-2">
+                    <div className="relative mb-2">
+                      <input
+                        type="text"
+                        aria-label="Gift card or discount code"
+                        placeholder="Gift card or discount code"
+                        value={discountCodeInput}
+                        onChange={(e) => setDiscountCodeInput(e.target.value.toUpperCase())}
+                        onKeyDown={(e) => e.key === 'Enter' && handleApplyDiscount()}
+                        className="w-full text-[12px] px-4 py-3.5 outline-none focus:ring-2 transition-colors"
+                        style={{ background: 'transparent', border: `1px solid ${BORD}`, borderRadius: 4, color: TEXT }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyDiscount}
+                        disabled={discountLoading || !discountCodeInput.trim()}
+                        className="absolute right-3 top-2.5 text-[10px] font-bold tracking-widest uppercase px-3 py-1.5 rounded disabled:opacity-50"
+                        style={{ background: isDark ? '#222' : '#EEE', color: TEXT }}
+                      >
+                        {discountLoading ? '...' : 'Apply'}
+                      </button>
+                    </div>
+                    {discountError && <p className="text-red-500 text-[11px] mb-6">{discountError}</p>}
+                  </div>
+                )}
 
                 {/* V13: Ask Concierge CTA */}
                 <div className="mb-6 p-5 rounded-xl relative overflow-hidden" style={{ background: '#050505', border: '1px solid #1A1A1A' }}>

@@ -33,6 +33,26 @@ export default function Checkout() {
   const [discountError, setDiscountError] = useState('');
   const [discountLoading, setDiscountLoading] = useState(false);
 
+  // Auto-apply a code carried over from the Cart page, so the user doesn't
+  // have to re-enter what they already validated one step ago.
+  useEffect(() => {
+    const carriedCode = sessionStorage.getItem('nexora_discount_code');
+    if (!carriedCode || !cartTotal) return;
+
+    discountService.validate(carriedCode, cartTotal)
+      .then(({ data }) => {
+        setDiscountAmount(data.data.discountAmount);
+        setAppliedDiscountCode(carriedCode);
+      })
+      .catch(() => {
+        // Silently drop an invalid/expired carried-over code — the user can
+        // still enter a fresh one manually, no need to surface an error for
+        // something they didn't just type in on this page.
+        sessionStorage.removeItem('nexora_discount_code');
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartTotal > 0]);
+
   const [aiSuggestions, setAiSuggestions] = useState([]);
   const [aiSuggestLoading, setAiSuggestLoading] = useState(false);
   const [suggestPanelOpen, setSuggestPanelOpen] = useState(true);
@@ -163,6 +183,7 @@ export default function Checkout() {
 
       if (payment === 'cod') {
         clearCart();
+        sessionStorage.removeItem('nexora_discount_code');
         setLoading(false);
         navigate(`/order-success?orderId=${orderId}`);
         return;
@@ -186,6 +207,7 @@ export default function Checkout() {
               razorpay_signature: response.razorpay_signature,
             });
             clearCart();
+            sessionStorage.removeItem('nexora_discount_code');
             navigate(`/order-success?orderId=${orderId}`);
           } catch {
             navigate(`/payment-failure?orderId=${orderId}&paymentId=${paymentId}`);
