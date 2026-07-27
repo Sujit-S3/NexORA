@@ -7,4 +7,5 @@ export const paymentService = {
   getHistory: (params) => api.get('/payments/history', { params }),
   // Admin
   getAll: (params) => api.get('/payments', { params }),
+  refund: (paymentId, reason) => api.post(`/payments/${paymentId}/refund`, { reason }),
 };

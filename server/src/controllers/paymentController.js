@@ -168,6 +168,81 @@ const verifyPayment = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Refund a successful payment via Razorpay
+// @route   POST /api/payments/:id/refund
+// @access  Admin
+const refundPayment = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body;
+
+  const payment = await Payment.findById(id);
+  if (!payment) {
+    throw ApiError.notFound('Payment not found');
+  }
+
+  if (payment.method === 'cod') {
+    throw ApiError.badRequest('Cash on Delivery payments have no gateway transaction to reverse — refund manually.');
+  }
+
+  if (payment.status !== 'success') {
+    throw ApiError.badRequest(`Only a successful payment can be refunded (current status: ${payment.status})`);
+  }
+
+  if (!payment.razorpayPaymentId) {
+    throw ApiError.badRequest('Payment has no associated Razorpay payment ID');
+  }
+
+  // The gateway call happens outside the DB transaction below — Razorpay has
+  // no concept of our transaction. If the DB update fails after a refund is
+  // actually issued, the refund.processed webhook (handled further down)
+  // reconciles it, the same defense-in-depth pattern used for verifyPayment.
+  const refund = await paymentService.processRefund({
+    razorpayPaymentId: payment.razorpayPaymentId,
+    amount: payment.amount,
+    notes: { reason: reason || 'Refund issued by admin', orderId: payment.order.toString() },
+  });
+
+  const session = await mongoose.startSession();
+  try {
+    session.startTransaction();
+
+    const updatedPayment = await Payment.findOneAndUpdate(
+      { _id: id, status: 'success' },
+      {
+        status: 'refunded',
+        refundedAt: new Date(),
+        refundId: refund.id,
+        gatewayResponse: { ...(payment.gatewayResponse || {}), refund },
+      },
+      { session, new: true },
+    );
+
+    if (!updatedPayment) {
+      await session.abortTransaction();
+      throw ApiError.badRequest('Payment already processed');
+    }
+
+    await Order.findByIdAndUpdate(
+      updatedPayment.order,
+      { 'paymentInfo.status': 'refunded' },
+      { session },
+    );
+
+    await session.commitTransaction();
+    return sendResponse(res, 200, 'Refund processed successfully', updatedPayment);
+  } catch (error) {
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    if (isWriteConflict(error)) {
+      throw ApiError.badRequest('Payment already processed');
+    }
+    throw error;
+  } finally {
+    session.endSession();
+  }
+});
+
 // @desc    Razorpay webhook — server-to-server payment reconciliation
 // @route   POST /api/payments/webhook
 // @access  Public (authenticated via X-Razorpay-Signature, not JWT)
@@ -184,6 +259,30 @@ const handleWebhook = asyncHandler(async (req, res) => {
   }
 
   const event = req.body?.event;
+
+  if (event === 'refund.processed' || event === 'refund.failed') {
+    const refundEntity = req.body?.payload?.refund?.entity;
+    if (refundEntity?.payment_id) {
+      const payment = await Payment.findOne({ razorpayPaymentId: refundEntity.payment_id });
+      // Only reconciles a payment still marked 'success' — if the admin's
+      // own refund request already flipped it to 'refunded', this is a
+      // benign duplicate webhook delivery.
+      if (payment && payment.status === 'success' && event === 'refund.processed') {
+        await Payment.findOneAndUpdate(
+          { _id: payment._id, status: 'success' },
+          {
+            status: 'refunded',
+            refundedAt: new Date(),
+            refundId: refundEntity.id,
+            gatewayResponse: { ...(payment.gatewayResponse || {}), refund: refundEntity },
+          },
+        );
+        await Order.findByIdAndUpdate(payment.order, { 'paymentInfo.status': 'refunded' });
+      }
+    }
+    return res.status(200).json({ success: true });
+  }
+
   const paymentEntity = req.body?.payload?.payment?.entity;
 
   if (!paymentEntity?.order_id) {
@@ -272,4 +371,4 @@ const getAllPayments = asyncHandler(async (req, res) => {
   sendResponse(res, 200, 'All payments retrieved', payments);
 });
 
-module.exports = { initiatePayment, verifyPayment, handleWebhook, getPaymentHistory, getAllPayments };
+module.exports = { initiatePayment, verifyPayment, refundPayment, handleWebhook, getPaymentHistory, getAllPayments };

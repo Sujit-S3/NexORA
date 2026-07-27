@@ -79,11 +79,23 @@ const verifyWebhookSignature = ({ rawBody, signature }) => {
 };
 
 /**
- * Refunds are not yet implemented. Left as an explicit stub rather than a
- * fake success response — callers must handle this failing.
+ * Issues a full refund for a captured Razorpay payment.
+ * @param {object} params - { razorpayPaymentId, amount (major units), notes }
+ * @returns {Promise<object>} Razorpay refund object (contains refund.id, status)
  */
-const processRefund = async () => {
-  throw new Error('paymentService.processRefund — not yet implemented');
+const processRefund = async ({ razorpayPaymentId, amount, notes }) => {
+  const razorpay = getRazorpayClient();
+  if (!razorpay) {
+    throw new Error('Razorpay is not configured');
+  }
+
+  const amountInPaise = Math.round(amount * 100);
+
+  return razorpay.payments.refund(razorpayPaymentId, {
+    amount: amountInPaise,
+    speed: 'normal',
+    notes,
+  });
 };
 
 module.exports = {

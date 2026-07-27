@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react';
-import { CreditCard, TrendingUp, DollarSign, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { CreditCard, TrendingUp, DollarSign, CheckCircle, XCircle, Clock, RotateCcw } from 'lucide-react';
 import Spinner from '@components/common/Spinner';
 import api from '@services/api';
+import { paymentService } from '@services/paymentService';
 
 const statusStyles = {
   success: { label: 'Paid', cls: 'text-green-600 bg-green-500/10', icon: CheckCircle },
   pending: { label: 'Pending', cls: 'text-yellow-600 bg-yellow-500/10', icon: Clock },
   failed: { label: 'Failed', cls: 'text-red-500 bg-red-500/10', icon: XCircle },
+  refunded: { label: 'Refunded', cls: 'text-gray-600 bg-gray-500/10', icon: RotateCcw },
 };
 
 const Payments = () => {
   const [payments, setPayments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [refundingId, setRefundingId] = useState(null);
 
   useEffect(() => {
     const fetch = async () => {
@@ -24,6 +27,25 @@ const Payments = () => {
     };
     fetch();
   }, []);
+
+  const handleRefund = async (payment) => {
+    const reason = window.prompt(`Refund ₹${payment.amount?.toLocaleString('en-IN')} to ${payment.user?.name || 'this customer'}?\n\nOptional reason:`, '');
+    if (reason === null) return; // cancelled
+
+    setRefundingId(payment._id);
+    try {
+      const res = await paymentService.refund(payment._id, reason);
+      const { status, refundedAt, refundId } = res.data.data;
+      // Merge rather than replace — the refund response's `user` field is an
+      // unpopulated ObjectId, and replacing wholesale would blank out the
+      // customer name/email already shown in this row.
+      setPayments((prev) => prev.map((p) => (p._id === payment._id ? { ...p, status, refundedAt, refundId } : p)));
+    } catch (err) {
+      alert(err.response?.data?.message || 'Refund failed');
+    } finally {
+      setRefundingId(null);
+    }
+  };
 
   const filtered = filter === 'all' ? payments : payments.filter(p => p.status === filter);
 
@@ -76,7 +98,7 @@ const Payments = () => {
 
         {/* Filter Tabs */}
         <div className="flex gap-2 mb-6">
-          {['all', 'success', 'pending', 'failed'].map(f => (
+          {['all', 'success', 'pending', 'failed', 'refunded'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all capitalize ${filter === f ? 'bg-gradient-to-r from-[#D4AF37] to-[#B38945] text-white shadow' : 'glass-panel text-gray-500 hover:text-[#111827] dark:hover:text-white'}`}>
               {f === 'all' ? 'All' : f}
@@ -96,6 +118,7 @@ const Payments = () => {
                   <th className="px-6 py-4">Amount</th>
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4">Date</th>
+                  <th className="px-6 py-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -130,11 +153,23 @@ const Payments = () => {
                       <td className="px-6 py-4 text-gray-500 dark:text-gray-400 text-xs">
                         {new Date(p.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </td>
+                      <td className="px-6 py-4">
+                        {p.status === 'success' && p.method !== 'cod' && (
+                          <button
+                            onClick={() => handleRefund(p)}
+                            disabled={refundingId === p._id}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-red-500 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-50 transition-colors"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            {refundingId === p._id ? 'Refunding…' : 'Refund'}
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500">No transactions found.</td></tr>
+                  <tr><td colSpan="7" className="px-6 py-10 text-center text-gray-500">No transactions found.</td></tr>
                 )}
               </tbody>
             </table>

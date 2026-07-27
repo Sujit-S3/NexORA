@@ -122,6 +122,26 @@ a real Razorpay integration:
   document. `server/backup_db.js` — the one script that *is* a documented,
   actively-used ops tool (see `rollback_plan.md`) — was kept.
 
+### Fixed — Product Reference Images
+
+- Every product's reference image was regenerated — many products
+  referenced image files that didn't exist on disk at all (broken image),
+  and several others displayed a completely different, unrelated
+  product's photo (e.g. a Casio watch showing a Rolex Daytona image),
+  caused by a since-deleted script that assigned images via crude
+  brand-name substring matching. All 64 products now have a unique,
+  locally-hosted reference image; `server/src/data/luxurySeed.js` was
+  updated to match so a future reseed doesn't reintroduce the old data.
+
+### Added — Razorpay Refunds
+
+- `POST /api/payments/:id/refund` (admin-only) issues a real refund
+  through Razorpay for a successful, non-COD payment, and marks the
+  Payment/Order as `refunded` once confirmed. `paymentService.processRefund`
+  is no longer a stub. Reconciled by the `refund.processed`/`refund.failed`
+  webhook events, the same defense-in-depth pattern used for payment
+  verification. Added a Refund action to the admin Payments page.
+
 ---
 
 ## [1.0.0] — 2026-06-26 — Release Candidate 1 (RC1)
@@ -211,7 +231,6 @@ a real Razorpay integration:
 - Visual Search (image-to-product)
 - Redis AI cache (replace in-memory Map)
 - PostHog funnel dashboards
-- Razorpay refunds (`paymentService.processRefund` is still an explicit stub)
 
 ---
 
