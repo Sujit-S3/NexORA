@@ -20,6 +20,7 @@ const shippingRoutes = require('./shippingRoutes');
 const aiRoutes = require('./aiRoutes');
 const preferenceRoutes = require('./preferenceRoutes');
 const wishlistRoutes = require('./wishlistRoutes');
+const contactRoutes = require('./contactRoutes');
 
 // Health check — reports DB connectivity so an outage doesn't read as healthy
 router.get('/health', (req, res) => {
@@ -52,6 +53,7 @@ router.use('/shipping', shippingRoutes);
 router.use('/ai', aiRoutes);
 router.use('/preferences', preferenceRoutes);
 router.use('/wishlist', wishlistRoutes);
+router.use('/contact', contactRoutes);
 
 module.exports = router;
 

@@ -25,7 +25,7 @@ const getResend = () => {
 const FROM = process.env.EMAIL_FROM || 'NexORA <noreply@nexora.com>';
 
 // ── Internal send helper ──────────────────────────────────────────────────────
-const sendEmail = async ({ to, subject, html }) => {
+const sendEmail = async ({ to, subject, html, replyTo }) => {
   if (!isProduction) {
     console.log(`[EmailService] DEV — would send to: ${to}`);
     console.log(`[EmailService] Subject: ${subject}`);
@@ -36,7 +36,7 @@ const sendEmail = async ({ to, subject, html }) => {
   if (!client) {return { success: false, error: 'Email client not configured' };}
 
   try {
-    const result = await client.emails.send({ from: FROM, to, subject, html });
+    const result = await client.emails.send({ from: FROM, to, subject, html, ...(replyTo && { reply_to: replyTo }) });
     return { success: true, id: result.id };
   } catch (err) {
     console.error(`[EmailService] Failed to send email to ${to}:`, err.message);
@@ -193,4 +193,36 @@ const sendOrderConfirmation = async (to, order, name = 'Valued Customer') => {
   });
 };
 
-module.exports = { sendPasswordReset, sendWelcomeEmail, sendOrderConfirmation };
+// ── Contact Form ───────────────────────────────────────────────────────────────
+/**
+ * Forward a contact-form submission to the support inbox.
+ * @param {{name: string, email: string, subject: string, message: string}} fields
+ */
+const sendContactMessage = async ({ name, email, subject, message }) => sendEmail({
+    to: process.env.CONTACT_EMAIL || 'support@nexora.app',
+    replyTo: email,
+    subject: `[Contact Form] ${subject || 'New message from ' + name}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <body style="font-family: Georgia, serif; background: #0a0a0a; color: #e8d5a3; padding: 40px 20px; margin: 0;">
+          <div style="max-width: 560px; margin: 0 auto; background: #111; border: 1px solid #2a2a1a; border-radius: 8px; overflow: hidden;">
+            <div style="background: linear-gradient(135deg, #1a1500 0%, #0a0a0a 100%); padding: 32px; text-align: center; border-bottom: 1px solid #2a2a1a;">
+              <h1 style="margin: 0; color: #c9a84c; font-size: 28px; letter-spacing: 4px; font-weight: 400;">NEXORA</h1>
+              <p style="margin: 8px 0 0; color: #8a7a5a; font-size: 12px; letter-spacing: 2px;">CONTACT FORM SUBMISSION</p>
+            </div>
+            <div style="padding: 40px 32px;">
+              <p style="color: #b0a090; margin: 0 0 8px;"><strong style="color: #c9a84c;">From:</strong> ${name} (${email})</p>
+              ${subject ? `<p style="color: #b0a090; margin: 0 0 16px;"><strong style="color: #c9a84c;">Subject:</strong> ${subject}</p>` : ''}
+              <p style="color: #b0a090; line-height: 1.7; white-space: pre-wrap; border-top: 1px solid #2a2a1a; padding-top: 16px;">${message}</p>
+            </div>
+            <div style="padding: 20px 32px; border-top: 1px solid #2a2a1a; text-align: center;">
+              <p style="color: #4a3a2a; font-size: 11px; margin: 0;">Reply directly to this email to respond to ${name}.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  });
+
+module.exports = { sendPasswordReset, sendWelcomeEmail, sendOrderConfirmation, sendContactMessage };
