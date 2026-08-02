@@ -13,7 +13,7 @@ const skipInTest = () => process.env.NODE_ENV === 'test';
  */
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipInTest,
