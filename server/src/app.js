@@ -40,7 +40,15 @@ app.use(
     },
   }),
 );
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// No express.urlencoded() — every endpoint here is JSON or multipart (via
+// multer, which parses its own body independently). Parsing
+// application/x-www-form-urlencoded was both unused *and* a CSRF vector:
+// it's a CORS-safelisted content type, so a cross-origin HTML <form> can
+// submit it without a preflight, and with the cross-origin production
+// deployment requiring sameSite:'none' on the auth cookie (see
+// generateToken.js), the browser would still attach it. Dropping this
+// parser means a forged form-urlencoded submission never populates
+// req.body, so it can't drive any endpoint that expects real fields.
 app.use(cookieParser());
 
 // ── Data sanitization against NoSQL injection ────────────────────────────
