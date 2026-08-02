@@ -56,9 +56,7 @@ export default defineConfig({
             if (id.includes('axios')) return 'axios';
             if (id.includes('framer-motion')) return 'framer';
             if (id.includes('recharts')) return 'recharts';
-            if (id.includes('three')) return 'three';
             if (id.includes('posthog-js')) return 'posthog';
-            if (id.includes('react-confetti')) return 'confetti';
             if (id.includes('lucide-react')) return 'icons';
           }
         }

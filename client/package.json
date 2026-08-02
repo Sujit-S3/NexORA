@@ -22,13 +22,11 @@
     "lucide-react": "^1.21.0",
     "posthog-js": "^1.393.5",
     "react": "^19.0.0",
-    "react-confetti": "^6.4.0",
     "react-dom": "^19.0.0",
     "react-helmet-async": "^3.0.0",
     "react-router-dom": "^7.18.2",
     "recharts": "^3.8.1",
-    "tailwind-merge": "^3.6.0",
-    "three": "^0.184.0"
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.0",
