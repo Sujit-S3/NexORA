@@ -77,6 +77,96 @@ const uploadAvatar = asyncHandler(async (req, res) => {
   sendResponse(res, 200, 'Avatar updated', user);
 });
 
+const REQUIRED_ADDRESS_FIELDS = ['street', 'city', 'state', 'zip'];
+
+const validateAddressBody = (body) => {
+  for (const field of REQUIRED_ADDRESS_FIELDS) {
+    if (!body[field] || !String(body[field]).trim()) {
+      throw ApiError.badRequest(`${field} is required`);
+    }
+  }
+};
+
+// @desc    List the current user's saved addresses
+// @route   GET /api/users/addresses
+// @access  Auth
+const getAddresses = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  sendResponse(res, 200, 'Addresses retrieved', user.addresses);
+});
+
+// @desc    Add a new saved address
+// @route   POST /api/users/addresses
+// @access  Auth
+const addAddress = asyncHandler(async (req, res) => {
+  validateAddressBody(req.body);
+
+  const user = await User.findById(req.user._id);
+  const { label, street, city, state, zip, country, isDefault } = req.body;
+
+  // The first saved address is always the default, regardless of what was
+  // sent — otherwise a user's very first address wouldn't be selectable
+  // as a default anywhere that only shows "the default address".
+  const shouldBeDefault = isDefault === true || user.addresses.length === 0;
+  if (shouldBeDefault) {
+    user.addresses.forEach((addr) => { addr.isDefault = false; });
+  }
+
+  user.addresses.push({ label, street, city, state, zip, country, isDefault: shouldBeDefault });
+  await user.save();
+
+  sendResponse(res, 201, 'Address added', user.addresses);
+});
+
+// @desc    Update a saved address
+// @route   PUT /api/users/addresses/:addressId
+// @access  Auth
+const updateAddress = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  const address = user.addresses.id(req.params.addressId);
+  if (!address) {
+    throw ApiError.notFound('Address not found');
+  }
+
+  const { label, street, city, state, zip, country, isDefault } = req.body;
+  if (label !== undefined) {address.label = label;}
+  if (street !== undefined) {address.street = street;}
+  if (city !== undefined) {address.city = city;}
+  if (state !== undefined) {address.state = state;}
+  if (zip !== undefined) {address.zip = zip;}
+  if (country !== undefined) {address.country = country;}
+
+  if (isDefault === true) {
+    user.addresses.forEach((addr) => { addr.isDefault = addr._id.equals(address._id); });
+  }
+
+  await user.save();
+  sendResponse(res, 200, 'Address updated', user.addresses);
+});
+
+// @desc    Delete a saved address
+// @route   DELETE /api/users/addresses/:addressId
+// @access  Auth
+const deleteAddress = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  const address = user.addresses.id(req.params.addressId);
+  if (!address) {
+    throw ApiError.notFound('Address not found');
+  }
+
+  const wasDefault = address.isDefault;
+  user.addresses.pull(req.params.addressId);
+
+  // Promote another address to default so there's always one, as long as
+  // any remain — otherwise "use my default address" silently has nothing.
+  if (wasDefault && user.addresses.length > 0) {
+    user.addresses[0].isDefault = true;
+  }
+
+  await user.save();
+  sendResponse(res, 200, 'Address deleted', user.addresses);
+});
+
 // @desc    Get all users (admin)
 // @route   GET /api/users
 // @access  Admin
@@ -158,4 +248,16 @@ const deleteUser = asyncHandler(async (req, res) => {
   sendResponse(res, 200, 'User deleted successfully');
 });
 
-module.exports = { getProfile, updateProfile, uploadAvatar, getAllUsers, getUserById, updateUserRole, deleteUser };
+module.exports = {
+  getProfile,
+  updateProfile,
+  uploadAvatar,
+  getAddresses,
+  addAddress,
+  updateAddress,
+  deleteAddress,
+  getAllUsers,
+  getUserById,
+  updateUserRole,
+  deleteUser,
+};

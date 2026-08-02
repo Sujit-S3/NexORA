@@ -58,15 +58,13 @@ const Profile = () => {
             <p className="text-sm text-[#6B7280] dark:text-[#9CA3AF]">Curate your personal luxury collection.</p>
           </Link>
 
-          <div className="glass-panel p-8 opacity-70 border-dashed border-gray-300 dark:border-white/10 cursor-not-allowed">
-            <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center mb-6">
-              <MapPin className="w-6 h-6 text-gray-500" />
+          <Link to="/addresses" className="glass-panel p-8 group hover:border-[#D4AF37]/50 transition-all duration-500 hover:shadow-[0_10px_30px_rgba(212,175,55,0.1)] block">
+            <div className="w-12 h-12 rounded-xl bg-[#D4AF37]/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
+              <MapPin className="w-6 h-6 text-[#D4AF37]" />
             </div>
-            <h3 className="text-xl font-semibold text-[#111827] dark:text-[#F5F5F5] mb-2 flex items-center justify-between">
-              Addresses <span className="text-xs font-medium px-2 py-0.5 bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-400 rounded-full">Soon</span>
-            </h3>
+            <h3 className="text-xl font-semibold text-[#111827] dark:text-[#F5F5F5] mb-2">Addresses</h3>
             <p className="text-sm text-[#6B7280] dark:text-[#9CA3AF]">Manage delivery locations.</p>
-          </div>
+          </Link>
 
           <div className="glass-panel p-8 opacity-70 border-dashed border-gray-300 dark:border-white/10 cursor-not-allowed">
             <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center mb-6">

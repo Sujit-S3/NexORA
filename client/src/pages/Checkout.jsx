@@ -9,6 +9,7 @@ import { useAuth } from '@context/AuthContext';
 import { orderService } from '@services/orderService';
 import { paymentService } from '@services/paymentService';
 import { discountService } from '@services/discountService';
+import { userService } from '@services/userService';
 import { getLuxuryFallback } from '../utils/getLuxuryFallback';
 import { formatPrice } from '../utils/formatPrice';
 import { openRazorpayCheckout } from '../utils/razorpay';
@@ -25,6 +26,31 @@ export default function Checkout() {
   const [address, setAddress] = useState({ street: '', city: '', state: '', zip: '', country: '' });
   const [delivery, setDelivery] = useState('standard');
   const [payment, setPayment] = useState('card');
+
+  // Saved addresses — offered as a shortcut so a returning shopper doesn't
+  // have to retype an address they've already saved on their account.
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+
+  useEffect(() => {
+    if (!user) return;
+    userService.getAddresses()
+      .then(({ data }) => {
+        const addresses = data.data || [];
+        setSavedAddresses(addresses);
+        const defaultAddress = addresses.find((a) => a.isDefault) || addresses[0];
+        if (defaultAddress) {
+          setSelectedAddressId(defaultAddress._id);
+          setAddress({ street: defaultAddress.street, city: defaultAddress.city, state: defaultAddress.state, zip: defaultAddress.zip, country: defaultAddress.country });
+        }
+      })
+      .catch(() => {});
+  }, [user]);
+
+  const handleSelectSavedAddress = (addr) => {
+    setSelectedAddressId(addr._id);
+    setAddress({ street: addr.street, city: addr.city, state: addr.state, zip: addr.zip, country: addr.country });
+  };
 
   // Discount State
   const [discountCodeInput, setDiscountCodeInput] = useState('');
@@ -276,6 +302,32 @@ export default function Checkout() {
                   {step === 1 && (
                     <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                       <h2 className="font-playfair text-2xl mb-8">Shipping Information</h2>
+
+                      {savedAddresses.length > 0 && (
+                        <div className="mb-8">
+                          <p className="text-[11px] font-bold tracking-widest uppercase mb-3" style={{ color: SUB }}>Use a Saved Address</p>
+                          <div className="flex flex-wrap gap-3">
+                            {savedAddresses.map((addr) => (
+                              <button
+                                key={addr._id}
+                                type="button"
+                                onClick={() => handleSelectSavedAddress(addr)}
+                                className="text-left px-4 py-3 rounded-lg text-[12px] transition-all"
+                                style={{
+                                  border: `1px solid ${selectedAddressId === addr._id ? ACC : BORD}`,
+                                  background: selectedAddressId === addr._id ? 'rgba(212,175,55,0.05)' : 'transparent',
+                                  color: TEXT,
+                                }}
+                              >
+                                <span className="font-bold uppercase tracking-wider" style={{ color: selectedAddressId === addr._id ? ACC : SUB }}>{addr.label || 'Address'}</span>
+                                <br />
+                                {addr.street}, {addr.city}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <div className="grid gap-6">
                         <div>
                           <label htmlFor="checkout-street" className="block text-[11px] font-bold tracking-widest uppercase mb-2" style={{ color: SUB }}>Street Address</label>

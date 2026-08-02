@@ -10,6 +10,10 @@ export const userService = {
     formData.append('avatar', file);
     return api.post('/users/avatar', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
   },
+  getAddresses: () => api.get('/users/addresses'),
+  addAddress: (data) => api.post('/users/addresses', data),
+  updateAddress: (id, data) => api.put(`/users/addresses/${id}`, data),
+  deleteAddress: (id) => api.delete(`/users/addresses/${id}`),
 
   // Admin
   getAllUsers: (params) => api.get('/users', { params }),
