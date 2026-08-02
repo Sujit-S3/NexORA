@@ -151,6 +151,15 @@ a real Razorpay integration:
   `/account-settings` page, reachable from the Profile page's "Settings"
   tile (previously a disabled "Soon" placeholder).
 
+### Added — Saved Addresses
+
+- `GET/POST/PUT/DELETE /api/users/addresses` — a full address book
+  (Profile's "Addresses" tile had no backend at all, not even a stub).
+  First address added is always the default; deleting the default
+  promotes another if any remain. New `/addresses` page. Checkout now
+  offers saved addresses as one-click-to-prefill chips and auto-fills
+  from the default address for a returning shopper.
+
 ---
 
 ## [1.0.0] — 2026-06-26 — Release Candidate 1 (RC1)
