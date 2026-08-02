@@ -142,6 +142,15 @@ a real Razorpay integration:
   webhook events, the same defense-in-depth pattern used for payment
   verification. Added a Refund action to the admin Payments page.
 
+### Added — Profile & Avatar Management
+
+- `userController`'s `getProfile`/`updateProfile`/`uploadAvatar` were all
+  501 stubs; implemented for real. Users can now update their name,
+  mobile, country code, and preferred currency, and upload/replace their
+  avatar (via the existing Cloudinary upload middleware). New
+  `/account-settings` page, reachable from the Profile page's "Settings"
+  tile (previously a disabled "Soon" placeholder).
+
 ---
 
 ## [1.0.0] — 2026-06-26 — Release Candidate 1 (RC1)
