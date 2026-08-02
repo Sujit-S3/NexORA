@@ -13,18 +13,25 @@ const responseGuard       = require('../guard/responseGuard');
 const crypto              = require('crypto');
 
 // ── Diagnostic Logger ─────────────────────────────────────────────────────────
+// Verbose per-stage tracing (including raw user messages/session/memory
+// dumps) is dev-only — it was previously unconditional, which meant every
+// production AI Concierge request wrote full conversation content to
+// stdout. Failures still log unconditionally: low-volume and operationally
+// useful for diagnosing a real incident in production.
+const IS_DEV = process.env.NODE_ENV === 'development';
 const log = {
   stage: (id, stage, data) => {
+    if (!IS_DEV) {return;}
     console.log(`\n[PIPELINE:${id}] ── STAGE ${stage} ──────────────────────────`);
     if (data) {console.dir(data, { depth: 3, colors: true });}
   },
-  ok:   (id, stage, label, ms) => console.log(`[PIPELINE:${id}] ✅  ${stage} OK — ${label} (${ms}ms)`),
+  ok:   (id, stage, label, ms) => { if (IS_DEV) {console.log(`[PIPELINE:${id}] ✅  ${stage} OK — ${label} (${ms}ms)`);} },
   fail: (id, stage, error) => {
     console.error(`[PIPELINE:${id}] ❌  ${stage} FAILED`);
     console.error(`[PIPELINE:${id}]    Message: ${error.message}`);
     if (error.stack) {console.error(`[PIPELINE:${id}]    Stack:\n${error.stack}`);}
   },
-  summary: (id, ms) => console.log(`\n[PIPELINE:${id}] ── COMPLETE — ${ms}ms ──\n`),
+  summary: (id, ms) => { if (IS_DEV) {console.log(`\n[PIPELINE:${id}] ── COMPLETE — ${ms}ms ──\n`);} },
 };
 
 function buildDiagnosticError(requestId, stage, error) {
@@ -77,13 +84,15 @@ class PipelineService {
     const sessionId      = reqHeaders['x-session-id']      || 'anonymous';
     const conversationId = reqHeaders['x-conversation-id'] || 'none';
 
-    console.log(`\n${'═'.repeat(64)}`);
-    console.log(`[PIPELINE:${requestId}] V13 NEW REQUEST`);
-    console.log(`[PIPELINE:${requestId}]  Session   : ${sessionId}`);
-    console.log(`[PIPELINE:${requestId}]  User      : ${user?._id || 'guest'}`);
-    console.log(`[PIPELINE:${requestId}]  Message   : "${userMessage}"`);
-    console.log(`[PIPELINE:${requestId}]  Memory    :`, JSON.stringify(memory).slice(0, 120));
-    console.log(`${'─'.repeat(64)}`);
+    if (IS_DEV) {
+      console.log(`\n${'═'.repeat(64)}`);
+      console.log(`[PIPELINE:${requestId}] V13 NEW REQUEST`);
+      console.log(`[PIPELINE:${requestId}]  Session   : ${sessionId}`);
+      console.log(`[PIPELINE:${requestId}]  User      : ${user?._id || 'guest'}`);
+      console.log(`[PIPELINE:${requestId}]  Message   : "${userMessage}"`);
+      console.log(`[PIPELINE:${requestId}]  Memory    :`, JSON.stringify(memory).slice(0, 120));
+      console.log(`${'─'.repeat(64)}`);
+    }
 
     // Helper: write SSE frame safely
     const write = (payload) => {
@@ -165,7 +174,7 @@ class PipelineService {
             resolverMeta.appliedFilters,
           ));
         }
-      } else {
+      } else if (IS_DEV) {
         console.log(`[PIPELINE:${requestId}] ⏭️  STAGES 2-5 — Skipped (needsDB=false)`);
       }
 
@@ -176,11 +185,11 @@ class PipelineService {
       if (rankedProducts.length > 0) {
         const explanations = explanationService.formatExplanations(rankedProducts);
         write(responseFormatter.serializeProducts(explanations, detectedIntent.intent, globalStart));
-        console.log(`[PIPELINE:${requestId}]  Products sent: ${rankedProducts.length}`);
+        if (IS_DEV) {console.log(`[PIPELINE:${requestId}]  Products sent: ${rankedProducts.length}`);}
       }
 
       if (!detectedIntent.needsGemini) {
-        console.log(`[PIPELINE:${requestId}] ⏭️  Gemini skipped`);
+        if (IS_DEV) {console.log(`[PIPELINE:${requestId}] ⏭️  Gemini skipped`);}
         if (rankedProducts.length > 0) {
           write(responseFormatter.serializeStreamChunk("I've curated the finest matches from our verified catalog. Our AI advisor will be with you momentarily — feel free to refine your preferences."));
         } else {
