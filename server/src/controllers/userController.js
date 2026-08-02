@@ -1,6 +1,5 @@
 // NexORA — User Controller
 const User = require('../models/User');
-const Order = require('../models/Order');
 const asyncHandler = require('../utils/asyncHandler');
 const { sendResponse } = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
