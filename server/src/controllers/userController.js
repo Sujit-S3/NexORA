@@ -4,26 +4,77 @@ const Order = require('../models/Order');
 const asyncHandler = require('../utils/asyncHandler');
 const { sendResponse } = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
+const uploadService = require('../middleware/upload');
 
 // @desc    Get current user profile
 // @route   GET /api/users/profile
 // @access  Auth
 const getProfile = asyncHandler(async (req, res) => {
-  sendResponse(res, 501, 'Users: getProfile — not yet implemented');
+  const user = await User.findById(req.user._id);
+  sendResponse(res, 200, 'Profile retrieved', user);
 });
+
+const EDITABLE_PROFILE_FIELDS = ['name', 'mobile', 'countryCode', 'currency'];
+const VALID_CURRENCIES = ['INR', 'USD', 'GBP', 'EUR', 'AED'];
 
 // @desc    Update current user profile
 // @route   PUT /api/users/profile
 // @access  Auth
 const updateProfile = asyncHandler(async (req, res) => {
-  sendResponse(res, 501, 'Users: updateProfile — not yet implemented');
+  const updates = {};
+
+  for (const field of EDITABLE_PROFILE_FIELDS) {
+    if (req.body[field] !== undefined) {
+      updates[field] = req.body[field];
+    }
+  }
+
+  if (updates.name !== undefined) {
+    const trimmed = String(updates.name).trim();
+    if (trimmed.length < 2 || trimmed.length > 50) {
+      throw ApiError.badRequest('Name must be between 2 and 50 characters');
+    }
+    updates.name = trimmed;
+  }
+
+  if (updates.currency !== undefined && !VALID_CURRENCIES.includes(updates.currency)) {
+    throw ApiError.badRequest(`Currency must be one of: ${VALID_CURRENCIES.join(', ')}`);
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw ApiError.badRequest('No valid profile fields provided');
+  }
+
+  const user = await User.findByIdAndUpdate(req.user._id, updates, {
+    new: true,
+    runValidators: true,
+  });
+
+  sendResponse(res, 200, 'Profile updated', user);
 });
 
-// @desc    Upload user avatar
+// @desc    Upload/replace the current user's avatar
 // @route   POST /api/users/avatar
 // @access  Auth
 const uploadAvatar = asyncHandler(async (req, res) => {
-  sendResponse(res, 501, 'Users: uploadAvatar — not yet implemented');
+  if (!req.file) {
+    throw ApiError.badRequest('No image file provided');
+  }
+
+  const user = await User.findById(req.user._id);
+  const previousPublicId = user.avatar?.publicId;
+
+  const result = await uploadService.uploadToCloudinary(req.file.buffer, 'nexora/avatars');
+  user.avatar = { url: result.secure_url, publicId: result.public_id };
+  await user.save();
+
+  // Best-effort cleanup — a failure here shouldn't fail the request, the
+  // user's new avatar is already saved and correct.
+  if (previousPublicId) {
+    uploadService.deleteFromCloudinary(previousPublicId).catch(() => {});
+  }
+
+  sendResponse(res, 200, 'Avatar updated', user);
 });
 
 // @desc    Get all users (admin)

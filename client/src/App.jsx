@@ -36,6 +36,7 @@ const Wishlist = lazy(() => import('@pages/Wishlist'));
 const Login = lazy(() => import('@pages/Login'));
 const Register = lazy(() => import('@pages/Register'));
 const Profile = lazy(() => import('@pages/Profile'));
+const AccountSettings = lazy(() => import('@pages/AccountSettings'));
 const Orders = lazy(() => import('@pages/Orders'));
 const OrderDetail = lazy(() => import('@pages/OrderDetail'));
 const OrderSuccess = lazy(() => import('@pages/OrderSuccess'));
@@ -221,6 +222,16 @@ const App = () => {
                     <AppLayout>
                       <PrivateRoute>
                         <Profile />
+                      </PrivateRoute>
+                    </AppLayout>
+                  }
+                />
+                <Route
+                  path="/account-settings"
+                  element={
+                    <AppLayout>
+                      <PrivateRoute>
+                        <AccountSettings />
                       </PrivateRoute>
                     </AppLayout>
                   }

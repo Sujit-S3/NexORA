@@ -16,8 +16,12 @@ const Profile = () => {
           <div className="absolute right-0 top-0 w-64 h-64 bg-[#D4AF37]/10 blur-[80px] rounded-full pointer-events-none"></div>
           
           <div className="flex items-center gap-6 relative z-10">
-            <div className="w-24 h-24 rounded-full bg-white/10 dark:bg-[#0B1220]/60 backdrop-blur-md border border-gray-200/50 dark:border-[rgba(212,175,55,0.2)] flex items-center justify-center p-4 shadow-lg">
-              <MainLogo className="w-16 h-16" />
+            <div className="w-24 h-24 rounded-full bg-white/10 dark:bg-[#0B1220]/60 backdrop-blur-md border border-gray-200/50 dark:border-[rgba(212,175,55,0.2)] flex items-center justify-center overflow-hidden shadow-lg">
+              {user?.avatar?.url ? (
+                <img src={user.avatar.url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <MainLogo className="w-16 h-16" />
+              )}
             </div>
             <div>
               <h1 className="text-3xl font-display font-bold text-[#111827] dark:text-[#F5F5F5] tracking-tight">{user?.name}</h1>
@@ -74,15 +78,13 @@ const Profile = () => {
             <p className="text-sm text-[#6B7280] dark:text-[#9CA3AF]">Manage saved cards and methods.</p>
           </div>
 
-          <div className="glass-panel p-8 opacity-70 border-dashed border-gray-300 dark:border-white/10 cursor-not-allowed">
-            <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center mb-6">
-              <Settings className="w-6 h-6 text-gray-500" />
+          <Link to="/account-settings" className="glass-panel p-8 group hover:border-[#D4AF37]/50 transition-all duration-500 hover:shadow-[0_10px_30px_rgba(212,175,55,0.1)] block">
+            <div className="w-12 h-12 rounded-xl bg-[#D4AF37]/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
+              <Settings className="w-6 h-6 text-[#D4AF37]" />
             </div>
-            <h3 className="text-xl font-semibold text-[#111827] dark:text-[#F5F5F5] mb-2 flex items-center justify-between">
-              Settings <span className="text-xs font-medium px-2 py-0.5 bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-400 rounded-full">Soon</span>
-            </h3>
-            <p className="text-sm text-[#6B7280] dark:text-[#9CA3AF]">Account preferences and security.</p>
-          </div>
+            <h3 className="text-xl font-semibold text-[#111827] dark:text-[#F5F5F5] mb-2">Settings</h3>
+            <p className="text-sm text-[#6B7280] dark:text-[#9CA3AF]">Update your name, avatar, and preferences.</p>
+          </Link>
         </div>
       </div>
     </div>
