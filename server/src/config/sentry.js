@@ -9,7 +9,7 @@ const isSentryConfigured = () => Boolean(process.env.SENTRY_DSN);
 
 const initSentry = () => {
   if (!isSentryConfigured()) {
-    console.warn('⚠️   SENTRY_DSN not set — server error tracking disabled.');
+    console.log('⚠️   SENTRY_DSN not set — server error tracking disabled.');
     return;
   }
 
