@@ -3,12 +3,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, ArrowRight, Plus, Minus, Heart, Sparkles, ShoppingBag, ShieldCheck, Tag, ShoppingCart, MessageSquare, Zap } from 'lucide-react';
+import { Trash2, ArrowRight, Plus, Minus, Heart, Sparkles, ShieldCheck, ShoppingCart, MessageSquare } from 'lucide-react';
 import { useCart } from '@context/CartContext';
 import { useWishlist } from '@context/WishlistContext';
-import { productService } from '@services/productService';
 import { discountService } from '@services/discountService';
-import axios from 'axios';
+import api from '@services/api';
 import { getSessionId } from '../hooks/usePreferenceTracking';
 import { Activity } from 'lucide-react';
 import { getLuxuryFallback } from '../utils/getLuxuryFallback';
@@ -19,10 +18,10 @@ export default function Cart() {
     items: cartItems = [], 
     removeItem: removeFromCart, 
     updateItem: updateQuantity, 
-    totalPrice: cartTotal = 0, 
-    clearCart 
+    totalPrice: cartTotal = 0
   } = useCart();
   const { addToWishlist } = useWishlist();
+  const [transferError, setTransferError] = useState('');
 
   const navigate = useNavigate();
 
@@ -36,8 +35,22 @@ export default function Cart() {
   }, [cartItems, cartTotal, navigate]);
 
   const handleMoveToWishlist = async (item) => {
-    await addToWishlist(item);
-    await removeFromCart(item._id);
+    setTransferError('');
+    const wishlistResult = await addToWishlist(item, item.size || '', item.color || '');
+    if (!wishlistResult?.success) {
+      setTransferError(wishlistResult?.message || 'Could not move this item to your wishlist. Your cart was not changed.');
+      return;
+    }
+
+    const cartResult = await removeFromCart(
+      item._id,
+      item.size || '',
+      item.color || '',
+      item.cartItemId || '',
+    );
+    if (!cartResult?.success) {
+      setTransferError('The item was saved to your wishlist but could not be removed from the cart. Please try again.');
+    }
   };
 
   // Discount code
@@ -91,7 +104,7 @@ export default function Cart() {
   useEffect(() => {
     if (cartItems.length > 0) {
       setAiLoading(true);
-      axios.post('/api/preferences/cart', { cartItems }, {
+      api.post('/preferences/cart', { cartItems }, {
         headers: { 'x-session-id': getSessionId() }
       })
       .then(res => {
@@ -149,6 +162,12 @@ export default function Cart() {
         
         <h1 className="font-playfair text-4xl lg:text-5xl mb-12">Shopping Bag</h1>
 
+        {transferError && (
+          <div role="alert" className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">
+            {transferError}
+          </div>
+        )}
+
         <div className="flex flex-col lg:flex-row gap-12">
           
           {/* ══════════════════════════════
@@ -159,7 +178,7 @@ export default function Cart() {
               <AnimatePresence>
                 {cartItems.map((item) => (
                   <motion.div
-                    key={item._id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+                    key={item.cartItemId || `${item._id}-${item.size || ''}-${item.color || ''}`} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
                     className="group relative flex flex-col sm:flex-row gap-6 p-6 transition-all hover:-translate-y-1"
                     style={{ background: SURF, border: `1px solid ${BORD}`, borderRadius: 20, boxShadow: isDark ? '0 10px 40px rgba(0,0,0,0.2)' : '0 10px 40px rgba(0,0,0,0.02)' }}
                   >
@@ -168,16 +187,10 @@ export default function Cart() {
 
                     {/* Image */}
                     <Link to={`/product/${item.slug || item._id}`} className="w-full sm:w-40 h-40 rounded-xl flex items-center justify-center shrink-0 overflow-hidden" style={{ background: isDark ? '#111' : '#F2EDE4' }}>
-                      <img loading="lazy" src={item.image || getLuxuryFallback(item.category?.name || item.category || 'default')} alt={item.name} className="w-full h-full object-contain p-4 mix-blend-multiply dark:mix-blend-normal group-hover:scale-110 transition-transform duration-700"  onError={(e) => {
-    e.currentTarget.onerror = null;
-    let cat = 'default';
-    try { if (typeof product !== 'undefined') cat = product?.category?.name || product?.category; } catch(err){}
-    try { if (typeof item !== 'undefined' && cat === 'default') cat = item?.category?.name || item?.category; } catch(err){}
-    try { if (typeof p !== 'undefined' && cat === 'default') cat = p?.category?.name || p?.category; } catch(err){}
-    try { if (typeof r !== 'undefined' && cat === 'default') cat = r?.category?.name || r?.category; } catch(err){}
-    try { if (typeof quickViewProduct !== 'undefined' && cat === 'default') cat = quickViewProduct?.category?.name || quickViewProduct?.category; } catch(err){}
-    e.currentTarget.src = getLuxuryFallback(cat);
-  }} />
+                      <img loading="lazy" src={item.image || getLuxuryFallback(item.category?.name || item.category || 'default')} alt={item.name} className="w-full h-full object-contain p-4 mix-blend-multiply dark:mix-blend-normal group-hover:scale-110 transition-transform duration-700" onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = getLuxuryFallback(item.category?.name || item.category || 'default');
+                      }} />
                     </Link>
 
                     {/* Details */}
@@ -232,9 +245,9 @@ export default function Cart() {
                       <div className="mt-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         {/* Qty */}
                         <div className="flex items-center rounded overflow-hidden w-fit" style={{ border: `1px solid ${BORD}`, opacity: item.stock === 0 || item.isActive === false ? 0.5 : 1 }}>
-                          <button aria-label="Decrease quantity" disabled={item.stock === 0 || item.isActive === false} onClick={() => updateQuantity(item._id, item.quantity - 1, item.size)} className="w-8 h-8 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors disabled:cursor-not-allowed"><Minus size={12} /></button>
+                          <button aria-label="Decrease quantity" disabled={item.stock === 0 || item.isActive === false || item.quantity <= 1} onClick={() => updateQuantity(item._id, item.quantity - 1, item.size, item.color)} className="w-8 h-8 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors disabled:cursor-not-allowed"><Minus size={12} /></button>
                           <span className="w-10 text-center text-[12px] font-medium">{item.quantity}</span>
-                          <button aria-label="Increase quantity" disabled={item.stock === 0 || item.isActive === false || item.quantity >= item.stock} onClick={() => updateQuantity(item._id, item.quantity + 1, item.size)} className="w-8 h-8 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors disabled:cursor-not-allowed"><Plus size={12} /></button>
+                          <button aria-label="Increase quantity" disabled={item.stock === 0 || item.isActive === false || item.quantity >= item.stock} onClick={() => updateQuantity(item._id, item.quantity + 1, item.size, item.color)} className="w-8 h-8 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors disabled:cursor-not-allowed"><Plus size={12} /></button>
                         </div>
 
                         {/* Actions */}
@@ -243,7 +256,7 @@ export default function Cart() {
                             <Heart size={14} /> Wishlist
                           </button>
                           <span style={{ color: BORD }}>|</span>
-                          <button onClick={() => removeFromCart(item._id)} className="flex items-center gap-1.5 text-[11px] font-bold tracking-widest uppercase text-red-500 hover:text-red-400 transition-colors">
+                          <button onClick={() => removeFromCart(item._id, item.size || '', item.color || '', item.cartItemId || '')} className="flex items-center gap-1.5 text-[11px] font-bold tracking-widest uppercase text-red-500 hover:text-red-400 transition-colors">
                             <Trash2 size={14} /> Remove
                           </button>
                         </div>
@@ -406,16 +419,10 @@ export default function Cart() {
                         recommendations.map(r => (
                           <Link key={r._id} to={`/product/${r.slug}`} className="flex items-center gap-4 group">
                             <div className="w-16 h-16 rounded flex items-center justify-center bg-[#111] shrink-0 border border-white/5 group-hover:border-[#D4AF37]/50 transition-colors">
-                              <img loading="lazy" src={r.primaryImage?.url || r.images?.[0]?.url || getLuxuryFallback(r.category?.name || r.category || 'default')} alt="" className="w-10 h-10 object-contain"  onError={(e) => {
-    e.currentTarget.onerror = null;
-    let cat = 'default';
-    try { if (typeof product !== 'undefined') cat = product?.category?.name || product?.category; } catch(err){}
-    try { if (typeof item !== 'undefined' && cat === 'default') cat = item?.category?.name || item?.category; } catch(err){}
-    try { if (typeof p !== 'undefined' && cat === 'default') cat = p?.category?.name || p?.category; } catch(err){}
-    try { if (typeof r !== 'undefined' && cat === 'default') cat = r?.category?.name || r?.category; } catch(err){}
-    try { if (typeof quickViewProduct !== 'undefined' && cat === 'default') cat = quickViewProduct?.category?.name || quickViewProduct?.category; } catch(err){}
-    e.currentTarget.src = getLuxuryFallback(cat);
-  }} />
+                              <img loading="lazy" src={r.primaryImage?.url || r.images?.[0]?.url || getLuxuryFallback(r.category?.name || r.category || 'default')} alt="" className="w-10 h-10 object-contain" onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = getLuxuryFallback(r.category?.name || r.category || 'default');
+                              }} />
                             </div>
                             <div>
                               <h4 className="text-[12px] font-medium text-white group-hover:text-[#D4AF37] transition-colors leading-snug">{r.name}</h4>

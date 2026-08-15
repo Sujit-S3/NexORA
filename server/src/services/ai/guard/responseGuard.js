@@ -25,7 +25,7 @@ class ResponseGuard {
    * @param {Array} verifiedProducts - The Ground Truth products passed to the AI
    * @returns {Object} { isValid: boolean, safeResponse: string }
    */
-  validateResponse(aiResponse, verifiedProducts = []) {
+  validateResponse(aiResponse, _verifiedProducts = []) {
     // Basic checks
     if (!aiResponse || aiResponse.trim().length === 0) {
       return { isValid: false, safeResponse: "I'm sorry, I am having trouble connecting to my luxury database. Please try again." };

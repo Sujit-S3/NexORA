@@ -3,6 +3,7 @@
 // Auth is tracked purely via the server's httpOnly session cookie — the
 // client never stores the JWT itself, only the resulting user object.
 
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import { authService } from '@services/authService';
 import { identifyUser, resetUser } from '@services/analyticsService';

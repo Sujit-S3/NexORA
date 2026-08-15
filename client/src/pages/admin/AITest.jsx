@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import aiService from '@services/aiService';
-import { BrainCircuit, Activity, Zap, Play, AlertTriangle } from 'lucide-react';
+import { BrainCircuit, Activity, Play, AlertTriangle } from 'lucide-react';
 
 export default function AITest() {
   const [prompt, setPrompt] = useState('What is the true meaning of luxury in 3 sentences?');

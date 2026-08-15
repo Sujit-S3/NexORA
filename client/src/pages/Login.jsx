@@ -13,7 +13,7 @@ const Login = () => {
   
   useEffect(() => {
     if (error) clearError();
-  }, []);
+  }, [clearError, error]);
   
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [formError, setFormError] = useState('');

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Star, Package, ShieldCheck, Headphones, Gift, ArrowRight, Sparkles, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Star, Package, ShieldCheck, Headphones, Gift, ArrowRight, Sparkles } from 'lucide-react';
 import MainLogo from '../components/common/MainLogo';
 import api from '../services/api';
 
@@ -59,7 +59,7 @@ const NOrb = ({ size = 100, isDark }) => (
 );
 
 /* ─── DYNAMIC ROW COMPONENTS ───────────────────────────────── */
-const DynamicProductRow = ({ title, products, isDark, SURF, CARD, BORD, TEXT, SUB }) => {
+const DynamicProductRow = ({ title, products, isDark, CARD, BORD, TEXT, SUB }) => {
   const [carIdx, setCarIdx] = useState(0);
   
   if (!products || products.length === 0) return null;
@@ -102,16 +102,12 @@ const DynamicProductRow = ({ title, products, isDark, SURF, CARD, BORD, TEXT, SU
                 
                 <div className="h-32 mb-3 relative flex items-center justify-center">
                   <img loading="lazy"
-                    src={p.images?.[0]?.url || '/assets/placeholders/luxury-placeholder.jpg'} alt={p.name}
+                    src={p.primaryImage?.url || p.images?.[0]?.url || (p.slug ? `/assets/luxury/generated/${p.slug}.svg` : '/assets/luxury/fallbacks/default-luxury.webp')} alt={p.name}
                     className="max-w-full max-h-full object-contain transition-transform duration-700 group-hover:scale-105"
                     style={{ mixBlendMode: isDark ? 'lighten' : 'multiply' }}
                    onError={(e) => {
-    let cat = 'default';
-    try { if (typeof product !== 'undefined') cat = product?.category?.name || product?.category; } catch(err){}
-    try { if (typeof item !== 'undefined' && cat === 'default') cat = item?.category?.name || item?.category; } catch(err){}
-    try { if (typeof p !== 'undefined' && cat === 'default') cat = p?.category?.name || p?.category; } catch(err){}
-    try { if (typeof r !== 'undefined' && cat === 'default') cat = r?.category?.name || r?.category; } catch(err){}
-    try { if (typeof quickViewProduct !== 'undefined' && cat === 'default') cat = quickViewProduct?.category?.name || quickViewProduct?.category; } catch(err){}
+    const cat = p?.category?.name || p?.category || 'default';
+    e.currentTarget.onerror = null;
     e.currentTarget.src = getLuxuryFallback(cat);
   }} />
                 </div>
@@ -160,7 +156,7 @@ export default function Home() {
   const [tIdx, setTIdx]           = useState(0);
   const [heroIdx, setHeroIdx]     = useState(0);
   const [heroPrev, setHeroPrev]   = useState(null);
-  const [heroFading, setHeroFading] = useState(false);
+  const [, setHeroFading] = useState(false);
   const containerRef = useRef(null);
 
   const [recs, setRecs] = useState({
@@ -474,14 +470,9 @@ export default function Home() {
                   src={cat.img} alt={cat.name}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                  onError={(e) => {
-    let cat = 'default';
-    try { if (typeof product !== 'undefined') cat = product?.category?.name || product?.category; } catch(err){}
-    try { if (typeof item !== 'undefined' && cat === 'default') cat = item?.category?.name || item?.category; } catch(err){}
-    try { if (typeof p !== 'undefined' && cat === 'default') cat = p?.category?.name || p?.category; } catch(err){}
-    try { if (typeof r !== 'undefined' && cat === 'default') cat = r?.category?.name || r?.category; } catch(err){}
-    try { if (typeof quickViewProduct !== 'undefined' && cat === 'default') cat = quickViewProduct?.category?.name || quickViewProduct?.category; } catch(err){}
-    e.currentTarget.src = getLuxuryFallback(cat);
-  }} />
+                   e.currentTarget.onerror = null;
+                   e.currentTarget.src = getLuxuryFallback(cat.name);
+                 }} />
                 {/* Gradient overlay */}
                 <div className="absolute inset-0 transition-opacity duration-500"
                   style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.2) 55%, transparent 100%)' }} />

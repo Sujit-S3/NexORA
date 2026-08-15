@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, cloneElement } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ChevronLeft, UploadCloud, X, Check, Plus, Sparkles,
-  Bold, Italic, List, Tag, Package, IndianRupee
+  ChevronLeft, UploadCloud, X, Check, Plus, Tag
 } from 'lucide-react';
 import { productService } from '@services/productService';
 import { categoryService } from '@services/categoryService';
 import Spinner from '@components/common/Spinner';
+import { MAX_PRODUCT_IMAGES, validateProductImages } from '../../utils/productImages';
 
 const Toggle = ({ value, onChange, label }) => (
   <div className="flex items-center justify-between">
@@ -30,6 +30,12 @@ const AddProduct = () => {
   const [tagInput, setTagInput] = useState('');
   const [previews, setPreviews] = useState([]);
   const [imageFiles, setImageFiles] = useState([]);
+  const [imageError, setImageError] = useState('');
+  const previewUrlsRef = useRef(new Set());
+
+  useEffect(() => () => {
+    previewUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+  }, []);
 
   const [form, setForm] = useState({
     name: '', brand: '', category: '', description: '',
@@ -58,21 +64,34 @@ const AddProduct = () => {
   const removeTag = (t) => setForm(f => ({ ...f, tags: f.tags.filter(x => x !== t) }));
 
   const handleFiles = (files) => {
-    const arr = Array.from(files);
-    setImageFiles(prev => [...prev, ...arr].slice(0, 10));
-    const urls = arr.map(f => URL.createObjectURL(f));
-    setPreviews(prev => [...prev, ...urls].slice(0, 10));
+    const { accepted, error } = validateProductImages(files, MAX_PRODUCT_IMAGES - imageFiles.length);
+    setImageError(error);
+    if (accepted.length === 0) return;
+
+    const urls = accepted.map(file => URL.createObjectURL(file));
+    urls.forEach(url => previewUrlsRef.current.add(url));
+    setImageFiles(prev => [...prev, ...accepted]);
+    setPreviews(prev => [...prev, ...urls]);
+    if (fileRef.current) fileRef.current.value = '';
   };
 
   const removeImage = (i) => {
+    const url = previews[i];
+    if (url) {
+      URL.revokeObjectURL(url);
+      previewUrlsRef.current.delete(url);
+    }
     setImageFiles(prev => prev.filter((_, idx) => idx !== i));
     setPreviews(prev => prev.filter((_, idx) => idx !== i));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.price || !form.stock || !form.category) {
+    if (!form.name || form.price === '' || form.stock === '' || !form.category) {
       return alert('Name, price, stock and category are required');
+    }
+    if (form.isActive && imageFiles.length === 0) {
+      return alert('Add at least one real product image before publishing. You can save without an image by turning off Active.');
     }
     setSaving(true);
     try {
@@ -83,6 +102,8 @@ const AddProduct = () => {
       if (payload.discountPrice) payload.discountPrice = Number(payload.discountPrice);
       payload.variants = payload.variants.map(v => ({ ...v, stock: Number(v.stock) }));
 
+      const shouldPublish = payload.isActive;
+      payload.isActive = false;
       const res = await productService.create(payload);
       const productId = res.data.data._id;
 
@@ -90,6 +111,10 @@ const AddProduct = () => {
         const fd = new FormData();
         imageFiles.forEach(f => fd.append('images', f));
         await productService.uploadImages(productId, fd);
+      }
+
+      if (shouldPublish) {
+        await productService.update(productId, { ...payload, isActive: true });
       }
 
       navigate('/admin/products');
@@ -348,15 +373,17 @@ const AddProduct = () => {
                 <UploadCloud className="w-7 h-7 text-[#D4AF37]/60 mb-2" />
                 <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">Drag & drop or click to upload</p>
                 <p className="text-xs text-gray-400 mt-1">PNG, JPG, WEBP — Max 10 images</p>
-                <input ref={fileRef} type="file" multiple accept="image/*" className="hidden" onChange={e => handleFiles(e.target.files)} aria-hidden="true" tabIndex={-1} />
+                <input ref={fileRef} type="file" multiple accept="image/jpeg,image/png,image/webp" className="hidden" onChange={e => handleFiles(e.target.files)} aria-hidden="true" tabIndex={-1} />
               </div>
+
+              {imageError && <p role="alert" className="mb-3 text-xs text-red-500">{imageError}</p>}
 
               {/* Previews */}
               {previews.length > 0 && (
                 <div className="grid grid-cols-4 gap-2">
                   {previews.map((url, i) => (
                     <div key={i} className={`relative aspect-square rounded-lg border-2 overflow-hidden ${i === 0 ? 'border-[#D4AF37]' : 'border-gray-200 dark:border-white/10'}`}>
-                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <img src={url} alt={`Selected product preview ${i + 1}`} className="w-full h-full object-cover" />
                       <button type="button" onClick={() => removeImage(i)}
                         className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/60 rounded-sm flex items-center justify-center text-white">
                         <X className="w-3 h-3" />

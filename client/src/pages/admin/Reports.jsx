@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BarChart2, TrendingUp, ShoppingBag, Users, Package, ArrowUp, ArrowDown } from 'lucide-react';
+import { BarChart2, TrendingUp, ShoppingBag, Users, Package } from 'lucide-react';
 import Spinner from '@components/common/Spinner';
 import { adminService } from '@services/adminService';
 

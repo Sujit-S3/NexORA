@@ -1,9 +1,9 @@
 // NexORA — Premium Wishlist Component
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Trash2, ArrowRight, ShoppingBag } from 'lucide-react';
+import { Heart, Trash2, ShoppingBag } from 'lucide-react';
 import { useWishlist } from '@context/WishlistContext';
 import { useCart } from '@context/CartContext';
 import { formatPrice } from '../utils/formatPrice';
@@ -13,15 +13,24 @@ const Wishlist = () => {
   const { wishlistItems, removeFromWishlist, clearWishlist } = useWishlist();
   const { addToCart } = useCart();
   const navigate = useNavigate();
+  const [moveError, setMoveError] = useState('');
+  const [movingProductId, setMovingProductId] = useState('');
 
   const handleAddToCart = async (product) => {
+    setMoveError('');
+    setMovingProductId(product._id);
     // 1. Add to Cart with preferred size if exists
-    const result = await addToCart(product, 1, product.size || '');
+    const result = await addToCart(product, 1, product.size || '', product.color || '');
     
     // 2. Confirm success
     if (result && result.success) {
       // 3. Remove from Wishlist
-      await removeFromWishlist(product._id);
+      const removeResult = await removeFromWishlist(product._id);
+      if (!removeResult?.success) {
+        setMoveError('The item was added to your cart but could not be removed from the wishlist.');
+        setMovingProductId('');
+        return;
+      }
       // 4. Navigate to cart or let UI naturally refresh
       navigate('/cart');
     } else {
@@ -29,9 +38,10 @@ const Wishlist = () => {
         // Redirect to product page to select size
         navigate(`/product/${product.slug || product._id}`);
       } else {
-        console.error("Move to Cart failed:", result?.message);
+        setMoveError(result?.message || 'Could not move this item to your cart. Your wishlist was not changed.');
       }
     }
+    setMovingProductId('');
   };
 
   if (wishlistItems.length === 0) {
@@ -67,10 +77,16 @@ const Wishlist = () => {
           Clear All
         </button>
       </div>
+
+      {moveError && (
+        <div role="alert" className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-500">
+          {moveError}
+        </div>
+      )}
         
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <AnimatePresence>
-          {wishlistItems.map((product, idx) => (
+          {wishlistItems.map((product) => (
             <motion.div
               key={product._id}
               layout
@@ -89,18 +105,13 @@ const Wishlist = () => {
 
               <Link to={`/product/${product.slug || product._id}`} className="relative h-64 mb-4 rounded-[1.5rem] overflow-hidden bg-white dark:bg-[#05070A]">
                 <img loading="lazy"
-                  src={product.images?.[0]?.url || product.image || getLuxuryFallback(product.category?.name || product.category)}
+                  src={product.primaryImage?.url || product.images?.[0]?.url || product.image || getLuxuryFallback(product.category?.name || product.category)}
                   alt={product.name}
                   className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-700 mix-blend-multiply dark:mix-blend-normal" 
                  onError={(e) => {
-    let cat = 'default';
-    try { if (typeof product !== 'undefined') cat = product?.category?.name || product?.category; } catch(err){}
-    try { if (typeof item !== 'undefined' && cat === 'default') cat = item?.category?.name || item?.category; } catch(err){}
-    try { if (typeof p !== 'undefined' && cat === 'default') cat = p?.category?.name || p?.category; } catch(err){}
-    try { if (typeof r !== 'undefined' && cat === 'default') cat = r?.category?.name || r?.category; } catch(err){}
-    try { if (typeof quickViewProduct !== 'undefined' && cat === 'default') cat = quickViewProduct?.category?.name || quickViewProduct?.category; } catch(err){}
-    e.currentTarget.src = getLuxuryFallback(cat);
-  }} />
+                   e.currentTarget.onerror = null;
+                   e.currentTarget.src = getLuxuryFallback(product.category?.name || product.category || 'default');
+                 }} />
               </Link>
               
               <div className="flex flex-col flex-1 justify-end">
@@ -119,10 +130,11 @@ const Wishlist = () => {
                 ) : (
                   <button 
                     onClick={() => handleAddToCart(product)}
+                    disabled={movingProductId === product._id}
                     className="w-full btn-glass py-3 flex items-center justify-center gap-2 group/btn"
                   >
                     <ShoppingBag className="w-4 h-4" /> 
-                    <span>Add to Cart</span>
+                    <span>{movingProductId === product._id ? 'Moving...' : 'Add to Cart'}</span>
                   </button>
                 )}
               </div>

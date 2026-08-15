@@ -88,6 +88,7 @@ class PipelineService {
       console.log(`\n${'═'.repeat(64)}`);
       console.log(`[PIPELINE:${requestId}] V13 NEW REQUEST`);
       console.log(`[PIPELINE:${requestId}]  Session   : ${sessionId}`);
+      console.log(`[PIPELINE:${requestId}]  Conversation: ${conversationId}`);
       console.log(`[PIPELINE:${requestId}]  User      : ${user?._id || 'guest'}`);
       console.log(`[PIPELINE:${requestId}]  Message   : "${userMessage}"`);
       console.log(`[PIPELINE:${requestId}]  Memory    :`, JSON.stringify(memory).slice(0, 120));

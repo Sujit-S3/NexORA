@@ -79,6 +79,7 @@ function LuxuryProductCard({
           whileHover={{ scale: 1.045 }}
           transition={{ duration: 0.35, ease: 'easeOut' }}
           onError={event => {
+            event.currentTarget.onerror = null;
             const catName = typeof product?.category === 'object' ? product?.category?.name : product?.category;
             event.currentTarget.src = getLuxuryFallback(catName);
           }}

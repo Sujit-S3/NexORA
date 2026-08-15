@@ -8,6 +8,24 @@ const ApiError = require('../utils/ApiError');
 const paymentService = require('../services/paymentService');
 const { isRazorpayConfigured } = require('../services/razorpayClient');
 
+const toCheckoutPayload = (payment, razorpayOrder) => ({
+  _id: payment._id,
+  razorpayOrderId: payment.razorpayOrderId || razorpayOrder?.id,
+  razorpayKeyId: process.env.RAZORPAY_KEY_ID,
+  amount: razorpayOrder?.amount || Math.round(payment.amount * 100),
+  currency: razorpayOrder?.currency || payment.currency,
+});
+
+// @desc    Public payment capability (never exposes a secret or key ID)
+// @route   GET /api/payments/config
+// @access  Public
+const getPaymentConfig = asyncHandler(async (_req, res) => {
+  sendResponse(res, 200, 'Payment configuration retrieved', {
+    onlinePaymentsAvailable: isRazorpayConfigured(),
+    provider: isRazorpayConfigured() ? 'razorpay' : null,
+  });
+});
+
 // When two verify/webhook requests race on the same payment, MongoDB aborts
 // the losing transaction with a WriteConflict rather than letting its
 // findOneAndUpdate simply return null — this recognizes that case so it can
@@ -30,7 +48,7 @@ const initiatePayment = asyncHandler(async (req, res) => {
     throw ApiError.notFound('Order not found');
   }
 
-  if (order.user.toString() !== req.user._id.toString()) {
+  if (!order.user || order.user.toString() !== req.user._id.toString()) {
     throw ApiError.forbidden('Not authorized to pay for this order');
   }
 
@@ -42,6 +60,19 @@ const initiatePayment = asyncHandler(async (req, res) => {
 
   if (method !== 'cod' && !isRazorpayConfigured()) {
     throw ApiError.badRequest('Online payments are currently unavailable. Please select Cash on Delivery.');
+  }
+
+  // A retry caused by a lost client response must reuse the already-created
+  // Razorpay order instead of producing duplicate pending payment attempts.
+  const existingPayment = await Payment.findOne({
+    order: orderId,
+    user: req.user._id,
+    status: 'pending',
+    razorpayOrderId: { $ne: null },
+  }).sort({ createdAt: -1 });
+
+  if (existingPayment && method !== 'cod') {
+    return sendResponse(res, 200, 'Payment already initiated', toCheckoutPayload(existingPayment));
   }
 
   const payment = await Payment.create({
@@ -56,22 +87,37 @@ const initiatePayment = asyncHandler(async (req, res) => {
     return sendResponse(res, 201, 'Payment initiated', payment);
   }
 
-  const razorpayOrder = await paymentService.createRazorpayOrder({
-    amount: order.totalPrice,
-    currency: payment.currency,
-    receipt: payment.transactionId,
-  });
+  try {
+    const razorpayOrder = await paymentService.createRazorpayOrder({
+      amount: order.totalPrice,
+      currency: payment.currency,
+      receipt: payment.transactionId,
+    });
 
-  payment.razorpayOrderId = razorpayOrder.id;
-  await payment.save();
+    payment.razorpayOrderId = razorpayOrder.id;
+    await payment.save();
 
-  sendResponse(res, 201, 'Payment initiated', {
-    _id: payment._id,
-    razorpayOrderId: razorpayOrder.id,
-    razorpayKeyId: process.env.RAZORPAY_KEY_ID,
-    amount: razorpayOrder.amount,
-    currency: razorpayOrder.currency,
-  });
+    return sendResponse(res, 201, 'Payment initiated', toCheckoutPayload(payment, razorpayOrder));
+  } catch (error) {
+    payment.status = 'failed';
+    
+    let failureReason = 'Razorpay order creation failed';
+    let userMessage = 'The payment gateway could not start the payment. Please retry from your order page or use Cash on Delivery.';
+    
+    if (error?.statusCode === 400 && error?.error?.description?.includes('maximum amount')) {
+      failureReason = 'Amount exceeds maximum online transaction limit';
+      userMessage = 'Transaction limit exceeded. Please use VIP direct payment methods.';
+    }
+
+    payment.failureReason = failureReason;
+    payment.gatewayResponse = {
+      failedAt: new Date(),
+      providerStatusCode: error?.statusCode || null,
+    };
+    await payment.save();
+    
+    throw new ApiError(502, userMessage);
+  }
 });
 
 // @desc    Verify a Razorpay payment via its checkout-callback signature
@@ -371,4 +417,4 @@ const getAllPayments = asyncHandler(async (req, res) => {
   sendResponse(res, 200, 'All payments retrieved', payments);
 });
 
-module.exports = { initiatePayment, verifyPayment, refundPayment, handleWebhook, getPaymentHistory, getAllPayments };
+module.exports = { getPaymentConfig, initiatePayment, verifyPayment, refundPayment, handleWebhook, getPaymentHistory, getAllPayments };

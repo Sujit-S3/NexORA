@@ -1,5 +1,4 @@
 const UserPreference = require('../../../models/UserPreference');
-const { eventBus, EVENTS } = require('../../ai/utils/eventBus');
 
 class OccasionEngine {
   constructor() {

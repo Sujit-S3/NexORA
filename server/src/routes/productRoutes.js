@@ -28,6 +28,7 @@ router.post('/', protect, adminOnly, createProduct);
 router.put('/:id', protect, adminOnly, updateProduct);
 router.delete('/:id', protect, adminOnly, deleteProduct);
 router.post('/:id/images', protect, adminOnly, upload.array('images', 10), uploadProductImages);
+router.delete('/:id/images', protect, adminOnly, deleteProductImage);
 router.delete('/:id/images/:publicId', protect, adminOnly, deleteProductImage);
 
 module.exports = router;

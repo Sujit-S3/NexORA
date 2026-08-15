@@ -6,6 +6,7 @@ import {
 import { productService } from '@services/productService';
 import { categoryService } from '@services/categoryService';
 import Spinner from '@components/common/Spinner';
+import { isRealProductImage, MAX_PRODUCT_IMAGES, validateProductImages } from '../../utils/productImages';
 
 const Toggle = ({ value, onChange, label }) => (
   <div className="flex items-center justify-between">
@@ -33,6 +34,12 @@ const EditProduct = () => {
   const [newPreviews, setNewPreviews] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
   const [deletingImg, setDeletingImg] = useState(null);
+  const [imageError, setImageError] = useState('');
+  const previewUrlsRef = useRef(new Set());
+
+  useEffect(() => () => {
+    previewUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+  }, []);
 
   const [form, setForm] = useState({
     name: '', brand: '', category: '', description: '',
@@ -70,7 +77,7 @@ const EditProduct = () => {
       }
     };
     init();
-  }, [id]);
+  }, [id, navigate]);
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
   const addTag = () => {
@@ -81,12 +88,24 @@ const EditProduct = () => {
   const removeTag = (t) => setForm(f => ({ ...f, tags: f.tags.filter(x => x !== t) }));
 
   const handleFiles = (files) => {
-    const arr = Array.from(files);
-    setNewFiles(prev => [...prev, ...arr].slice(0, 10 - existingImages.length));
-    setNewPreviews(prev => [...prev, ...arr.map(f => URL.createObjectURL(f))].slice(0, 10 - existingImages.length));
+    const availableSlots = MAX_PRODUCT_IMAGES - existingImages.length - newFiles.length;
+    const { accepted, error } = validateProductImages(files, availableSlots);
+    setImageError(error);
+    if (accepted.length === 0) return;
+
+    const urls = accepted.map(file => URL.createObjectURL(file));
+    urls.forEach(url => previewUrlsRef.current.add(url));
+    setNewFiles(prev => [...prev, ...accepted]);
+    setNewPreviews(prev => [...prev, ...urls]);
+    if (fileRef.current) fileRef.current.value = '';
   };
 
   const removeNewImage = (i) => {
+    const url = newPreviews[i];
+    if (url) {
+      URL.revokeObjectURL(url);
+      previewUrlsRef.current.delete(url);
+    }
     setNewFiles(prev => prev.filter((_, idx) => idx !== i));
     setNewPreviews(prev => prev.filter((_, idx) => idx !== i));
   };
@@ -105,7 +124,11 @@ const EditProduct = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.price || !form.stock || !form.category) return alert('Name, price, stock and category are required');
+    if (!form.name || form.price === '' || form.stock === '' || !form.category) return alert('Name, price, stock and category are required');
+    const hasRealMedia = existingImages.some(isRealProductImage) || newFiles.length > 0;
+    if (form.isActive && !hasRealMedia) {
+      return alert('Add at least one real product image before publishing.');
+    }
     setSaving(true);
     try {
       const payload = { ...form };
@@ -115,12 +138,23 @@ const EditProduct = () => {
       if (payload.discountPrice) payload.discountPrice = Number(payload.discountPrice);
       payload.variants = payload.variants.map(v => ({ ...v, stock: Number(v.stock) }));
 
-      await productService.update(id, payload);
+      const shouldPublishAfterUpload = payload.isActive
+        && newFiles.length > 0
+        && !existingImages.some(isRealProductImage);
+
+      await productService.update(id, {
+        ...payload,
+        isActive: shouldPublishAfterUpload ? false : payload.isActive,
+      });
 
       if (newFiles.length > 0) {
         const fd = new FormData();
         newFiles.forEach(f => fd.append('images', f));
         await productService.uploadImages(id, fd);
+      }
+
+      if (shouldPublishAfterUpload) {
+        await productService.update(id, payload);
       }
 
       navigate('/admin/products');
@@ -362,13 +396,14 @@ const EditProduct = () => {
                 className="border-2 border-dashed border-[rgba(212,175,55,0.3)] rounded-xl p-5 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-[#D4AF37]/5 transition-colors mb-3">
                 <UploadCloud className="w-6 h-6 text-[#D4AF37]/60 mb-2" />
                 <p className="text-xs text-gray-500">Click or drag images here</p>
-                <input ref={fileRef} type="file" multiple accept="image/*" className="hidden" onChange={e => handleFiles(e.target.files)} aria-hidden="true" tabIndex={-1} />
+                <input ref={fileRef} type="file" multiple accept="image/jpeg,image/png,image/webp" className="hidden" onChange={e => handleFiles(e.target.files)} aria-hidden="true" tabIndex={-1} />
               </div>
+              {imageError && <p role="alert" className="mb-3 text-xs text-red-500">{imageError}</p>}
               {newPreviews.length > 0 && (
                 <div className="grid grid-cols-4 gap-2">
                   {newPreviews.map((url, i) => (
                     <div key={i} className="relative aspect-square rounded-lg border border-[#D4AF37]/40 overflow-hidden">
-                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <img src={url} alt={`Selected product preview ${i + 1}`} className="w-full h-full object-cover" />
                       <button type="button" onClick={() => removeNewImage(i)}
                         className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/60 rounded-sm flex items-center justify-center text-white">
                         <X className="w-3 h-3" />

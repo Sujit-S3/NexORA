@@ -281,9 +281,7 @@ const App = () => {
                   path="/payment-failure"
                   element={
                     <AppLayout>
-                      <PrivateRoute>
                         <PaymentFailure />
-                      </PrivateRoute>
                     </AppLayout>
                   }
                 />

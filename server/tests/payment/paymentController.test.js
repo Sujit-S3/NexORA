@@ -7,6 +7,7 @@ process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test_jwt_secret_should_be_long_enough_1234567890';
 process.env.JWT_EXPIRES_IN = '7d';
 process.env.CLIENT_ORIGIN = 'http://localhost:5173';
+process.env.RAZORPAY_KEY_ID = 'rzp_test_key_id';
 process.env.RAZORPAY_KEY_SECRET = 'test_key_secret_abc123';
 process.env.RAZORPAY_WEBHOOK_SECRET = 'test_webhook_secret_xyz789';
 
@@ -20,6 +21,7 @@ const app = require('../../src/app');
 const User = require('../../src/models/User');
 const Order = require('../../src/models/Order');
 const Payment = require('../../src/models/Payment');
+const gatewayService = require('../../src/services/paymentService');
 
 let replSet;
 
@@ -34,6 +36,7 @@ afterAll(async () => {
 });
 
 afterEach(async () => {
+  jest.restoreAllMocks();
   await Promise.all([User.deleteMany({}), Order.deleteMany({}), Payment.deleteMany({})]);
 });
 
@@ -161,5 +164,59 @@ describe('POST /api/payments/verify', () => {
 
     const reloadedOrder = await Order.findById(order._id);
     expect(reloadedOrder.paymentInfo.status).toBe('paid');
+  });
+});
+
+describe('Razorpay payment initiation', () => {
+  it('reports online payment capability without exposing a key', async () => {
+    const res = await request(app).get('/api/payments/config');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual({
+      onlinePaymentsAvailable: true,
+      provider: 'razorpay',
+    });
+    expect(JSON.stringify(res.body)).not.toContain(process.env.RAZORPAY_KEY_ID);
+  });
+
+  it('reuses an existing pending Razorpay order when initiation is retried', async () => {
+    const { token, order } = await buildFixtures();
+    await Payment.deleteMany({ order: order._id });
+    const createOrder = jest.spyOn(gatewayService, 'createRazorpayOrder').mockResolvedValue({
+      id: 'order_gateway_once',
+      amount: 115000,
+      currency: 'INR',
+    });
+
+    const first = await request(app)
+      .post('/api/payments/initiate')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ orderId: order._id.toString() });
+    const second = await request(app)
+      .post('/api/payments/initiate')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ orderId: order._id.toString() });
+
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(200);
+    expect(second.body.data.razorpayOrderId).toBe('order_gateway_once');
+    expect(createOrder).toHaveBeenCalledTimes(1);
+    expect(await Payment.countDocuments({ order: order._id, status: 'pending' })).toBe(1);
+  });
+
+  it('records a failed attempt when Razorpay order creation is unavailable', async () => {
+    const { token, order } = await buildFixtures();
+    await Payment.deleteMany({ order: order._id });
+    jest.spyOn(gatewayService, 'createRazorpayOrder').mockRejectedValue(new Error('gateway unavailable'));
+
+    const res = await request(app)
+      .post('/api/payments/initiate')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ orderId: order._id.toString() });
+
+    expect(res.status).toBe(502);
+    const failed = await Payment.findOne({ order: order._id });
+    expect(failed.status).toBe('failed');
+    expect(failed.failureReason).toBe('Razorpay order creation failed');
   });
 });

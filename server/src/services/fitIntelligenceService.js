@@ -1,8 +1,6 @@
 // NexORA V12.2.1 — Fit Intelligence Engine
 // Calculates recommended sizes, confidence scores, and fit explanations based on user profile and product templates.
 
-const SizeChart = require('../models/SizeChart');
-
 class FitIntelligenceService {
   
   /**

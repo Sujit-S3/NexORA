@@ -1,17 +1,9 @@
-import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useCart } from '@context/CartContext';
 
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('orderId');
   const paymentId = searchParams.get('paymentId');
-  const { clearCart } = useCart(); // Backend cleared it, but we force frontend to clear its context too
-
-  useEffect(() => {
-    // Optional: force fetchCart or just local clear
-    // We already know backend cleared it
-  }, []);
 
   return (
     <div className="section container-app flex justify-center items-center min-h-[60vh] animate-fade-in">

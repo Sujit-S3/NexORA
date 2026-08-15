@@ -1,11 +1,9 @@
 // NexORA V13 — Client AI Service
-import api from './api';
+import api, { apiBaseUrl, apiConfigurationError } from './api';
 import { getSessionId } from '../hooks/usePreferenceTracking';
 
 // Same base URL the shared `api` instance uses — chatStream needs an absolute
 // URL because it streams via fetch()/SSE rather than axios.
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-
 const getSessionHeaders = () => {
   const sessionId = getSessionId();
   const conversationId = localStorage.getItem('nexora_conversation_id') || sessionId;
@@ -27,14 +25,22 @@ const aiService = {
   // ── Chat Stream (SSE) ────────────────────────────────────────────────────
   // V13: passes memory so pipeline accumulates filters; supports AbortController signal
   chatStream: async (message, history, memory, cartItems = [], wishlistIds = [], signal = null) => {
+    if (apiConfigurationError) {
+      throw new Error(`${apiConfigurationError} AI streaming is disabled until it is configured.`);
+    }
     const headers = getSessionHeaders();
-    return fetch(`${API_BASE}/ai/chat`, {
+    const response = await fetch(`${apiBaseUrl}/ai/chat`, {
       method: 'POST',
       headers,
       credentials: 'include', // send the httpOnly auth cookie cross-origin
       body: JSON.stringify({ message, history, memory, cartItems, wishlistIds }),
       signal,
     });
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('text/html')) {
+      throw new Error('The AI endpoint returned the frontend application instead of a stream. Check VITE_API_URL before redeploying.');
+    }
+    return response;
   },
 
   // ── Compare Products ─────────────────────────────────────────────────────

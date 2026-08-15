@@ -11,6 +11,26 @@ const { sendResponse } = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
 const { sendTokenResponse, issueRefreshToken, revokeAllRefreshTokens, baseCookieOptions } = require('../utils/generateToken');
 
+const wishlistContains = (wishlist, productId) => wishlist.some(item =>
+  String(item?.product || item) === String(productId),
+);
+
+const mergeGuestWishlist = async (user, guestWishlist = []) => {
+  let modified = false;
+  for (const item of guestWishlist) {
+    const productId = item?._id || item?.product || item;
+    if (productId && !wishlistContains(user.wishlist, productId)) {
+      user.wishlist.push({
+        product: productId,
+        size: item?.size || '',
+        color: item?.color || '',
+      });
+      modified = true;
+    }
+  }
+  if (modified) {await user.save();}
+};
+
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
@@ -80,15 +100,7 @@ const register = asyncHandler(async (req, res) => {
 
   // Merge Guest Wishlist
   if (req.body.guestWishlist && req.body.guestWishlist.length > 0) {
-    let modified = false;
-    for (const item of req.body.guestWishlist) {
-      const id = item._id || item;
-      if (!user.wishlist.includes(id)) {
-        user.wishlist.push(id);
-        modified = true;
-      }
-    }
-    if (modified) {await user.save();}
+    await mergeGuestWishlist(user, req.body.guestWishlist);
   }
 
   sendResponse(res, 201, 'User registered successfully', {
@@ -168,14 +180,7 @@ const login = asyncHandler(async (req, res) => {
 
   // Merge Guest Wishlist
   if (req.body.guestWishlist && req.body.guestWishlist.length > 0) {
-    let modified = false;
-    for (const item of req.body.guestWishlist) {
-      if (!user.wishlist.includes(item._id || item)) {
-        user.wishlist.push(item._id || item);
-        modified = true;
-      }
-    }
-    if (modified) {await user.save();}
+    await mergeGuestWishlist(user, req.body.guestWishlist);
   }
 
   sendResponse(res, 200, 'Login successful', {

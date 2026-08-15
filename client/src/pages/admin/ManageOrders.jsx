@@ -11,7 +11,7 @@ const ManageOrders = () => {
     try {
       const res = await orderService.getAll({ limit: 500 });
       setOrders(res.data.data.orders);
-    } catch (err) {
+    } catch {
       alert('Failed to load orders');
     } finally {
       setIsLoading(false);

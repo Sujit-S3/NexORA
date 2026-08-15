@@ -1,6 +1,7 @@
 // NexORA — Theme Context
 // Manages light/dark mode with persistence in localStorage.
 
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState } from 'react';
 
 const ThemeContext = createContext(null);

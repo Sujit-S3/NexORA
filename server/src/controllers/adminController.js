@@ -1,9 +1,7 @@
 // NexORA — Admin Controller
 const User = require('../models/User');
 const Product = require('../models/Product');
-const Category = require('../models/Category');
 const Order = require('../models/Order');
-const { categories, products } = require('../data/luxurySeed');
 const asyncHandler = require('../utils/asyncHandler');
 const { sendResponse } = require('../utils/ApiResponse');
 

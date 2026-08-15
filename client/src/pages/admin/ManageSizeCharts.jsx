@@ -3,7 +3,7 @@ import { Plus, Search, Edit2, Trash2, Maximize } from 'lucide-react';
 import Spinner from '@components/common/Spinner';
 
 export default function ManageSizeCharts() {
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [charts, setCharts] = useState([]);
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, Users, Crown, Trash2, UserCheck } from 'lucide-react';
+import { Users, Crown, Trash2, UserCheck } from 'lucide-react';
 import Spinner from '@components/common/Spinner';
 import { userService } from '@services/userService';
 

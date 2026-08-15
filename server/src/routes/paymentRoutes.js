@@ -2,12 +2,13 @@
 
 const express = require('express');
 const router = express.Router();
-const { initiatePayment, verifyPayment, refundPayment, handleWebhook, getPaymentHistory, getAllPayments } = require('../controllers/paymentController');
+const { getPaymentConfig, initiatePayment, verifyPayment, refundPayment, handleWebhook, getPaymentHistory, getAllPayments } = require('../controllers/paymentController');
 const { protect } = require('../middleware/auth');
 const { adminOnly } = require('../middleware/admin');
 
 // Razorpay calls this server-to-server, authenticated via signature (not JWT).
 router.post('/webhook', handleWebhook);
+router.get('/config', getPaymentConfig);
 
 // Auth routes
 router.post('/initiate', protect, initiatePayment);

@@ -22,13 +22,13 @@ class GeminiProvider {
 }
 
 class OpenAIProvider {
-  async stream(prompt, usePro) {
+  async stream(_prompt, _usePro) {
     throw new Error('OpenAI Provider not yet implemented');
   }
 }
 
 class ClaudeProvider {
-  async stream(prompt, usePro) {
+  async stream(_prompt, _usePro) {
     throw new Error('Claude Provider not yet implemented');
   }
 }

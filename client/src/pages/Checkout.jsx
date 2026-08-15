@@ -1,9 +1,9 @@
 // NexORA V7 — Luxury Checkout Experience
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, ArrowRight, Truck, CreditCard, CheckCircle2, Package, Sparkles, Star, ShoppingBag } from 'lucide-react';
+import { ShieldCheck, ArrowRight, Truck, CreditCard, CheckCircle2, Package, Sparkles } from 'lucide-react';
 import { useCart } from '@context/CartContext';
 import { useAuth } from '@context/AuthContext';
 import { orderService } from '@services/orderService';
@@ -13,6 +13,7 @@ import { userService } from '@services/userService';
 import { getLuxuryFallback } from '../utils/getLuxuryFallback';
 import { formatPrice } from '../utils/formatPrice';
 import { openRazorpayCheckout } from '../utils/razorpay';
+import api from '@services/api';
 
 export default function Checkout() {
   const { items: cartItems, totalPrice: cartTotal, clearCart, addToCart } = useCart();
@@ -26,6 +27,29 @@ export default function Checkout() {
   const [address, setAddress] = useState({ street: '', city: '', state: '', zip: '', country: '' });
   const [delivery, setDelivery] = useState('standard');
   const [payment, setPayment] = useState('card');
+  const [paymentConfig, setPaymentConfig] = useState({ loading: true, onlinePaymentsAvailable: false });
+
+  useEffect(() => {
+    let cancelled = false;
+    paymentService.getConfig()
+      .then(({ data }) => {
+        if (!cancelled) {
+          setPaymentConfig({ loading: false, onlinePaymentsAvailable: Boolean(data.data?.onlinePaymentsAvailable) });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setPaymentConfig({ loading: false, onlinePaymentsAvailable: false });
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const canUseOnlinePayment = Boolean(user && paymentConfig.onlinePaymentsAvailable);
+
+  useEffect(() => {
+    if (!paymentConfig.loading && !canUseOnlinePayment && payment !== 'cod') {
+      setPayment('cod');
+    }
+  }, [canUseOnlinePayment, payment, paymentConfig.loading]);
 
   // Saved addresses — offered as a shortcut so a returning shopper doesn't
   // have to retype an address they've already saved on their account.
@@ -100,7 +124,17 @@ export default function Checkout() {
   const SUB  = isDark ? '#9CA3AF' : '#6B7280';
   const ACC  = isDark ? '#D4AF37' : '#C9A96E';
 
+  // Guards the empty-cart redirect below from firing during the moment
+  // between clearCart() resolving (which empties cartItems) and the
+  // explicit navigate to /order-success — clearCart is awaited, so that
+  // state update can land, and this effect re-run, before the success
+  // handler's own navigate() call executes. Without this, a completed
+  // order can bounce the user to an empty cart instead of the
+  // confirmation page.
+  const orderCompletedRef = useRef(false);
+
   useEffect(() => {
+    if (orderCompletedRef.current) return;
     if (!cartItems || cartItems.length === 0) {
       navigate('/cart');
     }
@@ -111,17 +145,12 @@ export default function Checkout() {
     if (step === 2 && aiSuggestions.length === 0 && cartItems?.length > 0) {
       setAiSuggestLoading(true);
       const cartProductIds = cartItems.map(i => i.product?._id || i._id).filter(Boolean);
-      fetch('/api/ai/checkout-suggest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cartProductIds })
-      })
-        .then(r => r.json())
-        .then(d => { if (d.success) setAiSuggestions(d.data || []); })
+      api.post('/ai/checkout-suggest', { cartProductIds })
+        .then(({ data }) => { if (data.success) setAiSuggestions(data.data || []); })
         .catch(() => {})
         .finally(() => setAiSuggestLoading(false));
     }
-  }, [step]);
+  }, [aiSuggestions.length, cartItems, step]);
 
   if (!cartItems || cartItems.length === 0) {
     return null;
@@ -173,6 +202,14 @@ export default function Checkout() {
     e.preventDefault();
     if (step < 4) return setStep(step + 1);
 
+    if (payment !== 'cod' && !canUseOnlinePayment) {
+      setError(user
+        ? 'Online payments are temporarily unavailable. Please select Cash on Delivery.'
+        : 'Sign in to use Razorpay, or select Cash on Delivery for guest checkout.');
+      setStep(3);
+      return;
+    }
+
     setError('');
     setLoading(true);
 
@@ -205,13 +242,23 @@ export default function Checkout() {
 
       const { data: orderData } = await orderService.placeOrder(orderPayload);
       const orderId = orderData.data._id;
-      const { data: initData } = await paymentService.initiate({ orderId });
 
       if (payment === 'cod') {
-        clearCart();
+        orderCompletedRef.current = true;
+        await clearCart();
         sessionStorage.removeItem('nexora_discount_code');
         setLoading(false);
         navigate(`/order-success?orderId=${orderId}`);
+        return;
+      }
+
+      let initData;
+      try {
+        ({ data: initData } = await paymentService.initiate({ orderId }));
+      } catch (paymentError) {
+        const reason = paymentError.response?.data?.message || paymentError.message || 'Payment initiation failed';
+        setLoading(false);
+        navigate(`/payment-failure?orderId=${orderId}&reason=${encodeURIComponent(reason)}`);
         return;
       }
 
@@ -232,15 +279,16 @@ export default function Checkout() {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             });
-            clearCart();
+            orderCompletedRef.current = true;
+            await clearCart();
             sessionStorage.removeItem('nexora_discount_code');
             navigate(`/order-success?orderId=${orderId}`);
           } catch {
             navigate(`/payment-failure?orderId=${orderId}&paymentId=${paymentId}`);
           }
         },
-        onFailure: () => {
-          navigate(`/payment-failure?orderId=${orderId}&paymentId=${paymentId}`);
+        onFailure: (reason) => {
+          navigate(`/payment-failure?orderId=${orderId}&paymentId=${paymentId}&reason=${encodeURIComponent(reason || 'Payment was not completed')}`);
         },
       });
     } catch (err) {
@@ -462,16 +510,19 @@ export default function Checkout() {
                   {step === 3 && (
                     <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                       <h2 className="font-playfair text-2xl mb-8">Payment Method</h2>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8" role="radiogroup" aria-label="Payment method">
-                        {paymentOptions.map(opt => (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8" role="radiogroup" aria-label="Payment method">
+                        {paymentOptions.map(opt => {
+                          const disabled = opt.id === 'card' && !canUseOnlinePayment;
+                          return (
                           <div
                             key={opt.id}
                             role="radio"
                             aria-checked={payment === opt.id}
-                            tabIndex={0}
-                            onClick={() => setPayment(opt.id)}
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPayment(opt.id); } }}
-                            className="p-6 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all gap-4"
+                            aria-disabled={disabled}
+                            tabIndex={disabled ? -1 : 0}
+                            onClick={() => { if (!disabled) setPayment(opt.id); }}
+                            onKeyDown={(e) => { if (!disabled && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setPayment(opt.id); } }}
+                            className={`p-6 rounded-xl flex flex-col items-center justify-center text-center transition-all gap-4 ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                             style={{
                               border: `1px solid ${payment === opt.id ? ACC : BORD}`,
                               background: payment === opt.id ? 'rgba(212,175,55,0.05)' : 'transparent'
@@ -479,12 +530,20 @@ export default function Checkout() {
                           >
                             <opt.icon size={24} style={{ color: payment === opt.id ? ACC : SUB }} />
                             <span className="text-[12px] font-medium">{opt.name}</span>
+                            {disabled && (
+                              <span className="text-[10px]" style={{ color: SUB }}>
+                                {user ? 'Temporarily unavailable' : 'Sign in required'}
+                              </span>
+                            )}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                       <div className="p-6 rounded-xl" style={{ border: `1px solid ${BORD}` }}>
                         <p className="text-center text-[12px] leading-relaxed" style={{ color: SUB }}>
-                          You will be redirected to the secure payment gateway in the final step. NexORA uses 256-bit encryption. We never store your card details.
+                          {payment === 'cod'
+                            ? 'Pay securely when your order is delivered. No online payment is required now.'
+                            : 'Razorpay opens securely in the final step. NexORA never stores your card, UPI, or banking details.'}
                         </p>
                       </div>
                     </motion.div>
@@ -520,16 +579,10 @@ export default function Checkout() {
                         <div className="flex flex-col gap-4">
                           {cartItems.map(item => (
                             <div key={item._id} className="flex items-center gap-4">
-                              <img loading="lazy" src={item.image || getLuxuryFallback(item.category?.name || item.category || 'default')} alt={item.name} className="w-16 h-16 object-contain rounded" style={{ background: isDark ? '#111' : '#F2EDE4' }}  onError={(e) => {
-    e.currentTarget.onerror = null;
-    let cat = 'default';
-    try { if (typeof product !== 'undefined') cat = product?.category?.name || product?.category; } catch(err){}
-    try { if (typeof item !== 'undefined' && cat === 'default') cat = item?.category?.name || item?.category; } catch(err){}
-    try { if (typeof p !== 'undefined' && cat === 'default') cat = p?.category?.name || p?.category; } catch(err){}
-    try { if (typeof r !== 'undefined' && cat === 'default') cat = r?.category?.name || r?.category; } catch(err){}
-    try { if (typeof quickViewProduct !== 'undefined' && cat === 'default') cat = quickViewProduct?.category?.name || quickViewProduct?.category; } catch(err){}
-    e.currentTarget.src = getLuxuryFallback(cat);
-  }} />
+                              <img loading="lazy" src={item.image || getLuxuryFallback(item.category?.name || item.category || 'default')} alt={item.name} className="w-16 h-16 object-contain rounded" style={{ background: isDark ? '#111' : '#F2EDE4' }} onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = getLuxuryFallback(item.category?.name || item.category || 'default');
+                              }} />
                               <div className="flex-1">
                                 <p className="text-[13px] font-medium truncate">{item.name}</p>
                                 <p className="text-[11px]" style={{ color: SUB }}>

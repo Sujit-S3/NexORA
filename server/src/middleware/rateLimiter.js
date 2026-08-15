@@ -2,18 +2,20 @@
 
 const rateLimit = require('express-rate-limit');
 
-// Jest runs every test file's requests through the same in-memory limiter
-// state within one process (--runInBand), so real production limits would
-// otherwise start rejecting unrelated test files' legitimate requests.
+const isDev  = process.env.NODE_ENV !== 'production';
+// Skip the limiter entirely in test mode, and use very generous limits in dev
+// so that health-check polling, hot-reload, and browser dev-tools don't push
+// legitimate local traffic into 429 territory.
 const skipInTest = () => process.env.NODE_ENV === 'test';
 
 /**
  * General API rate limiter:
- * 100 requests per IP per 15 minutes.
+ * - Production: 100 requests per IP per 15 minutes
+ * - Development: 1 000 requests per IP per 15 minutes
  */
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  windowMs: 15 * 60 * 1000,
+  max: isDev ? 1000 : 100,
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipInTest,
@@ -24,12 +26,13 @@ const apiLimiter = rateLimit({
 });
 
 /**
- * Strict limiter for auth endpoints:
- * 10 requests per IP per 15 minutes (prevent brute-force).
+ * Strict limiter for auth endpoints (brute-force protection):
+ * - Production: 10 requests per IP per 15 minutes
+ * - Development: 50 requests per IP per 15 minutes
  */
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: isDev ? 50 : 10,
   standardHeaders: true,
   legacyHeaders: false,
   skip: skipInTest,

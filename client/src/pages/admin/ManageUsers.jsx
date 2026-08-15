@@ -12,7 +12,7 @@ const ManageUsers = () => {
     try {
       const res = await userService.getAllUsers({ limit: 500 });
       setUsers(res.data.data.users);
-    } catch (err) {
+    } catch {
       alert('Failed to load users');
     } finally {
       setIsLoading(false);

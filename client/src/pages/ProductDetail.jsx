@@ -1,9 +1,9 @@
 // NexORA V13 — Luxury Product Detail Experience
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Heart, Star, Shield, Truck, Package, RotateCcw, ChevronDown, ChevronUp, Sparkles, MessageSquare, Plus, Minus, ArrowRight, CheckCircle2, Activity, X, Zap, GitCompare, Award, Clock } from 'lucide-react';
+import { ShoppingBag, Heart, Star, Shield, Truck, Package, RotateCcw, ChevronDown, ChevronUp, Sparkles, Plus, Minus, ArrowRight, CheckCircle2, Activity, Zap, GitCompare, Award } from 'lucide-react';
 import { productService } from '@services/productService';
 import { useCart } from '@context/CartContext';
 import { useWishlist } from '@context/WishlistContext';
@@ -11,7 +11,7 @@ import ProductReviews from '@components/product/ProductReviews';
 import SizeSelector from '@components/product/SizeSelector';
 import SizeGuideModal from '@components/product/SizeGuideModal';
 import aiService from '@services/aiService';
-import axios from 'axios';
+import api from '@services/api';
 import usePreferenceTracking, { getSessionId } from '../hooks/usePreferenceTracking';
 import { getLuxuryFallback } from '../utils/getLuxuryFallback';
 import { formatPrice } from '../utils/formatPrice';
@@ -51,7 +51,10 @@ export default function ProductDetail() {
   const hasVariants = product?.variants && product.variants.length > 0;
   
   // Extract unique colors
-  const uniqueColors = hasVariants ? Array.from(new Set(product.variants.filter(v => v.color).map(v => v.color))) : [];
+  const uniqueColors = useMemo(
+    () => hasVariants ? Array.from(new Set(product.variants.filter(v => v.color).map(v => v.color))) : [],
+    [hasVariants, product],
+  );
   
   // When variants load or color is missing but exists, set default color
   useEffect(() => {
@@ -87,9 +90,6 @@ export default function ProductDetail() {
   // AI States
   const [aiReviewSummary, setAiReviewSummary] = useState('');
   const [aiReviewLoading, setAiReviewLoading] = useState(false);
-  const [aiQuestion, setAiQuestion] = useState('');
-  const [aiResponse, setAiResponse] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
   const [conciergeHovered, setConciergeHovered] = useState(null);
 
   // V13: Navigate to concierge with product pre-loaded
@@ -127,7 +127,7 @@ export default function ProductDetail() {
         
         // Fetch Smart Recommendations
         if (p._id) {
-          const res = await axios.get(`/api/preferences/pdp/${p._id}`, {
+          const res = await api.get(`/preferences/pdp/${p._id}`, {
             headers: { 'x-session-id': getSessionId() }
           });
           if (res.data.success) {
@@ -194,15 +194,10 @@ export default function ProductDetail() {
                   className="w-20 h-24 rounded-lg overflow-hidden transition-all duration-300"
                   style={{ border: `2px solid ${activeImage === i ? ACC : 'transparent'}`, opacity: activeImage === i ? 1 : 0.5 }}
                 >
-                  <img loading="lazy" src={img.url} className="w-full h-full object-cover" alt=""  onError={(e) => {
-    let cat = 'default';
-    try { if (typeof product !== 'undefined') cat = product?.category?.name || product?.category; } catch(err){}
-    try { if (typeof item !== 'undefined' && cat === 'default') cat = item?.category?.name || item?.category; } catch(err){}
-    try { if (typeof p !== 'undefined' && cat === 'default') cat = p?.category?.name || p?.category; } catch(err){}
-    try { if (typeof r !== 'undefined' && cat === 'default') cat = r?.category?.name || r?.category; } catch(err){}
-    try { if (typeof quickViewProduct !== 'undefined' && cat === 'default') cat = quickViewProduct?.category?.name || quickViewProduct?.category; } catch(err){}
-    e.currentTarget.src = getLuxuryFallback(cat);
-  }} />
+                  <img loading="lazy" src={img.url} className="w-full h-full object-cover" alt="" onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = getLuxuryFallback(product?.category?.name || product?.category || 'default');
+                  }} />
                 </button>
               ))}
             </div>
@@ -299,7 +294,6 @@ export default function ProductDetail() {
                         sizeError={sizeError}
                         setSizeError={setSizeError}
                         setShowSizeGuide={setShowSizeGuide}
-                        fitType={product.fitType}
                         fitRecommendation={product.fitRecommendation} // Comes from AI injection in recommendationService
                       />
                     </div>
@@ -338,7 +332,7 @@ export default function ProductDetail() {
                         }} className="flex-1 py-4 text-[12px] font-bold tracking-widest uppercase transition-colors flex items-center justify-center gap-3 hover:bg-[#D4AF37] hover:text-black" style={{ background: 'transparent', border: `1px solid ${ACC}`, color: ACC, borderRadius: 4 }}>
                           Buy Now
                         </button>
-                        <button onClick={() => toggleWishlist(product)} className={`w-14 flex items-center justify-center transition-colors ${isInWishlist(product._id) ? 'text-[#D4AF37]' : 'hover:text-[#D4AF37]'}`} style={{ border: `1px solid ${BORD}`, borderRadius: 4 }}>
+                        <button onClick={() => toggleWishlist(product, selectedSize, selectedColor)} className={`w-14 flex items-center justify-center transition-colors ${isInWishlist(product._id) ? 'text-[#D4AF37]' : 'hover:text-[#D4AF37]'}`} style={{ border: `1px solid ${BORD}`, borderRadius: 4 }}>
                           <Heart size={18} fill={isInWishlist(product._id) ? '#D4AF37' : 'none'} />
                         </button>
                       </div>
@@ -611,15 +605,10 @@ export default function ProductDetail() {
                       </div>
                     )}
                     <div className="h-[280px] flex items-center justify-center p-6" style={{ background: isDark ? '#111' : '#F2EDE4' }}>
-                      <img loading="lazy" src={r.images[0]?.url || '/assets/placeholders/luxury-placeholder.jpg'} alt={r.name} className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal group-hover:scale-105 transition-transform duration-500"  onError={(e) => {
-      let cat = 'default';
-      try { if (typeof product !== 'undefined') cat = product?.category?.name || product?.category; } catch(err){}
-      try { if (typeof item !== 'undefined' && cat === 'default') cat = item?.category?.name || item?.category; } catch(err){}
-      try { if (typeof p !== 'undefined' && cat === 'default') cat = p?.category?.name || p?.category; } catch(err){}
-      try { if (typeof r !== 'undefined' && cat === 'default') cat = r?.category?.name || r?.category; } catch(err){}
-      try { if (typeof quickViewProduct !== 'undefined' && cat === 'default') cat = quickViewProduct?.category?.name || quickViewProduct?.category; } catch(err){}
-      e.currentTarget.src = getLuxuryFallback(cat);
-    }} />
+                      <img loading="lazy" src={r.images[0]?.url || '/assets/placeholders/luxury-placeholder.jpg'} alt={r.name} className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal group-hover:scale-105 transition-transform duration-500" onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = getLuxuryFallback(r.category?.name || r.category || 'default');
+                      }} />
                     </div>
                   <div className="p-6">
                     <p className="text-[9px] font-bold tracking-[0.2em] uppercase mb-2" style={{ color: SUB }}>{r.brand}</p>

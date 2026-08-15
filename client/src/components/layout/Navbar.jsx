@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Heart, User, LogOut, Menu, X, LayoutDashboard, Package, Sun, Moon, ArrowRight, Sparkles, TrendingUp } from 'lucide-react';
+import { Search, Heart, User, LogOut, Menu, X, LayoutDashboard, Package, Sun, Moon, Sparkles, TrendingUp } from 'lucide-react';
 import { useAuth } from '@context/AuthContext';
 import { useCart } from '@context/CartContext';
 import { useWishlist } from '@context/WishlistContext';
@@ -56,7 +56,7 @@ export default function Navbar() {
       categoryService.getAll().then(res => setCategories(res.data.data || []));
     }
     if (searchOpen) setTimeout(() => searchInputRef.current?.focus(), 100);
-  }, [searchOpen]);
+  }, [searchOpen, trending.length]);
 
   // Live Search
   useEffect(() => {

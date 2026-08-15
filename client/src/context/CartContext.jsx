@@ -2,6 +2,7 @@
 // Manages client-side cart state and syncs with backend.
 // Full cart logic implemented in Phase 4.
 
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import { cartService } from '@services/cartService';
 import { productService } from '@services/productService';
@@ -24,6 +25,10 @@ const cartReducer = (state, action) => {
     case 'SET_CART':
       const flatItems = (action.payload.items || []).map(item => {
         if (item.product && typeof item.product === 'object' && item.product._id) {
+          const selectedVariant = item.product.variants?.find(variant =>
+            (variant.size || '') === (item.size || '')
+            && (variant.color || '') === (item.color || ''),
+          );
           return {
             ...item,
             _id: item.product._id, // Set the item ID to the product ID for easy update/remove
@@ -32,9 +37,9 @@ const cartReducer = (state, action) => {
             brand: item.product.brand,
             slug: item.product.slug,
             image: item.image || item.product.primaryImage?.url || item.product.images?.[0]?.url || item.product.image || '',
-            price: item.product.discountPrice !== null && item.product.discountPrice !== undefined ? item.product.discountPrice : item.product.price,
+            price: item.price ?? (item.product.discountPrice !== null && item.product.discountPrice !== undefined ? item.product.discountPrice : item.product.price),
             originalPrice: item.product.price,
-            stock: item.product.stock,
+            stock: selectedVariant?.stock ?? item.product.stock,
             variants: item.product.variants,
             isActive: item.product.isActive,
             size: item.size || '',
@@ -106,6 +111,8 @@ export const CartProvider = ({ children }) => {
       const localItems = getLocalCartItems();
       saveLocalCart(localItems);
     }
+  // fetchCart is stable and this effect intentionally follows auth transitions.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
   const fetchCart = useCallback(async () => {
@@ -148,8 +155,14 @@ export const CartProvider = ({ children }) => {
         let availableStock = productData.stock;
         if (productData.variants && productData.variants.length > 0) {
           if (!size) throw new Error(`Please select a size for ${productData.name}.`);
-          const variant = productData.variants.find(v => v.size === size);
-          if (!variant) throw new Error(`Selected size ${size} is invalid.`);
+          const variant = productData.variants.find(v =>
+            v.size === size && (color ? v.color === color : true),
+          );
+          if (!variant) {
+            throw new Error(color
+              ? `Selected size ${size} with color ${color} is invalid.`
+              : `Selected size ${size} is invalid.`);
+          }
           availableStock = variant.stock;
         }
 
@@ -196,11 +209,11 @@ export const CartProvider = ({ children }) => {
     }
   }, [isAuthenticated]);
 
-  const updateItem = useCallback(async (productId, quantity, size = '') => {
+  const updateItem = useCallback(async (productId, quantity, size = '', color = '') => {
     dispatch({ type: 'CART_LOADING' });
     if (isAuthenticated) {
       try {
-        const { data } = await cartService.updateItem(productId, quantity, size);
+        const { data } = await cartService.updateItem(productId, quantity, size, color);
         dispatch({ type: 'SET_CART', payload: data.data });
         return { success: true };
       } catch (error) {
@@ -210,11 +223,17 @@ export const CartProvider = ({ children }) => {
     } else {
       try {
         const localItems = getLocalCartItems();
-        const existing = localItems.find(i => (i._id === productId || i.product === productId) && (i.size || '') === size);
+        const existing = localItems.find(i =>
+          (i._id === productId || i.product === productId)
+          && (i.size || '') === size
+          && (i.color || '') === color,
+        );
         if (existing) {
           let availableStock = existing.stock;
           if (existing.variants && existing.variants.length > 0) {
-            const variant = existing.variants.find(v => v.size === size);
+            const variant = existing.variants.find(v =>
+              v.size === size && (color ? v.color === color : true),
+            );
             if (variant) availableStock = variant.stock;
           }
           if (quantity > availableStock) {
@@ -231,11 +250,11 @@ export const CartProvider = ({ children }) => {
     }
   }, [isAuthenticated]);
 
-  const removeItem = useCallback(async (productId) => {
+  const removeItem = useCallback(async (productId, size = '', color = '', cartItemId = '') => {
     dispatch({ type: 'CART_LOADING' });
     if (isAuthenticated) {
       try {
-        const { data } = await cartService.removeItem(productId);
+        const { data } = await cartService.removeItem(productId, size, color, cartItemId);
         dispatch({ type: 'SET_CART', payload: data.data });
         return { success: true };
       } catch (error) {
@@ -245,10 +264,15 @@ export const CartProvider = ({ children }) => {
     } else {
       try {
         let localItems = getLocalCartItems();
-        localItems = localItems.filter(i => i._id !== productId && i.product !== productId);
+        localItems = localItems.filter(i => {
+          const sameProduct = i._id === productId || i.product === productId;
+          const sameCartItem = cartItemId ? i.cartItemId === cartItemId : true;
+          const sameVariant = (i.size || '') === size && (i.color || '') === color;
+          return !(sameProduct && sameCartItem && sameVariant);
+        });
         saveLocalCart(localItems);
         return { success: true };
-      } catch (error) {
+      } catch {
         return { success: false };
       }
     }

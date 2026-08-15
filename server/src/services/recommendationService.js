@@ -1,6 +1,5 @@
 const Product = require('../models/Product');
 const UserPreference = require('../models/UserPreference');
-const mongoose = require('mongoose');
 const FitIntelligenceService = require('./fitIntelligenceService');
 
 // ── In-Memory Product Pool Cache (5 min TTL) ───────────────────────────────
@@ -26,7 +25,6 @@ const generateReasonBadge = (product, intent = {}) => {
   const price   = product.price || 0;
   const rating  = product.ratings?.average || 0;
   const recipient = (intent?.recipient || '').toLowerCase();
-  const occasion  = (intent?.occasion || '').toLowerCase();
   const purpose   = (intent?.purpose  || '').toLowerCase();
 
   // Occasion-based
@@ -99,23 +97,20 @@ const generateConfidenceBreakdown = (product, pref, intent = {}) => {
   ].map(b => (typeof b === 'string' ? b.toLowerCase() : ''));
 
   // Category (40)
-  let catMatch = false;
   if (evalCategory && catName.includes(evalCategory.toLowerCase())) {
-    catMatch = true; score += 40; matched.push('Category Match');
+    score += 40; matched.push('Category Match');
   } else if (!evalCategory) {
     score += 20;
   }
 
   // Brand (20)
-  let brandMatch = false;
   if (evalBrands.length > 0 && evalBrands.some(b => (product.brand || '').toLowerCase().includes(b))) {
-    brandMatch = true; score += 20; matched.push('Brand Preference');
+    score += 20; matched.push('Brand Preference');
   }
 
   // Budget (15)
-  let budgetMatch = false;
   if (evalBudget > 0 && product.price <= evalBudget) {
-    budgetMatch = true; score += 15; matched.push('Within Budget');
+    score += 15; matched.push('Within Budget');
   } else if (!evalBudget) {
     score += 10;
   }

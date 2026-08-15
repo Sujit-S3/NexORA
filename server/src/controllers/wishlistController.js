@@ -8,7 +8,10 @@ const ApiError = require('../utils/ApiError');
 // @route   GET /api/wishlist
 // @access  Auth
 const getWishlist = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id).populate('wishlist.product');
+  const user = await User.findById(req.user._id).populate({
+    path: 'wishlist.product',
+    populate: { path: 'category', select: 'name slug' },
+  });
   
   // Filter out products that were deleted from DB (populate returns null)
   const validWishlist = user.wishlist.filter(item => item && item.product);
@@ -35,6 +38,11 @@ const addToWishlist = asyncHandler(async (req, res) => {
   const { productId, size = '', color = '' } = req.body;
   if (!productId) {throw ApiError.badRequest('Product ID is required');}
 
+  const product = await Product.findOne({ _id: productId, isActive: true });
+  if (!product) {
+    throw ApiError.notFound('The selected product is unavailable');
+  }
+
   const user = await User.findById(req.user._id);
   
   const existingItem = user.wishlist.find(item => item.product.toString() === productId);
@@ -53,7 +61,10 @@ const addToWishlist = asyncHandler(async (req, res) => {
     if (updated) {await user.save();}
   }
 
-  const updatedUser = await User.findById(req.user._id).populate('wishlist.product');
+  const updatedUser = await User.findById(req.user._id).populate({
+    path: 'wishlist.product',
+    populate: { path: 'category', select: 'name slug' },
+  });
   sendResponse(res, 200, 'Added to wishlist', updatedUser.wishlist);
 });
 
@@ -67,7 +78,10 @@ const removeFromWishlist = asyncHandler(async (req, res) => {
   user.wishlist = user.wishlist.filter(item => item.product.toString() !== productId);
   await user.save();
 
-  const updatedUser = await User.findById(req.user._id).populate('wishlist.product');
+  const updatedUser = await User.findById(req.user._id).populate({
+    path: 'wishlist.product',
+    populate: { path: 'category', select: 'name slug' },
+  });
   sendResponse(res, 200, 'Removed from wishlist', updatedUser.wishlist);
 });
 

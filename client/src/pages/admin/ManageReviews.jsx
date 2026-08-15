@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Star, Trash2, Search, MessageSquare, ExternalLink } from 'lucide-react';
+import { Star, Trash2, Search, MessageSquare } from 'lucide-react';
 import Spinner from '@components/common/Spinner';
 import api from '@services/api';
 

@@ -1,8 +1,11 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { wishlistService } from '../services/wishlistService';
 import { useAuth } from './AuthContext';
 
 const WishlistContext = createContext(null);
+
+const sameId = (left, right) => String(left || '') === String(right || '');
 
 export const WishlistProvider = ({ children }) => {
   const [wishlistItems, setWishlistItems] = useState([]);
@@ -73,10 +76,14 @@ export const WishlistProvider = ({ children }) => {
   }, [isAuthenticated]);
 
   const addToWishlist = async (product, size = '', color = '') => {
-    if (!product || !product._id) return;
-    
-    // Prevent duplicate entries by checking _id immediately
-    if (isInWishlist(product._id)) return;
+    if (!product || !product._id) {
+      return { success: false, message: 'A valid product is required' };
+    }
+
+    const existing = wishlistItems.find(item => sameId(item._id, product._id));
+    if (existing && (existing.size || '') === size && (existing.color || '') === color) {
+      return { success: true, alreadyPresent: true };
+    }
 
     if (isAuthenticated) {
       try {
@@ -85,23 +92,30 @@ export const WishlistProvider = ({ children }) => {
         await wishlistService.addToWishlist(product._id, size, color);
         // Refresh from backend to ensure data integrity
         await fetchWishlist();
+        return { success: true };
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to add to wishlist');
+        const message = err.response?.data?.message || err.message || 'Failed to add to wishlist';
+        setError(message);
         console.error('Failed to add to wishlist', err);
+        return { success: false, message };
       } finally {
         setLoading(false);
       }
     } else {
       const local = getLocalWishlist();
-      if (!local.find((item) => item._id === product._id)) {
+      const localIndex = local.findIndex(item => sameId(item._id, product._id));
+      if (localIndex === -1) {
         local.push({ ...product, size, color });
-        saveLocalWishlist(local);
+      } else {
+        local[localIndex] = { ...local[localIndex], ...product, size, color };
       }
+      saveLocalWishlist(local);
+      return { success: true };
     }
   };
 
   const removeFromWishlist = async (productId) => {
-    if (!productId) return;
+    if (!productId) return { success: false, message: 'Product ID is required' };
 
     if (isAuthenticated) {
       try {
@@ -109,31 +123,35 @@ export const WishlistProvider = ({ children }) => {
         setError(null);
         await wishlistService.removeFromWishlist(productId);
         // Instant UI update
-        setWishlistItems((prev) => prev.filter((item) => item._id !== productId));
+        setWishlistItems((prev) => prev.filter((item) => !sameId(item._id, productId)));
+        return { success: true };
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to remove from wishlist');
+        const message = err.response?.data?.message || err.message || 'Failed to remove from wishlist';
+        setError(message);
         console.error('Failed to remove from wishlist', err);
         // Revert UI on failure
         fetchWishlist();
+        return { success: false, message };
       } finally {
         setLoading(false);
       }
     } else {
       const local = getLocalWishlist();
-      saveLocalWishlist(local.filter((item) => item._id !== productId));
+      saveLocalWishlist(local.filter((item) => !sameId(item._id, productId)));
+      return { success: true };
     }
   };
 
-  const toggleWishlist = (product, size = '', color = '') => {
+  const toggleWishlist = async (product, size = '', color = '') => {
     if (isInWishlist(product._id)) {
-      removeFromWishlist(product._id);
+      return removeFromWishlist(product._id);
     } else {
-      addToWishlist(product, size, color);
+      return addToWishlist(product, size, color);
     }
   };
 
   const isInWishlist = (productId) => {
-    return wishlistItems.some((item) => item._id === productId);
+    return wishlistItems.some((item) => sameId(item._id, productId));
   };
 
   const clearWishlist = async () => {
@@ -141,14 +159,21 @@ export const WishlistProvider = ({ children }) => {
       try {
         setLoading(true);
         await wishlistService.clearWishlist();
+        localStorage.removeItem('nexora_wishlist');
+        setWishlistItems([]);
+        return { success: true };
       } catch (err) {
+        const message = err.response?.data?.message || err.message || 'Failed to clear wishlist';
+        setError(message);
         console.error('Failed to clear wishlist', err);
+        return { success: false, message };
       } finally {
         setLoading(false);
       }
     }
     localStorage.removeItem('nexora_wishlist');
     setWishlistItems([]);
+    return { success: true };
   };
 
   return (

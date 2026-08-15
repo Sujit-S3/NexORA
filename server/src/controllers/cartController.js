@@ -6,9 +6,11 @@ const { sendResponse } = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
 const { eventBus, EVENTS } = require('../services/ai/utils/eventBus');
 
+const CART_PRODUCT_FIELDS = 'name brand images primaryImage slug category stock variants price discountPrice isActive fitType';
+
 // Helper to get or create a cart for the user
 const getOrCreateCart = async (userId) => {
-  let cart = await Cart.findOne({ user: userId }).populate('items.product', 'name images slug stock price discountPrice isActive');
+  let cart = await Cart.findOne({ user: userId }).populate('items.product', CART_PRODUCT_FIELDS);
   if (!cart) {
     cart = await Cart.create({ user: userId, items: [] });
   } else {
@@ -104,7 +106,8 @@ const addToCart = asyncHandler(async (req, res) => {
 
   const cart = await getOrCreateCart(req.user._id);
 
-  const existingItem = cart.findItem(productId, size);
+  const resolvedColor = variantDetails.color || color || '';
+  const existingItem = cart.findItem(productId, size, resolvedColor);
   
   // Determine correct price snapshot
   const currentPrice = product.discountPrice !== null ? product.discountPrice : product.price;
@@ -121,6 +124,7 @@ const addToCart = asyncHandler(async (req, res) => {
       quantity,
       price: currentPrice,
       size,
+      color: resolvedColor,
       ...variantDetails,
     });
   }
@@ -131,7 +135,7 @@ const addToCart = asyncHandler(async (req, res) => {
   const sessionId = req.headers['x-session-id'];
   eventBus.emit(EVENTS.ADD_TO_CART, { userId: req.user._id, sessionId, product });
 
-  const populatedCart = await cart.populate('items.product', 'name price discountPrice images slug');
+  const populatedCart = await cart.populate('items.product', CART_PRODUCT_FIELDS);
 
   sendResponse(res, 200, 'Item added to cart', populatedCart);
 });
@@ -140,7 +144,7 @@ const addToCart = asyncHandler(async (req, res) => {
 // @route   PUT /api/cart/update
 // @access  Auth
 const updateCartItem = asyncHandler(async (req, res) => {
-  const { productId, quantity, size = '' } = req.body;
+  const { productId, quantity, size = '', color = '' } = req.body;
 
   if (!productId || quantity === undefined) {
     throw ApiError.badRequest('Product ID and quantity are required');
@@ -164,7 +168,9 @@ const updateCartItem = asyncHandler(async (req, res) => {
     if (!size) {
       throw ApiError.badRequest(`Please provide a size for ${product.name}.`);
     }
-    const variant = product.variants.find(v => v.size === size);
+    const variant = product.variants.find(v =>
+      v.size === size && (color ? v.color === color : true),
+    );
     if (!variant) {
       throw ApiError.badRequest(`Selected size ${size} is invalid.`);
     }
@@ -181,7 +187,7 @@ const updateCartItem = asyncHandler(async (req, res) => {
 
   const cart = await getOrCreateCart(req.user._id);
 
-  const existingItem = cart.findItem(productId, size);
+  const existingItem = cart.findItem(productId, size, color);
   if (!existingItem) {
     throw ApiError.notFound('Item not found in cart');
   }
@@ -191,7 +197,7 @@ const updateCartItem = asyncHandler(async (req, res) => {
   existingItem.price = product.discountPrice !== null ? product.discountPrice : product.price;
 
   await cart.save();
-  await cart.populate('items.product', 'name images slug stock variants price discountPrice isActive');
+  await cart.populate('items.product', CART_PRODUCT_FIELDS);
 
   sendResponse(res, 200, 'Cart updated', cart);
 });
@@ -201,16 +207,27 @@ const updateCartItem = asyncHandler(async (req, res) => {
 // @access  Auth
 const removeFromCart = asyncHandler(async (req, res) => {
   const { productId } = req.params;
+  const { size = '', color = '', cartItemId } = req.query;
 
   const cart = await getOrCreateCart(req.user._id);
 
+  let removed = false;
   cart.items = cart.items.filter(item => {
     if (!item.product) {return false;}
-    return item.product._id.toString() !== productId.toString();
+    const sameProduct = item.product._id.toString() === productId.toString();
+    const sameCartItem = cartItemId ? item._id.toString() === cartItemId : true;
+    const sameVariant = (item.size || '') === size && (item.color || '') === color;
+    const shouldRemove = sameProduct && sameCartItem && sameVariant;
+    if (shouldRemove) {removed = true;}
+    return !shouldRemove;
   });
 
+  if (!removed) {
+    throw ApiError.notFound('Item not found in cart');
+  }
+
   await cart.save();
-  await cart.populate('items.product', 'name images slug stock price discountPrice isActive');
+  await cart.populate('items.product', CART_PRODUCT_FIELDS);
 
   sendResponse(res, 200, 'Item removed from cart', cart);
 });

@@ -14,13 +14,26 @@ const { apiLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
 
+const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map(origin => origin.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
+const corsOrigin = (origin, callback) => {
+  // Requests without an Origin header are server-to-server/health probes.
+  if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+    return callback(null, true);
+  }
+  return callback(new Error('Origin is not allowed by the NexORA CORS policy'));
+};
+
 // ── Security middleware ──────────────────────────────────────────────────
 app.use(helmet());
 
 // ── CORS ─────────────────────────────────────────────────────────────────
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+    origin: corsOrigin,
     credentials: true, // Allow cookies
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     // x-session-id is required by the AI Concierge for anonymous session tracking

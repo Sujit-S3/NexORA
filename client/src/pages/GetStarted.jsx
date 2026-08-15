@@ -144,12 +144,6 @@ export default function GetStarted() {
   const bloomY = useTransform(smoothMouseY, [0, 1], [30, -30]);
 
   // Deep Parallax Blurred Logos
-  const logoBgTopLeftX = useTransform(smoothMouseX, [0, 1], [-20, 20]);
-  const logoBgTopLeftY = useTransform(smoothMouseY, [0, 1], [-20, 20]);
-  
-  const logoBgBottomRightX = useTransform(smoothMouseX, [0, 1], [40, -40]);
-  const logoBgBottomRightY = useTransform(smoothMouseY, [0, 1], [40, -40]);
-
   useEffect(() => {
     if (prefersReducedMotion) return;
     const handleMouseMove = (e) => {
@@ -167,7 +161,7 @@ export default function GetStarted() {
     setIsTransitioning(true);
     localStorage.setItem('nexora_intro_seen', 'true');
     
-    // Route to homepage right as the gold flash peaks
+    // Route to homepage right as the logo completes its massive zoom
     setTimeout(() => {
       navigate('/');
     }, 1200); 
@@ -177,10 +171,12 @@ export default function GetStarted() {
 
   return (
     <div className="gs-root">
+      <ParticleLayer disableParticles={prefersReducedMotion} />
+      <AnimatePresence>{showLoader && <LuxuryLoader />}</AnimatePresence>
       
       {/* ── Background Layers ── */}
       <motion.div className="gs-bg-gradient" style={{ x: bgX, y: bgY }} />
-      <motion.div className="gs-bloom" style={{ x: bloomX, y: bloomY }} />
+      {/* Bloom removed for higher contrast */}
       <div className="gs-stars" />
       <div className="gs-streaks" />
       <div className="gs-gold-waves-img" />
@@ -188,24 +184,7 @@ export default function GetStarted() {
       <div className="gs-vignette" />
       <div className="gs-gold-global-filter" />
 
-      {/* Gold Blowout Overlay */}
-      <AnimatePresence>
-        {isTransitioning && (
-          <motion.div 
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundColor: '#E69A21', // User's Primary Gold
-              mixBlendMode: 'screen', // Creates an intense blown-out light effect
-              zIndex: 9999,
-              pointerEvents: 'none'
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.6, ease: "easeIn" }}
-          />
-        )}
-      </AnimatePresence>
+      {/* Gold Blowout Overlay Removed so the logo zoom is visible */}
 
       {/* ── Main Scene ── */}
       <motion.div 
@@ -219,13 +198,13 @@ export default function GetStarted() {
           {/* Logo Layer */}
           <motion.div 
             className="gs-logo-wrap"
-            style={isTransitioning ? {} : { rotateX, rotateY }}
+            style={isTransitioning ? { zIndex: 9999 } : { rotateX, rotateY }}
             animate={isTransitioning ? { 
-              scale: [1, 40],
-              opacity: [1, 0],
-              filter: ['brightness(1) blur(0px)', 'brightness(10) blur(10px)']
+              scale: [1, 100],
+              opacity: [1, 1, 0],
+              filter: ['brightness(1) blur(0px)', 'brightness(1) blur(2px)']
             } : (prefersReducedMotion ? {} : { y: [-6, 6, -6], rotateZ: [-2, 2, -2] })}
-            transition={isTransitioning ? { duration: 1.2, ease: "easeIn" } : { duration: 6, repeat: Infinity, ease: "easeInOut" }}
+            transition={isTransitioning ? { duration: 1.2, ease: "easeInOut", times: [0, 0.8, 1] } : { duration: 6, repeat: Infinity, ease: "easeInOut" }}
           >
             <div className="gs-logo-sheen-container">
               <img 

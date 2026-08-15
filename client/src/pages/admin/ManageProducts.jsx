@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Pencil, Trash2, Search, Star, TrendingUp, Sparkles, Package, Filter } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Star, TrendingUp, Sparkles, Package } from 'lucide-react';
 import { productService } from '@services/productService';
 import Spinner from '@components/common/Spinner';
 
@@ -137,8 +137,8 @@ const ManageProducts = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-white/5 shrink-0">
-                          {prod.images?.[0]?.url
-                            ? <img src={prod.images[0].url} alt={prod.name} className="w-full h-full object-cover" />
+                          {prod.primaryImage?.url || prod.images?.[0]?.url
+                            ? <img src={prod.primaryImage?.url || prod.images[0].url} alt={prod.name} className="w-full h-full object-cover" />
                             : <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No img</div>
                           }
                         </div>

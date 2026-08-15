@@ -9,7 +9,6 @@ export default function SizeSelector({
   sizeError, 
   setSizeError, 
   setShowSizeGuide,
-  fitType,
   fitRecommendation // From AI
 }) {
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);

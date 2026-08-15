@@ -1,9 +1,9 @@
 // NexORA V7 — Luxury Products Page
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Star, X, Eye, Heart, ShoppingBag, ChevronRight, SlidersHorizontal, ArrowRight } from 'lucide-react';
+import { Search, Star, X, Eye, Heart, ShoppingBag, SlidersHorizontal, ArrowRight } from 'lucide-react';
 import { productService } from '@services/productService';
 import { categoryService } from '@services/categoryService';
 import { useCart } from '@context/CartContext';
@@ -15,24 +15,6 @@ import SEO from '../components/common/SEO';
 import useModalA11y from '@hooks/useModalA11y';
 
 /* ─── HELPER COMPONENTS ────────────────────────────────────── */
-
-const NOrbSmall = ({ size = 64 }) => (
-  <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-    <div className="absolute inset-0 rounded-full" style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.4) 0%, transparent 70%)', animation: 'goldPulse 3s ease-in-out infinite' }} />
-    <div className="absolute rounded-full border border-[#D4AF37]/45" style={{ inset: -4, animation: 'orbSpin 8s linear infinite' }} />
-    <div
-      className="relative rounded-full flex items-center justify-center"
-      style={{
-        width: size * 0.75, height: size * 0.75,
-        background: 'linear-gradient(145deg, rgba(212,175,55,0.15) 0%, rgba(5,5,5,0.92) 100%)',
-        border: '1.5px solid rgba(212,175,55,0.6)',
-        backdropFilter: 'blur(8px)',
-      }}
-    >
-      <span className="font-playfair font-semibold text-[#D4AF37]" style={{ fontSize: size * 0.35 }}>N</span>
-    </div>
-  </div>
-);
 
 /* ─── MAIN COMPONENT ───────────────────────────────────────── */
 

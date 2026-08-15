@@ -6,6 +6,7 @@ const required = [
   'PORT',
   'MONGO_URI',
   'JWT_SECRET',
+  'JWT_REFRESH_SECRET',
   'JWT_EXPIRES_IN',
   'CLOUDINARY_CLOUD_NAME',
   'CLOUDINARY_API_KEY',
@@ -43,8 +44,11 @@ const validateEnv = () => {
   }
   if (!hasKeyId) {
     console.warn('⚠️   RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET not set — online payments disabled, only Cash on Delivery will be accepted.');
+  } else if (!process.env.RAZORPAY_WEBHOOK_SECRET && process.env.NODE_ENV === 'production') {
+    console.error('Razorpay online payments require RAZORPAY_WEBHOOK_SECRET in production.');
+    process.exit(1);
   } else if (!process.env.RAZORPAY_WEBHOOK_SECRET) {
-    console.warn('⚠️   RAZORPAY_WEBHOOK_SECRET not set — payment webhook reconciliation will reject all events.');
+    console.warn('RAZORPAY_WEBHOOK_SECRET not set - payment webhook reconciliation will reject all events.');
   }
 
   console.log('✅  Environment variables validated');

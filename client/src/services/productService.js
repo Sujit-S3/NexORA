@@ -11,8 +11,9 @@ export const productService = {
   delete: (id) => api.delete(`/products/${id}`),
   uploadImages: (id, formData) =>
     api.post(`/products/${id}/images`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      // Let the browser add the multipart boundary. Supplying Content-Type
+      // manually can produce an unreadable body in some Axios/browser builds.
     }),
   deleteImage: (id, publicId) =>
-    api.delete(`/products/${id}/images/${encodeURIComponent(publicId)}`),
+    api.delete(`/products/${id}/images`, { data: { publicId } }),
 };

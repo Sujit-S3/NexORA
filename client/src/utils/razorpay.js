@@ -3,6 +3,8 @@
 // so the widget-invocation logic only lives in one place.
 
 const SCRIPT_SRC = 'https://checkout.razorpay.com/v1/checkout.js';
+const SCRIPT_ID = 'nexora-razorpay-checkout';
+const SCRIPT_TIMEOUT_MS = 15000;
 
 let scriptLoadingPromise = null;
 
@@ -16,10 +18,26 @@ export const loadRazorpayScript = () => {
   }
 
   scriptLoadingPromise = new Promise((resolve) => {
+    const staleScript = document.getElementById(SCRIPT_ID);
+    if (staleScript) staleScript.remove();
+
     const script = document.createElement('script');
+    script.id = SCRIPT_ID;
     script.src = SCRIPT_SRC;
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
+    script.async = true;
+
+    const finish = (loaded) => {
+      window.clearTimeout(timeoutId);
+      if (!loaded) {
+        script.remove();
+        scriptLoadingPromise = null;
+      }
+      resolve(loaded);
+    };
+
+    const timeoutId = window.setTimeout(() => finish(false), SCRIPT_TIMEOUT_MS);
+    script.onload = () => finish(Boolean(window.Razorpay));
+    script.onerror = () => finish(false);
     document.body.appendChild(script);
   });
 
@@ -38,30 +56,53 @@ export const loadRazorpayScript = () => {
  * @param {(reason?: string) => void} params.onFailure - called on gateway failure or if the user dismisses the widget
  */
 export const openRazorpayCheckout = async ({ razorpayKeyId, razorpayOrderId, amount, currency, prefill, onSuccess, onFailure }) => {
-  const loaded = await loadRazorpayScript();
-  if (!loaded || !window.Razorpay) {
-    onFailure('Payment gateway failed to load. Please check your connection and try again.');
-    return;
+  let settled = false;
+  const failOnce = (reason) => {
+    if (settled) return;
+    settled = true;
+    onFailure?.(reason);
+  };
+  const succeedOnce = (response) => {
+    if (settled) return;
+    settled = true;
+    onSuccess?.(response);
+  };
+
+  if (!razorpayKeyId || !razorpayOrderId || !Number.isInteger(Number(amount)) || Number(amount) <= 0 || !currency) {
+    failOnce('The payment session is invalid. Please retry from your order page.');
+    return false;
   }
 
-  const razorpay = new window.Razorpay({
-    key: razorpayKeyId,
-    order_id: razorpayOrderId,
-    amount,
-    currency,
-    name: 'NexORA',
-    description: 'Luxury Commerce Order',
-    prefill: prefill || {},
-    theme: { color: '#D4AF37' },
-    handler: (response) => onSuccess(response),
-    modal: {
-      ondismiss: () => onFailure('Payment cancelled'),
-    },
-  });
+  const loaded = await loadRazorpayScript();
+  if (!loaded || !window.Razorpay) {
+    failOnce('Payment gateway failed to load. Please check your connection and try again.');
+    return false;
+  }
 
-  razorpay.on('payment.failed', (response) => {
-    onFailure(response?.error?.description || 'Payment failed');
-  });
+  try {
+    const razorpay = new window.Razorpay({
+      key: razorpayKeyId,
+      order_id: razorpayOrderId,
+      amount: Number(amount),
+      currency,
+      name: 'NexORA',
+      description: 'Luxury Commerce Order',
+      prefill: prefill || {},
+      theme: { color: '#D4AF37' },
+      handler: succeedOnce,
+      modal: {
+        ondismiss: () => failOnce('Payment cancelled'),
+      },
+    });
 
-  razorpay.open();
+    razorpay.on('payment.failed', (response) => {
+      failOnce(response?.error?.description || 'Payment failed');
+    });
+
+    razorpay.open();
+    return true;
+  } catch {
+    failOnce('The payment window could not be opened. Please try again.');
+    return false;
+  }
 };

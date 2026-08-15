@@ -9,7 +9,6 @@ const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
 const Product = require('../models/Product');
-const Category = require('../models/Category');
 
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 

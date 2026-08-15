@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const slugify = require('slugify');
 const Product = require('../models/Product');
 const Category = require('../models/Category');

@@ -64,4 +64,35 @@ describe('Cart ownership isolation', () => {
     const cartA = await request(app).get('/api/cart').set('Cookie', cookieA);
     expect(cartA.body.data.items).toHaveLength(1);
   });
+
+  it('updates and removes only the selected size/color variant', async () => {
+    const product = await Product.create({
+      name: 'Colour Variant Item',
+      description: 'The same size in two colours',
+      price: 500,
+      category: new mongoose.Types.ObjectId(),
+      stock: 10,
+      variants: [
+        { size: 'M', color: 'Black', sku: 'VAR-M-BLK', stock: 5 },
+        { size: 'M', color: 'Red', sku: 'VAR-M-RED', stock: 5 },
+      ],
+    });
+    const cookie = await loginAs('variants@nexora.test');
+
+    await request(app).post('/api/cart/add').set('Cookie', cookie).send({
+      productId: product._id.toString(), quantity: 1, size: 'M', color: 'Black',
+    });
+    await request(app).post('/api/cart/add').set('Cookie', cookie).send({
+      productId: product._id.toString(), quantity: 1, size: 'M', color: 'Red',
+    });
+
+    const removeRes = await request(app)
+      .delete(`/api/cart/remove/${product._id}`)
+      .query({ size: 'M', color: 'Black' })
+      .set('Cookie', cookie);
+
+    expect(removeRes.status).toBe(200);
+    expect(removeRes.body.data.items).toHaveLength(1);
+    expect(removeRes.body.data.items[0].color).toBe('Red');
+  });
 });

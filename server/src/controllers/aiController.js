@@ -1,7 +1,6 @@
 // NexORA V9 — AI Controller
 const aiService = require('../services/aiService');
 const Product   = require('../models/Product');
-const Order     = require('../models/Order');
 const UserPreference = require('../models/UserPreference');
 
 // ── Health Check ──────────────────────────────────────────────────────────
@@ -61,7 +60,7 @@ exports.extractIntent = async (req, res, next) => {
 // POST /api/ai/chat
 exports.chat = async (req, res, next) => {
   try {
-    const { message, history, memory, cartItems, wishlistIds } = req.body;
+    const { message, history, memory } = req.body;
     const userId    = req.user ? req.user._id : null;
     const sessionId = req.headers['x-session-id'] || null;
 

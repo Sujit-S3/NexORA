@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CreditCard, TrendingUp, DollarSign, CheckCircle, XCircle, Clock, RotateCcw } from 'lucide-react';
+import { CreditCard, TrendingUp, CheckCircle, XCircle, Clock, RotateCcw } from 'lucide-react';
 import Spinner from '@components/common/Spinner';
 import api from '@services/api';
 import { paymentService } from '@services/paymentService';

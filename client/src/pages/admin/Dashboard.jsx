@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { adminService } from '@services/adminService';
-import { Users, Package, ShoppingBag, IndianRupee, TrendingUp, AlertCircle, CheckCircle2, ChevronRight, Sparkles } from 'lucide-react';
+import { Users, Package, ShoppingBag, TrendingUp, AlertCircle, CheckCircle2, ChevronRight, Sparkles } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 export default function Dashboard() {
@@ -17,7 +17,7 @@ export default function Dashboard() {
     
     adminService.getDashboardStats()
       .then(res => setStats(res.data.data))
-      .catch(err => setError('Failed to load executive statistics.'))
+      .catch(() => setError('Failed to load executive statistics.'))
       .finally(() => setLoading(false));
   }, []);
 

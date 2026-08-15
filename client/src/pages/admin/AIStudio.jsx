@@ -6,7 +6,7 @@ import {
   Mail, Package, Users, BarChart2, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import aiService from '@services/aiService';
-import axios from 'axios';
+import api from '@services/api';
 
 export default function AIStudio() {
   const [activeTab, setActiveTab] = useState('analytics');
@@ -163,7 +163,7 @@ function InsightsTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get('/api/preferences/analytics')
+    api.get('/preferences/analytics')
       .then(r => setData(r.data.data))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -496,7 +496,7 @@ function CustomerTrendsTab() {
   const [error, setError]         = useState('');
 
   useEffect(() => {
-    axios.get('/api/preferences/analytics')
+    api.get('/preferences/analytics')
       .then(r => setAnalytics(r.data.data))
       .catch(() => setError('Customer data unavailable.'))
       .finally(() => setLoading(false));

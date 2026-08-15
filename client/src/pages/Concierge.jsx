@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '@services/api';
 import aiService from '@services/aiService';
 import { useAI } from '@context/AIContext';
 import { useCart } from '@context/CartContext';
@@ -104,8 +104,8 @@ export default function Concierge() {
 
   useEffect(() => {
     let mounted = true;
-    axios
-      .get('/api/preferences/concierge-discovery', { headers: { 'x-session-id': getSessionId() } })
+    api
+      .get('/preferences/concierge-discovery', { headers: { 'x-session-id': getSessionId() } })
       .then(response => {
         if (mounted && response.data?.success) {
           setPreChatRecs({ ...DISCOVERY_DEFAULTS, ...response.data.data });
@@ -235,7 +235,7 @@ export default function Concierge() {
       recipient: nextData.recipient,
     });
 
-    axios.post('/api/preferences/track', {
+    api.post('/preferences/track', {
       sessionId: getSessionId(),
       event: 'gift_finder',
       data: {

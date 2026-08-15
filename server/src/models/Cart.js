@@ -77,11 +77,13 @@ cartSchema.virtual('itemCount').get(function () {
 });
 
 // ── Instance method: find item by product and size ───────────────────────
-cartSchema.methods.findItem = function (productId, size = '') {
+cartSchema.methods.findItem = function (productId, size = '', color = '') {
   return this.items.find((item) => {
     if (!item.product) {return false;}
     const id = item.product._id ? item.product._id.toString() : item.product.toString();
-    return id === productId.toString() && (item.size || '') === size;
+    return id === productId.toString()
+      && (item.size || '') === size
+      && (item.color || '') === color;
   });
 };
 

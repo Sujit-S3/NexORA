@@ -30,8 +30,6 @@ const AuthThemeToggle = () => {
 };
 
 const AuthLayout = ({ children }) => {
-  const { isDark } = useTheme();
-  
   // Parallax tracking
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);

@@ -17,7 +17,7 @@ class KPITracker {
   }
 
   subscribeToEvents() {
-    eventBus.on(EVENTS.CLICK_RECOMMENDATION, (payload) => {
+    eventBus.on(EVENTS.CLICK_RECOMMENDATION, () => {
       this.metrics.recommendationClicks++;
     });
 

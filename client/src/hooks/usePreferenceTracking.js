@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import axios from 'axios';
+import api from '@services/api';
 
 // Get or create anonymous session ID
 export const getSessionId = () => {
@@ -11,30 +11,25 @@ export const getSessionId = () => {
   return sessionId;
 };
 
-// Global axios interceptor for session
-axios.interceptors.request.use(config => {
-  config.headers['x-session-id'] = getSessionId();
-  return config;
-});
-
 export const trackEvent = async (event, data) => {
   try {
-    await axios.post('/api/preferences/track', {
+    await api.post('/preferences/track', {
       sessionId: getSessionId(),
       event,
       data
-    });
+    }, { headers: { 'x-session-id': getSessionId() } });
   } catch (error) {
     console.warn('Failed to track preference event', error);
   }
 };
 
 const usePreferenceTracking = (event, data, trigger = true) => {
+  const serializedData = JSON.stringify(data);
   useEffect(() => {
     if (trigger) {
-      trackEvent(event, data);
+      trackEvent(event, JSON.parse(serializedData || 'null'));
     }
-  }, [trigger, JSON.stringify(data)]);
+  }, [event, serializedData, trigger]);
 };
 
 export default usePreferenceTracking;

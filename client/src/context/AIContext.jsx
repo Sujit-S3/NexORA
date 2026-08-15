@@ -1,5 +1,6 @@
 // NexORA V13 — AI Context (Luxury Commerce OS)
 // Handles: status frames, action frames, session frames, memory pass-through
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import aiService from '../services/aiService';
 import { useCart } from './CartContext';
@@ -52,17 +53,30 @@ export const AIProvider = ({ children }) => {
   const abortControllerRef = useRef(null);
 
   const { addToCart, items: cartItems }            = useCart();
-  const { toggleWishlist, isInWishlist, wishlistItems } = useWishlist();
+  const { toggleWishlist, wishlistItems } = useWishlist();
   const navigate = useNavigate();
 
-  // Health check on mount
+  // Health check on mount — retries up to 3× with backoff so transient
+  // rate-limit windows or server cold-starts don't permanently show OFFLINE.
   useEffect(() => {
-    aiService.checkHealth().then(r => {
-      if (r.data?.success) setAiHealth(r.data.data);
-    }).catch(() => {
-      setAiHealth({ status: 'UNHEALTHY', available: false, error: 'Concierge temporarily unavailable.' });
-    });
+    let cancelled = false;
+    const runCheck = async (attempt = 1) => {
+      try {
+        const r = await aiService.checkHealth();
+        if (!cancelled && r.data?.success) setAiHealth(r.data.data);
+      } catch {
+        if (!cancelled && attempt < 3) {
+          // Exponential back-off: 2s, 4s
+          setTimeout(() => runCheck(attempt + 1), attempt * 2000);
+        } else if (!cancelled) {
+          setAiHealth({ status: 'UNHEALTHY', available: false, error: 'Concierge temporarily unavailable.' });
+        }
+      }
+    };
+    runCheck();
+    return () => { cancelled = true; };
   }, []);
+
 
   // Memory persistence
   const updateMemory = useCallback((updates) => {
@@ -294,7 +308,7 @@ export const AIProvider = ({ children }) => {
                   return updated;
                 });
               }
-            } catch (_) { /* ignore partial JSON */ }
+            } catch { /* ignore partial JSON */ }
           }
         }
       } finally {

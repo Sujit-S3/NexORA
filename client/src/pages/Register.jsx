@@ -13,7 +13,7 @@ const Register = () => {
   
   useEffect(() => {
     if (error) clearError();
-  }, []);
+  }, [clearError, error]);
   
   const [formData, setFormData] = useState({ 
     name: '', email: '', password: '', 

@@ -16,7 +16,7 @@ const FloatingInput = ({ label, type = "text", id, ...props }) => {
         className={`w-full bg-white/40 dark:bg-black/20 border ${isFocused ? 'border-[#D4AF37] dark:border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.2)]' : 'border-gray-200 dark:border-white/10'} rounded-xl px-4 pt-6 pb-2 ${isPassword ? 'pr-12' : ''} text-gray-900 dark:text-white backdrop-blur-md outline-none transition-all duration-300 peer placeholder-transparent`}
         placeholder={label}
         onFocus={() => setIsFocused(true)}
-        onBlur={(e) => setIsFocused(false)}
+        onBlur={() => setIsFocused(false)}
         {...props}
       />
       <label 
