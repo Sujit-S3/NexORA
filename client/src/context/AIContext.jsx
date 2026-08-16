@@ -58,8 +58,34 @@ export const AIProvider = ({ children }) => {
 
   // Health check on mount — retries up to 3× with backoff so transient
   // rate-limit windows or server cold-starts don't permanently show OFFLINE.
+  // A Render free/starter-tier cold start can take longer than this initial
+  // ~30-50s budget, so once it's exhausted we keep polling in the background
+  // every 20s rather than declaring the Concierge permanently dead for the
+  // rest of the page session — the badge self-heals as soon as the backend
+  // actually finishes waking up, no reload required.
   useEffect(() => {
     let cancelled = false;
+    let backgroundPollId = null;
+
+    const startBackgroundPolling = () => {
+      if (backgroundPollId) return;
+      backgroundPollId = setInterval(async () => {
+        try {
+          const r = await aiService.checkHealth();
+          if (!cancelled && r.data?.success) {
+            setAiHealth(r.data.data);
+            if (r.data.data?.available !== false) {
+              clearInterval(backgroundPollId);
+              backgroundPollId = null;
+            }
+          }
+        } catch {
+          // Still down — keep polling silently, no state change needed
+          // since aiHealth already reflects unavailable.
+        }
+      }, 20000);
+    };
+
     const runCheck = async (attempt = 1) => {
       try {
         const r = await aiService.checkHealth();
@@ -70,11 +96,15 @@ export const AIProvider = ({ children }) => {
           setTimeout(() => runCheck(attempt + 1), attempt * 2000);
         } else if (!cancelled) {
           setAiHealth({ status: 'UNHEALTHY', available: false, error: 'Concierge temporarily unavailable.' });
+          startBackgroundPolling();
         }
       }
     };
     runCheck();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (backgroundPollId) clearInterval(backgroundPollId);
+    };
   }, []);
 
 
