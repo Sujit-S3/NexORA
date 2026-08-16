@@ -37,26 +37,6 @@ router.get('/health', (req, res) => {
   });
 });
 
-// TEMPORARY — production trust-proxy verification (NexORA hardening Phase 2).
-// Deployed solely to empirically confirm how many reverse-proxy hops sit
-// between the client and this app (Render's docs confirm Cloudflare sits in
-// front of Render's own load balancer, but not the resulting X-Forwarded-For
-// shape), per the official express-rate-limit method: hit this, compare
-// reqIp to your real IP, adjust `trust proxy` until they match. No auth data,
-// no secrets — only IP/header plumbing already visible to any client via its
-// own request. Removed once the correct hop count is confirmed and hardcoded.
-router.get('/debug/ip', (req, res) => {
-  res.json({
-    reqIp: req.ip,
-    reqIps: req.ips,
-    xForwardedFor: req.headers['x-forwarded-for'] || null,
-    xForwardedProto: req.headers['x-forwarded-proto'] || null,
-    xForwardedHost: req.headers['x-forwarded-host'] || null,
-    socketRemoteAddress: req.socket.remoteAddress,
-    trustProxySetting: req.app.get('trust proxy'),
-  });
-});
-
 // Mount routers
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);

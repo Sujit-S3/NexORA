@@ -13,7 +13,22 @@ const errorHandler = require('./middleware/errorHandler');
 const { apiLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
-app.set('trust proxy', 1); // Required for rate limiting behind a reverse proxy (Render/Vercel)
+
+// Render's own docs confirm ALL inbound traffic passes through Cloudflare's
+// network before reaching Render's load balancer, which then forwards to
+// this container over loopback. Empirically confirmed in production via a
+// temporary /api/debug/ip probe (since removed): X-Forwarded-For arrives as
+// "<real-client-ip>, <cloudflare-edge-ip>, <render-internal-ip>" — a genuine
+// 3-entry chain — while req.socket.remoteAddress is always "::1" (Render's
+// proxy connects same-host). Trusting exactly 3 hops walks back past
+// Render's internal hop and Cloudflare's edge hop to land on the real
+// client IP, while still refusing to trust anything a client could prepend
+// onto X-Forwarded-For beyond those 3 trusted hops. If Render ever changes
+// this internal topology, re-verify with the same method: add a route that
+// returns { ip: req.ip, xff: req.headers['x-forwarded-for'], socket:
+// req.socket.remoteAddress }, hit it, and adjust the hop count until req.ip
+// matches your real IP (https://api.ipify.org).
+app.set('trust proxy', 3);
 
 const isProduction = process.env.NODE_ENV === 'production';
 
