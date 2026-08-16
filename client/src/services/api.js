@@ -74,10 +74,19 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
-    const message =
-      error.response?.data?.message ||
-      error.message ||
-      'An unexpected error occurred';
+    // No error.response means the request never got a server reply at all —
+    // DNS/connection failure, or (most commonly on Render's free/starter
+    // tier) a cold-start wake-up that outlasted the 15s timeout. Axios's own
+    // wording for this ("Network Error", "timeout of 15000ms exceeded") is
+    // accurate but not actionable, and is easily confused with a genuine
+    // 4xx failure like wrong credentials. Presence of error.response (not
+    // the message text) is the reliable discriminator between the two.
+    const isConfigError = error.code === 'API_CONFIGURATION_ERROR';
+    const isNetworkOrTimeout = !error.response && !isConfigError;
+
+    const message = isNetworkOrTimeout
+      ? "Couldn't reach NexORA's servers — this can happen right after a period of inactivity. Please try again in a moment."
+      : error.response?.data?.message || error.message || 'An unexpected error occurred';
 
     const originalRequest = error.config;
     const isAuthEndpoint =
