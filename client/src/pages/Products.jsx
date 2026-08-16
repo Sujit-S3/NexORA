@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Star, X, Eye, Heart, ShoppingBag, SlidersHorizontal, ArrowRight } from 'lucide-react';
+import { Search, Star, X, Eye, Heart, ShoppingBag, SlidersHorizontal, ArrowRight, AlertCircle } from 'lucide-react';
 import { productService } from '@services/productService';
 import { categoryService } from '@services/categoryService';
 import { useCart } from '@context/CartContext';
@@ -37,6 +37,7 @@ export default function Products() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [pages, setPages] = useState(1);
   const [page, setPage] = useState(parseInt(searchParams.get('page')) || 1);
 
@@ -66,10 +67,13 @@ export default function Products() {
     categoryService.getAll().then(res => setCategories(res.data.data)).catch(console.error);
   }, []);
 
+  const [retryCount, setRetryCount] = useState(0);
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
+        setFetchError(null);
         const params = Object.fromEntries([...searchParams]);
         const res = await productService.getAll(params);
         setProducts(res.data.data.products || []);
@@ -77,12 +81,19 @@ export default function Products() {
         setPage(res.data.data.pagination?.page || 1);
       } catch (err) {
         console.error(err);
+        // A failed request (cold-start timeout, network error, 5xx) must not
+        // render as "No results found" — that's reserved for a successful
+        // response with a genuinely empty product array.
+        setProducts([]);
+        setFetchError(err?.message || 'Something went wrong loading products.');
       } finally {
         setLoading(false);
       }
     };
     fetchProducts();
-  }, [searchParams]);
+  }, [searchParams, retryCount]);
+
+  const retryFetch = () => setRetryCount((n) => n + 1);
 
   const updateParams = (newParams) => {
     const current = Object.fromEntries([...searchParams]);
@@ -269,6 +280,17 @@ export default function Products() {
               {[...Array(8)].map((_, i) => (
                 <div key={i} className="animate-pulse rounded-[20px]" style={{ height: 520, background: SURF, border: `1px solid ${BORD}` }} />
               ))}
+            </div>
+          ) : fetchError ? (
+            <div className="flex flex-col items-center justify-center py-32 text-center" style={{ background: SURF, border: `1px solid ${BORD}`, borderRadius: 24 }}>
+              <div className="w-16 h-16 mb-6 flex items-center justify-center rounded-full" style={{ background: 'rgba(239,68,68,0.1)' }}>
+                <AlertCircle size={24} style={{ color: '#EF4444' }} />
+              </div>
+              <h3 className="font-playfair text-2xl mb-3">Couldn&apos;t load the collection</h3>
+              <p className="text-[14px] max-w-sm mb-6" style={{ color: SUB }}>Our store took too long to respond — this can happen right after a period of inactivity. Please try again.</p>
+              <button onClick={retryFetch} className="px-6 py-3 text-[11px] font-bold tracking-widest uppercase transition-opacity hover:opacity-90" style={{ background: ACC, color: '#000', borderRadius: 2 }}>
+                Retry
+              </button>
             </div>
           ) : products.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-32 text-center" style={{ background: SURF, border: `1px solid ${BORD}`, borderRadius: 24 }}>
