@@ -43,7 +43,7 @@ export default function Products() {
   // Filter State
   const [keyword, setKeyword] = useState(searchParams.get('keyword') || '');
   const [category, setCategory] = useState(searchParams.get('category') || '');
-  const [sort, setSort] = useState(searchParams.get('sort') || 'createdAt:desc');
+  const [sort, setSort] = useState(searchParams.get('sort') || '');
   const [minPrice, setMinPrice] = useState(searchParams.get('minPrice') || '');
   const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') || '');
   const [isFeatured, setIsFeatured] = useState(searchParams.get('isFeatured') === 'true');
@@ -98,7 +98,7 @@ export default function Products() {
 
   const clearFilters = () => {
     setKeyword(''); setCategory(''); setMinPrice(''); setMaxPrice(''); setIsFeatured(false); setIsNewArrival(false);
-    updateParams({ keyword: '', category: '', sort: 'createdAt:desc', minPrice: '', maxPrice: '', isFeatured: '', isNewArrival: '', page: 1 });
+    updateParams({ keyword: '', category: '', sort: '', minPrice: '', maxPrice: '', isFeatured: '', isNewArrival: '', page: 1 });
   };
 
   return (
@@ -242,7 +242,7 @@ export default function Products() {
             <div className="mb-8">
               <h4 className="text-[10px] font-bold tracking-[0.2em] uppercase mb-4" style={{ color: SUB }}>Sort By</h4>
               <select aria-label="Sort by" value={sort} onChange={e => setSort(e.target.value)} className="w-full text-[13px] px-3 py-2 outline-none focus:ring-2 appearance-none cursor-pointer" style={{ background: 'transparent', border: `1px solid ${BORD}`, borderRadius: 4, color: TEXT }}>
-                <option value="createdAt:desc" className="bg-[#050505] text-white">Newest Arrivals</option>
+                <option value="" className="bg-[#050505] text-white">Newest Arrivals</option>
                 <option value="price_asc" className="bg-[#050505] text-white">Price: Low to High</option>
                 <option value="price_desc" className="bg-[#050505] text-white">Price: High to Low</option>
                 <option value="top_rated" className="bg-[#050505] text-white">Top Rated</option>

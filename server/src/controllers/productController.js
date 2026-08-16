@@ -90,12 +90,21 @@ const productWriteFields = (body) => ({
 
 // @desc    Get all products (with filter, sort, pagination)
 // @route   GET /api/products
-// @access  Public
+// @access  Public (isActive=all is for admin use only)
 const getProducts = asyncHandler(async (req, res) => {
-  const { keyword, category, minPrice, maxPrice, sort, page = 1, limit = 12, isFeatured, isNewArrival, isBestSeller } = req.query;
+  const { keyword, category, minPrice, maxPrice, sort, page = 1, limit = 12, isFeatured, isNewArrival, isBestSeller, isActive } = req.query;
 
   // 1. Build Query
-  const query = { isActive: true };
+  // Admins can pass isActive=all to see every product (including inactive drafts).
+  // All public-facing calls default to showing only active products.
+  const query = {};
+  if (isActive === 'all') {
+    // No isActive filter — return everything (admin panel use)
+  } else if (isActive === 'false') {
+    query.isActive = false;
+  } else {
+    query.isActive = true; // default: public store shows only active products
+  }
 
   // Search keyword (Uses MongoDB full-text index instead of slow regex)
   if (keyword) {

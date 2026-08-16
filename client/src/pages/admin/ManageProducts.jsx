@@ -15,7 +15,7 @@ const ManageProducts = () => {
   const fetchProducts = async () => {
     setIsLoading(true);
     try {
-      const res = await productService.getAll({ limit: 200 });
+      const res = await productService.getAll({ limit: 200, isActive: 'all' });
       setProducts(res.data.data.products || []);
     } catch {
       setError('Failed to load products');
