@@ -40,6 +40,11 @@ const NO_REFRESH_PATHS = ['/auth/refresh', '/auth/login', '/auth/register'];
 
 // Public routes where an unauthenticated 401 is totally expected and should
 // NOT trigger a redirect (e.g. background /auth/me check on homepage/register).
+// Must cover every route in App.jsx that isn't wrapped in <PrivateRoute> —
+// otherwise the mount-time auth check (AuthContext) can lose a race against
+// a same-tick client-side navigate() (e.g. Home -> /get-started for
+// first-time visitors) and force a hard redirect to /login on a page that
+// never required auth in the first place.
 const isPublicPage = () => {
   const p = window.location.pathname;
   return (
@@ -47,8 +52,13 @@ const isPublicPage = () => {
     p.startsWith('/login') ||
     p.startsWith('/register') ||
     p.startsWith('/products') ||
+    p.startsWith('/product/') ||
     p.startsWith('/collections') ||
-    p.startsWith('/concierge')
+    p.startsWith('/concierge') ||
+    p.startsWith('/wishlist') ||
+    p.startsWith('/get-started') ||
+    p.startsWith('/forgot-password') ||
+    p.startsWith('/reset-password')
   );
 };
 
