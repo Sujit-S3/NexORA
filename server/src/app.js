@@ -13,6 +13,8 @@ const errorHandler = require('./middleware/errorHandler');
 const { apiLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
+app.set('trust proxy', 1); // Required for rate limiting behind a reverse proxy (Render/Vercel)
+
 
 const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
   .split(',')
@@ -40,7 +42,9 @@ const corsOrigin = (origin, callback) => {
 };
 
 // ── Security middleware ──────────────────────────────────────────────────
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
 // ── CORS ─────────────────────────────────────────────────────────────────
 app.use(
